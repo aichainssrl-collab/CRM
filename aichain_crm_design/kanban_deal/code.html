@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AiChain CRM - Kanban Deals</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-primary-container": "#83829b",
+                      "tertiary": "#695d3c",
+                      "surface-container-highest": "#e5e1e3",
+                      "surface-dim": "#ddd9db",
+                      "secondary-fixed": "#e4e1ed",
+                      "surface-container": "#f1edef",
+                      "outline-variant": "#c8c5cd",
+                      "on-secondary": "#ffffff",
+                      "primary-fixed-dim": "#c6c4df",
+                      "on-tertiary-fixed": "#231b02",
+                      "surface": "#fcf8fa",
+                      "on-primary-fixed": "#1a1a2e",
+                      "surface-container-high": "#ebe7e9",
+                      "primary-fixed": "#e2e0fc",
+                      "inverse-on-surface": "#f4f0f2",
+                      "on-tertiary-fixed-variant": "#514627",
+                      "on-error-container": "#93000a",
+                      "outline": "#78767d",
+                      "error": "#ba1a1a",
+                      "on-background": "#1c1b1d",
+                      "surface-variant": "#e5e1e3",
+                      "inverse-primary": "#c6c4df",
+                      "surface-tint": "#5d5c74",
+                      "inverse-surface": "#313032",
+                      "surface-container-low": "#f6f2f4",
+                      "secondary-container": "#e1deea",
+                      "surface-container-lowest": "#ffffff",
+                      "secondary": "#5e5d68",
+                      "on-secondary-container": "#63616c",
+                      "primary": "#00000b",
+                      "on-tertiary": "#ffffff",
+                      "on-primary-fixed-variant": "#45455b",
+                      "on-surface": "#1c1b1d",
+                      "tertiary-fixed-dim": "#d5c59d",
+                      "tertiary-fixed": "#f2e1b7",
+                      "surface-bright": "#fcf8fa",
+                      "on-primary": "#ffffff",
+                      "on-surface-variant": "#47464c",
+                      "on-error": "#ffffff",
+                      "on-secondary-fixed": "#1b1b23",
+                      "on-tertiary-container": "#493f20",
+                      "tertiary-container": "#b9aa83",
+                      "on-secondary-fixed-variant": "#47464f",
+                      "primary-container": "#1a1a2e",
+                      "error-container": "#ffdad6",
+                      "secondary-fixed-dim": "#c8c5d1",
+                      "background": "#fcf8fa"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "input_height": "36px",
+                      "stack_gap": "16px",
+                      "sidebar_width": "240px",
+                      "container_padding": "32px",
+                      "base": "4px",
+                      "topbar_height": "56px"
+              },
+              "fontFamily": {
+                      "h2": [
+                              "Inter"
+                      ],
+                      "body-medium": [
+                              "Inter"
+                      ],
+                      "h1": [
+                              "Inter"
+                      ],
+                      "mono": [
+                              "JetBrains Mono"
+                      ],
+                      "small-medium": [
+                              "Inter"
+                      ],
+                      "body": [
+                              "Inter"
+                      ],
+                      "small": [
+                              "Inter"
+                      ],
+                      "h3": [
+                              "Inter"
+                      ],
+                      "display": [
+                              "Inter"
+                      ]
+              },
+              "fontSize": {
+                      "h2": [
+                              "18px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-medium": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "h1": [
+                              "22px",
+                              {
+                                      "lineHeight": "28px",
+                                      "letterSpacing": "-0.01em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "mono": [
+                              "13px",
+                              {
+                                      "lineHeight": "18px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "small-medium": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "body": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "small": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "h3": [
+                              "15px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "display": [
+                              "28px",
+                              {
+                                      "lineHeight": "36px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        
+        /* Custom scrollbar for Kanban board */
+        .kanban-scroll::-webkit-scrollbar {
+            height: 8px;
+            width: 8px;
+        }
+        .kanban-scroll::-webkit-scrollbar-track {
+            background: theme('colors.surface-container-low'); 
+            border-radius: 4px;
+        }
+        .kanban-scroll::-webkit-scrollbar-thumb {
+            background: theme('colors.outline-variant'); 
+            border-radius: 4px;
+        }
+        .kanban-scroll::-webkit-scrollbar-thumb:hover {
+            background: theme('colors.secondary'); 
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body h-screen flex overflow-hidden">
+<!-- SideNavBar -->
+<nav class="bg-primary-container dark:bg-primary-container font-body-medium text-body-medium docked fixed left-0 top-0 h-screen w-[240px] border-r border-outline-variant flex flex-col h-full py-6 transition-all duration-200 ease-in-out z-20 hidden md:flex">
+<!-- Header -->
+<div class="px-6 mb-8 flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-[#3B5BDB] flex items-center justify-center text-white font-bold">
+                A
+            </div>
+<div>
+<h1 class="text-h1 font-h1 text-surface-container-lowest tracking-tight">AiChain</h1>
+<p class="text-small text-on-primary-container">Enterprise CRM</p>
+</div>
+</div>
+<!-- Navigation Links -->
+<div class="flex-1 overflow-y-auto">
+<ul class="space-y-1">
+<li>
+<a class="flex items-center gap-3 px-4 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant/50 transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]">dashboard</span>
+                        Dashboard
+                    </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant/50 transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]">leaderboard</span>
+                        Leads
+                    </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-2 text-surface-container-lowest bg-on-primary-fixed-variant border-l-[3px] border-[#3B5BDB]" href="#">
+<span class="material-symbols-outlined text-[20px]">handshake</span>
+                        Deals
+                    </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant/50 transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]">group</span>
+                        Contacts
+                    </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant/50 transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]">description</span>
+                        Forms
+                    </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant/50 transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]">calendar_today</span>
+                        Bookings
+                    </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant/50 transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]">mail</span>
+                        Email
+                    </a>
+</li>
+</ul>
+</div>
+<!-- Footer -->
+<div class="mt-auto px-4 pt-4 border-t border-on-primary-fixed-variant/30">
+<a class="flex items-center gap-3 px-4 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant/50 transition-colors rounded" href="#">
+<span class="material-symbols-outlined text-[20px]">settings</span>
+                Settings
+            </a>
+</div>
+</nav>
+<!-- Main Content Area -->
+<div class="flex-1 flex flex-col md:ml-[240px] w-full h-screen overflow-hidden">
+<!-- TopAppBar -->
+<header class="bg-surface dark:bg-surface-dim font-body-medium text-body-medium sticky top-0 right-0 h-topbar_height w-full border-b border-outline-variant flex justify-between items-center px-8 z-10">
+<div class="flex items-center gap-2">
+<span class="text-on-surface-variant font-medium">Deals</span>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2 text-on-surface-variant">
+<button class="hover:bg-surface-container-high dark:hover:bg-surface-container rounded-full p-2 transition-colors cursor-pointer active:scale-95 transition-transform">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="hover:bg-surface-container-high dark:hover:bg-surface-container rounded-full p-2 transition-colors cursor-pointer active:scale-95 transition-transform">
+<span class="material-symbols-outlined">help_outline</span>
+</button>
+</div>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-outline-variant shrink-0 cursor-pointer">
+<img alt="User Profile Avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCljAbz29yNPpWD_RjsAyuZHuZ8mk2d-6-iqlhRJ6nEOEByVKL7TuD_7RjpfqybDgMe4vFWZLgl5Moi8oboRBgUoke6mN5myL2cGW68ws4Z96JDWAZu6-uk-gmi4UNuREyN1_hBaCF-0BckuVzy_y41HlkHDlA6uyXK4ckLgDBImpwYRKWAytSPx5j3k4W_suR4JnrHssXvNcdpLDlPJQzTDUlb4En0X38c1eKuA0MTNKqsPc32LC4bQUlfAWIjsWdxxzKqFGUIZVs"/>
+</div>
+</div>
+</header>
+<!-- Canvas Area -->
+<main class="flex-1 overflow-hidden flex flex-col p-container_padding bg-surface-container-low">
+<!-- Page Header -->
+<div class="flex items-center justify-between mb-6 shrink-0">
+<h2 class="text-h1 font-h1 text-on-surface">Deals Pipeline</h2>
+<div class="flex items-center gap-3">
+<button class="h-input_height px-4 flex items-center justify-center gap-2 bg-surface-container-lowest border border-outline-variant text-on-surface text-small-medium font-small-medium rounded hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-[18px]">filter_list</span>
+                        Filtri
+                    </button>
+<button class="h-input_height px-4 flex items-center justify-center gap-2 bg-surface-container-lowest border border-outline-variant text-on-surface text-small-medium font-small-medium rounded hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-[18px]">view_list</span>
+                        Vista Lista
+                    </button>
+<button class="h-input_height px-4 flex items-center justify-center gap-2 bg-[#3B5BDB] text-white text-small-medium font-small-medium rounded hover:bg-opacity-90 transition-colors shadow-sm">
+<span class="material-symbols-outlined text-[18px]">add</span>
+                        Nuovo deal
+                    </button>
+</div>
+</div>
+<!-- Kanban Board -->
+<div class="flex-1 overflow-x-auto overflow-y-hidden kanban-scroll flex gap-6 pb-4">
+<!-- Column: Nuovo -->
+<div class="flex-shrink-0 w-[300px] flex flex-col bg-surface-container-lowest border border-outline-variant rounded-lg overflow-hidden h-full">
+<div class="p-4 border-b border-outline-variant bg-surface-bright flex items-center justify-between shrink-0">
+<div class="flex flex-col">
+<span class="font-h3 text-h3 text-on-surface flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-blue-500"></div>
+                                Nuovo
+                            </span>
+<span class="text-small text-on-surface-variant mt-1">2 · €15.000</span>
+</div>
+</div>
+<div class="flex-1 overflow-y-auto p-3 space-y-3 kanban-scroll bg-surface-container-low">
+<!-- Card 1 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded p-4 cursor-pointer hover:bg-[#EEF2FF] hover:border-[#3B5BDB]/30 transition-colors shadow-sm group">
+<div class="flex justify-between items-start mb-2">
+<h4 class="font-body-medium text-body-medium text-on-surface group-hover:text-[#3B5BDB] transition-colors line-clamp-2">Integrazione API CRM</h4>
+<button class="text-on-surface-variant hover:text-on-surface opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-[18px]">more_horiz</span>
+</button>
+</div>
+<p class="text-small text-on-surface-variant mb-3">TechFlow Solutions</p>
+<div class="flex items-center justify-between mt-auto pt-2 border-t border-surface-container-highest">
+<span class="font-h3 text-small text-on-surface">€8.500</span>
+<div class="flex items-center gap-2">
+<span class="text-[10px] text-on-surface-variant bg-surface-container px-2 py-0.5 rounded">15 Ott</span>
+<img alt="Owner Avatar" class="w-5 h-5 rounded-full" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD_lQSMvlDvCcDEBYAU9Oj8LVyBCMQwHdSTUMQOQ_3_84PWYVSvZ43TO01Xiv-hjWU06MiYXwNHApR_XN5ElQhIpxWF9kWBT1FhTPvHgPSVqzziB9vytb6L4Ip-K2vcfigcxcHiu5eRkDHxZaN6QX8TAZjreYdQKOBSsLGfX96MCh65Ie3ShAWHzT-xTqos15sFxDhtEgB1GPPkzDsk5v0gys46NTSZX-vfYR1twrIidrGN1zLybkJ7y0f-X0rK3qZg7hzCnKST6EI"/>
+</div>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded p-4 cursor-pointer hover:bg-[#EEF2FF] hover:border-[#3B5BDB]/30 transition-colors shadow-sm group">
+<div class="flex justify-between items-start mb-2">
+<h4 class="font-body-medium text-body-medium text-on-surface group-hover:text-[#3B5BDB] transition-colors line-clamp-2">Licenze Enterprise 50+</h4>
+<button class="text-on-surface-variant hover:text-on-surface opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-[18px]">more_horiz</span>
+</button>
+</div>
+<p class="text-small text-on-surface-variant mb-3">Global Logistics Inc.</p>
+<div class="flex items-center justify-between mt-auto pt-2 border-t border-surface-container-highest">
+<span class="font-h3 text-small text-on-surface">€6.500</span>
+<div class="flex items-center gap-2">
+<span class="text-[10px] text-on-surface-variant bg-surface-container px-2 py-0.5 rounded">22 Ott</span>
+<img alt="Owner Avatar" class="w-5 h-5 rounded-full" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA5XmgOQzcKEUc5XRtLK2DCrbX5u-TIWxt0mRBP7sFGp4GFMdcLgYj53bYz-pAKWUeLqvAx8F7UDo9oDqFJ22U_SIDDL4vBanIs7VLX9rCkjheVUnXpFntuz07Pq-4J2t2qxopfOOL6XcIx7BmwmtBiXnxdFG0ZO2myGpbDfMYZ5JkAP_DSpAJkDJsAQal9mHPJD3LbQUTR3su_4SRmrdKssN_vaskoeRg1kPQ_EAxWLJFtt78kYYrCvfTpL4tNr-Mg7ItlPooVUSQ"/>
+</div>
+</div>
+</div>
+</div>
+<div class="p-3 border-t border-outline-variant bg-surface-bright shrink-0">
+<button class="w-full flex items-center justify-center gap-2 text-on-surface-variant hover:text-on-surface hover:bg-surface-container py-1.5 rounded transition-colors text-small-medium">
+<span class="material-symbols-outlined text-[16px]">add</span>
+                            Nuovo deal
+                        </button>
+</div>
+</div>
+<!-- Column: Qualificato -->
+<div class="flex-shrink-0 w-[300px] flex flex-col bg-surface-container-lowest border border-outline-variant rounded-lg overflow-hidden h-full">
+<div class="p-4 border-b border-outline-variant bg-surface-bright flex items-center justify-between shrink-0">
+<div class="flex flex-col">
+<span class="font-h3 text-h3 text-on-surface flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-purple-500"></div>
+                                Qualificato
+                            </span>
+<span class="text-small text-on-surface-variant mt-1">1 · €12.000</span>
+</div>
+</div>
+<div class="flex-1 overflow-y-auto p-3 space-y-3 kanban-scroll bg-surface-container-low">
+<!-- Card 1 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded p-4 cursor-pointer hover:bg-[#EEF2FF] hover:border-[#3B5BDB]/30 transition-colors shadow-sm group">
+<div class="flex justify-between items-start mb-2">
+<h4 class="font-body-medium text-body-medium text-on-surface group-hover:text-[#3B5BDB] transition-colors line-clamp-2">Migrazione Dati Cloud</h4>
+<button class="text-on-surface-variant hover:text-on-surface opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-[18px]">more_horiz</span>
+</button>
+</div>
+<p class="text-small text-on-surface-variant mb-3">Nexus Health</p>
+<div class="flex items-center justify-between mt-auto pt-2 border-t border-surface-container-highest">
+<span class="font-h3 text-small text-on-surface">€12.000</span>
+<div class="flex items-center gap-2">
+<span class="text-[10px] text-error bg-error-container px-2 py-0.5 rounded">Scaduto</span>
+<img alt="Owner Avatar" class="w-5 h-5 rounded-full" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDjM_AZVqeEOh3rIYDGUNEppieYp3cwJs6BoQcQ0F73tan0ndAiLqHXqNjVGYvLmbqEOlLhqLagukp8YzkHVhJNi7-8mKjboBMkBJSAHWrRZtqkqTSqmzD5siRgeSrVKSfP_JKokXwhr6Ip48wkVubns6tvgepNVsYmgqbnGZ1ziGZvb67bK9QhtpAmxlV9x7dnUL0WeoLbcvfjcda9EnTIu0Zrrz-oKu1R9fSHs1C9JmSpY72nvwbMaATe3f_Bc3FHJULBra9EyGs"/>
+</div>
+</div>
+</div>
+</div>
+<div class="p-3 border-t border-outline-variant bg-surface-bright shrink-0">
+<button class="w-full flex items-center justify-center gap-2 text-on-surface-variant hover:text-on-surface hover:bg-surface-container py-1.5 rounded transition-colors text-small-medium">
+<span class="material-symbols-outlined text-[16px]">add</span>
+                            Nuovo deal
+                        </button>
+</div>
+</div>
+<!-- Column: Proposta -->
+<div class="flex-shrink-0 w-[300px] flex flex-col bg-surface-container-lowest border border-outline-variant rounded-lg overflow-hidden h-full">
+<div class="p-4 border-b border-outline-variant bg-surface-bright flex items-center justify-between shrink-0">
+<div class="flex flex-col">
+<span class="font-h3 text-h3 text-on-surface flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-yellow-500"></div>
+                                Proposta
+                            </span>
+<span class="text-small text-on-surface-variant mt-1">4 · €42.000</span>
+</div>
+</div>
+<div class="flex-1 overflow-y-auto p-3 space-y-3 kanban-scroll bg-surface-container-low">
+<!-- Card 1 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded p-4 cursor-pointer hover:bg-[#EEF2FF] hover:border-[#3B5BDB]/30 transition-colors shadow-sm group border-l-2 border-l-[#3B5BDB]">
+<div class="flex justify-between items-start mb-2">
+<h4 class="font-body-medium text-body-medium text-on-surface group-hover:text-[#3B5BDB] transition-colors line-clamp-2">Sviluppo Portale Fornitori</h4>
+<button class="text-on-surface-variant hover:text-on-surface opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-[18px]">more_horiz</span>
+</button>
+</div>
+<p class="text-small text-on-surface-variant mb-3">Alpha Industries</p>
+<div class="flex items-center justify-between mt-auto pt-2 border-t border-surface-container-highest">
+<span class="font-h3 text-small text-on-surface">€25.000</span>
+<div class="flex items-center gap-2">
+<span class="text-[10px] text-on-surface-variant bg-surface-container px-2 py-0.5 rounded">05 Nov</span>
+<img alt="Owner Avatar" class="w-5 h-5 rounded-full" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAODKijbWOLSriWqXpG6Nq4nxiDx3nZIg7CKoorL6g-UjnM7BNeA0F3S0fkQ3P2UyioKwac5wXIgJOds7Y0eUICsLMaoWFhKyquUFmmSESOEI0Y-bamsneRZGYokbBlHkI31pN27lZKieN9MiJTHtUuKMuPFlVGQgfePCft0246ObLZ-DoX60HCWvMsDdATrhKDBSGpsKv3WLkkrDIniJg6YHpkelOV6GJ0Zq5ygmx4ramW1dBg5ANwW2KlKUs-SIZJqLxOCJF2CaI"/>
+</div>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded p-4 cursor-pointer hover:bg-[#EEF2FF] hover:border-[#3B5BDB]/30 transition-colors shadow-sm group">
+<div class="flex justify-between items-start mb-2">
+<h4 class="font-body-medium text-body-medium text-on-surface group-hover:text-[#3B5BDB] transition-colors line-clamp-2">Rinnovo Contratto Supporto</h4>
+<button class="text-on-surface-variant hover:text-on-surface opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-[18px]">more_horiz</span>
+</button>
+</div>
+<p class="text-small text-on-surface-variant mb-3">Beta Corp</p>
+<div class="flex items-center justify-between mt-auto pt-2 border-t border-surface-container-highest">
+<span class="font-h3 text-small text-on-surface">€8.000</span>
+<div class="flex items-center gap-2">
+<span class="text-[10px] text-on-surface-variant bg-surface-container px-2 py-0.5 rounded">10 Nov</span>
+<img alt="Owner Avatar" class="w-5 h-5 rounded-full" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAF2jlvbqQg1-8uSPEzxGVLvYzV_UDL7LL4mWHgQsApujLx4WiwGGXMM2eIbeWA5JbAK-K1CFEDAoM536vEE_J33w81W8rSu3IoSm6L6DmCijXPylEKTUNSaS8nTO7LU01EP4vpGO_leJOko3IdhQdmFJsYQqDFgdXt77Qnk9mxK9prfvbenT1uvJiO_r0p2g9-hKk0iuCK2VFG98z2kYXyJOg8XOBquRgC7-1zkpdLA3WhUTklJOVkytnJraklzefwrlfpJ1D1_Bw"/>
+</div>
+</div>
+</div>
+</div>
+<div class="p-3 border-t border-outline-variant bg-surface-bright shrink-0">
+<button class="w-full flex items-center justify-center gap-2 text-on-surface-variant hover:text-on-surface hover:bg-surface-container py-1.5 rounded transition-colors text-small-medium">
+<span class="material-symbols-outlined text-[16px]">add</span>
+                            Nuovo deal
+                        </button>
+</div>
+</div>
+<!-- Column: Negoziazione -->
+<div class="flex-shrink-0 w-[300px] flex flex-col bg-surface-container-lowest border border-outline-variant rounded-lg overflow-hidden h-full">
+<div class="p-4 border-b border-outline-variant bg-surface-bright flex items-center justify-between shrink-0">
+<div class="flex flex-col">
+<span class="font-h3 text-h3 text-on-surface flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-orange-500"></div>
+                                Negoziazione
+                            </span>
+<span class="text-small text-on-surface-variant mt-1">0 · €0</span>
+</div>
+</div>
+<div class="flex-1 overflow-y-auto p-3 space-y-3 kanban-scroll bg-surface-container-low flex items-center justify-center">
+<div class="text-center p-4">
+<span class="material-symbols-outlined text-surface-tint text-[32px] mb-2">inventory_2</span>
+<p class="text-small text-on-surface-variant">Nessun deal in questa fase</p>
+</div>
+</div>
+<div class="p-3 border-t border-outline-variant bg-surface-bright shrink-0">
+<button class="w-full flex items-center justify-center gap-2 text-on-surface-variant hover:text-on-surface hover:bg-surface-container py-1.5 rounded transition-colors text-small-medium">
+<span class="material-symbols-outlined text-[16px]">add</span>
+                            Nuovo deal
+                        </button>
+</div>
+</div>
+<!-- Column: Chiuso Vinto -->
+<div class="flex-shrink-0 w-[300px] flex flex-col bg-surface-container-lowest border border-outline-variant rounded-lg overflow-hidden h-full">
+<div class="p-4 border-b border-green-200 bg-[#EBFBEE] flex items-center justify-between shrink-0">
+<div class="flex flex-col">
+<span class="font-h3 text-h3 text-green-900 flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-green-600">check_circle</span>
+                                Chiuso Vinto
+                            </span>
+<span class="text-small text-green-700 mt-1">2 · €55.000</span>
+</div>
+</div>
+<div class="flex-1 overflow-y-auto p-3 space-y-3 kanban-scroll bg-surface-container-low">
+<!-- Card 1 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded p-4 cursor-pointer hover:bg-[#EEF2FF] hover:border-[#3B5BDB]/30 transition-colors shadow-sm group opacity-80">
+<div class="flex justify-between items-start mb-2">
+<h4 class="font-body-medium text-body-medium text-on-surface line-through decoration-on-surface-variant/50 line-clamp-2">Consulenza Strategica Q4</h4>
+</div>
+<p class="text-small text-on-surface-variant mb-3">Omega Financial</p>
+<div class="flex items-center justify-between mt-auto pt-2 border-t border-surface-container-highest">
+<span class="font-h3 text-small text-on-surface">€55.000</span>
+<div class="flex items-center gap-2">
+<span class="text-[10px] text-green-700 bg-green-100 px-2 py-0.5 rounded">Vinto</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Column: Chiuso Perso -->
+<div class="flex-shrink-0 w-[300px] flex flex-col bg-surface-container-lowest border border-outline-variant rounded-lg overflow-hidden h-full">
+<div class="p-4 border-b border-outline-variant bg-surface-container-high flex items-center justify-between shrink-0">
+<div class="flex flex-col">
+<span class="font-h3 text-h3 text-on-surface-variant flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">cancel</span>
+                                Chiuso Perso
+                            </span>
+<span class="text-small text-on-surface-variant mt-1">1 · €4.500</span>
+</div>
+</div>
+<div class="flex-1 overflow-y-auto p-3 space-y-3 kanban-scroll bg-surface-container-low">
+<!-- Card 1 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded p-4 cursor-pointer hover:bg-[#EEF2FF] hover:border-[#3B5BDB]/30 transition-colors shadow-sm group opacity-60 grayscale">
+<div class="flex justify-between items-start mb-2">
+<h4 class="font-body-medium text-body-medium text-on-surface line-through decoration-on-surface-variant/50 line-clamp-2">Formazione Team Vendite</h4>
+</div>
+<p class="text-small text-on-surface-variant mb-3">Delta Retail</p>
+<div class="flex items-center justify-between mt-auto pt-2 border-t border-surface-container-highest">
+<span class="font-h3 text-small text-on-surface">€4.500</span>
+<div class="flex items-center gap-2">
+<span class="text-[10px] text-on-surface-variant bg-surface-container px-2 py-0.5 rounded">Perso</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

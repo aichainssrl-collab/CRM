@@ -1,0 +1,40 @@
+steps:
+  # 1. Build immagine Docker
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      - build
+      - -t
+      - europe-west1-docker.pkg.dev/$PROJECT_ID/crm/frontend:$SHORT_SHA
+      - -t
+      - europe-west1-docker.pkg.dev/$PROJECT_ID/crm/frontend:latest
+      - .
+
+  # 2. Push su Artifact Registry (EU)
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      - push
+      - --all-tags
+      - europe-west1-docker.pkg.dev/$PROJECT_ID/crm/frontend
+
+  # 3. Deploy su Cloud Run (europe-west1)
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - crm-frontend
+      - --image=europe-west1-docker.pkg.dev/$PROJECT_ID/crm/frontend:$SHORT_SHA
+      - --region=europe-west1
+      - --platform=managed
+      - --allow-unauthenticated
+      - --memory=256Mi
+      - --cpu=1
+      - --min-instances=0
+      - --max-instances=5
+      - --concurrency=80
+
+images:
+  - europe-west1-docker.pkg.dev/$PROJECT_ID/crm/frontend:$SHORT_SHA
+
+options:
+  logging: CLOUD_LOGGING_ONLY

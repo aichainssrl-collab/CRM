@@ -1,0 +1,43 @@
+steps:
+  # 1. Installa dipendenze e lancia i test unitari
+  - name: 'python:3.12-slim'
+    entrypoint: 'bash'
+    dir: 'backend'
+    args:
+      - '-c'
+      - |
+        pip install -r requirements.txt
+        pip install pytest httpx
+        pytest tests/
+
+  # 2. Costruisci l'immagine Docker
+  - name: 'gcr.io/cloud-builders/docker'
+    dir: 'backend'
+    args: ['build', '-t', 'europe-west1-docker.pkg.dev/$PROJECT_ID/crm-repo/backend:$COMMIT_SHA', '.']
+
+  # 3. Pusha l'immagine su Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'europe-west1-docker.pkg.dev/$PROJECT_ID/crm-repo/backend:$COMMIT_SHA']
+
+  # 4. Deploy su Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'crm-backend'
+      - '--image'
+      - 'europe-west1-docker.pkg.dev/$PROJECT_ID/crm-repo/backend:$COMMIT_SHA'
+      - '--region'
+      - 'europe-west1'
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated'
+      - '--set-secrets=FIREBASE_CREDENTIALS=firebase-adminsdk:latest'
+      - '--set-secrets=RESEND_API_KEY=resend-api-key:latest'
+
+images:
+  - 'europe-west1-docker.pkg.dev/$PROJECT_ID/crm-repo/backend:$COMMIT_SHA'
+
+options:
+  logging: CLOUD_LOGGING_ONLY

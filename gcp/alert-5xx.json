@@ -1,0 +1,32 @@
+{
+  "displayName": "CRM 5xx Error Alert",
+  "combiner": "OR",
+  "conditions": [
+    {
+      "displayName": "Cloud Run Revision - Request count (5xx)",
+      "conditionThreshold": {
+        "filter": "metric.type=\"run.googleapis.com/request_count\" resource.type=\"cloud_run_revision\" metric.label.\"response_code_class\"=\"5xx\"",
+        "aggregations": [
+          {
+            "alignmentPeriod": "60s",
+            "crossSeriesReducer": "REDUCE_SUM",
+            "perSeriesAligner": "ALIGN_RATE"
+          }
+        ],
+        "comparison": "COMPARISON_GT",
+        "duration": "60s",
+        "trigger": {
+          "count": 1
+        },
+        "thresholdValue": 5
+      }
+    }
+  ],
+  "alertStrategy": {
+    "autoClose": "604800s"
+  },
+  "documentation": {
+    "content": "L'app AiChain CRM sta restituendo un numero anomalo di errori 5xx. Controllare i Cloud Logs immediatamente.",
+    "mimeType": "text/markdown"
+  }
+}

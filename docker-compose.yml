@@ -1,0 +1,56 @@
+version: "3.8"
+
+services:
+  # --- BACKEND ---
+  backend:
+    build:
+      context: ./backend
+    ports:
+      - "8000:8080"
+    environment:
+      - PORT=8080
+      - ENVIRONMENT=development
+      # Variabili per emulatori
+      - FIRESTORE_EMULATOR_HOST=firestore-emulator:8080
+      - FIREBASE_AUTH_EMULATOR_HOST=auth-emulator:9099
+    depends_on:
+      - firestore-emulator
+      - auth-emulator
+    volumes:
+      - ./backend/app:/app/app # Live reload del codice
+    command: >
+      uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload
+
+  # --- FRONTEND ---
+  frontend:
+    build:
+      context: ./frontend
+      target: builder # Usiamo il builder in dev per hot-reload
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - NEXT_PUBLIC_FIREBASE_API_KEY=dummy-key
+      - NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=dummy-auth-domain
+      - NEXT_PUBLIC_FIREBASE_PROJECT_ID=demo-project
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    command: npm run dev
+    depends_on:
+      - backend
+
+  # --- EMULATORI FIREBASE ---
+  firestore-emulator:
+    image: mtlynch/firestore-emulator-docker:latest
+    ports:
+      - "8080:8080" # Porta API
+    environment:
+      - FIRESTORE_PROJECT_ID=demo-project
+
+  auth-emulator:
+    image: gcr.io/google.com/cloudsdktool/google-cloud-cli:emulators
+    ports:
+      - "9099:9099" # Porta Auth
+    command: gcloud beta emulators auth start --host-port=0.0.0.0:9099 --project=demo-project

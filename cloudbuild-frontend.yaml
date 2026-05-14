@@ -1,0 +1,47 @@
+steps:
+  # 1. Installa dipendenze e lancia test e lint
+  - name: 'node:20-alpine'
+    entrypoint: 'sh'
+    dir: 'frontend'
+    args:
+      - '-c'
+      - |
+        npm ci
+        npm run test
+        npm run lint
+
+  # 2. Costruisci l'immagine Docker
+  - name: 'gcr.io/cloud-builders/docker'
+    dir: 'frontend'
+    args: 
+      - 'build'
+      - '--build-arg'
+      - 'NEXT_PUBLIC_API_URL=https://crm-backend-xyz.run.app'
+      - '-t'
+      - 'europe-west1-docker.pkg.dev/$PROJECT_ID/crm-repo/frontend:$COMMIT_SHA'
+      - '.'
+
+  # 3. Pusha l'immagine su Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'europe-west1-docker.pkg.dev/$PROJECT_ID/crm-repo/frontend:$COMMIT_SHA']
+
+  # 4. Deploy su Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'crm-frontend'
+      - '--image'
+      - 'europe-west1-docker.pkg.dev/$PROJECT_ID/crm-repo/frontend:$COMMIT_SHA'
+      - '--region'
+      - 'europe-west1'
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated'
+
+images:
+  - 'europe-west1-docker.pkg.dev/$PROJECT_ID/crm-repo/frontend:$COMMIT_SHA'
+
+options:
+  logging: CLOUD_LOGGING_ONLY

@@ -1,0 +1,53 @@
+steps:
+  # 1. Test
+  - name: "python:3.12"
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        pip install -r requirements.txt
+        pytest tests/ -v --tb=short
+    env:
+      - "FIREBASE_PROJECT_ID=aichain-crm-dev"
+      - "NEXT_PUBLIC_USE_EMULATOR=true"
+
+  # 2. Build immagine Docker
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      - build
+      - -t
+      - europe-west1-docker.pkg.dev/$PROJECT_ID/crm/backend:$SHORT_SHA
+      - -t
+      - europe-west1-docker.pkg.dev/$PROJECT_ID/crm/backend:latest
+      - .
+
+  # 3. Push su Artifact Registry (EU)
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      - push
+      - --all-tags
+      - europe-west1-docker.pkg.dev/$PROJECT_ID/crm/backend
+
+  # 4. Deploy su Cloud Run (europe-west1)
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - crm-backend
+      - --image=europe-west1-docker.pkg.dev/$PROJECT_ID/crm/backend:$SHORT_SHA
+      - --region=europe-west1
+      - --platform=managed
+      - --no-allow-unauthenticated
+      - --service-account=crm-backend@$PROJECT_ID.iam.gserviceaccount.com
+      - --memory=512Mi
+      - --cpu=1
+      - --min-instances=0
+      - --max-instances=10
+      - --concurrency=80
+
+images:
+  - europe-west1-docker.pkg.dev/$PROJECT_ID/crm/backend:$SHORT_SHA
+
+options:
+  logging: CLOUD_LOGGING_ONLY

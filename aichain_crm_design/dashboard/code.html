@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AiChain CRM - Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-primary-container": "#83829b",
+                        "tertiary": "#695d3c",
+                        "surface-container-highest": "#e5e1e3",
+                        "surface-dim": "#ddd9db",
+                        "secondary-fixed": "#e4e1ed",
+                        "surface-container": "#f1edef",
+                        "outline-variant": "#c8c5cd",
+                        "on-secondary": "#ffffff",
+                        "primary-fixed-dim": "#c6c4df",
+                        "on-tertiary-fixed": "#231b02",
+                        "surface": "#fcf8fa",
+                        "on-primary-fixed": "#1a1a2e",
+                        "surface-container-high": "#ebe7e9",
+                        "primary-fixed": "#e2e0fc",
+                        "inverse-on-surface": "#f4f0f2",
+                        "on-tertiary-fixed-variant": "#514627",
+                        "on-error-container": "#93000a",
+                        "outline": "#78767d",
+                        "error": "#ba1a1a",
+                        "on-background": "#1c1b1d",
+                        "surface-variant": "#e5e1e3",
+                        "inverse-primary": "#c6c4df",
+                        "surface-tint": "#5d5c74",
+                        "inverse-surface": "#313032",
+                        "surface-container-low": "#f6f2f4",
+                        "secondary-container": "#e1deea",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary": "#5e5d68",
+                        "on-secondary-container": "#63616c",
+                        "primary": "#00000b",
+                        "on-tertiary": "#ffffff",
+                        "on-primary-fixed-variant": "#45455b",
+                        "on-surface": "#1c1b1d",
+                        "tertiary-fixed-dim": "#d5c59d",
+                        "tertiary-fixed": "#f2e1b7",
+                        "surface-bright": "#fcf8fa",
+                        "on-primary": "#ffffff",
+                        "on-surface-variant": "#47464c",
+                        "on-error": "#ffffff",
+                        "on-secondary-fixed": "#1b1b23",
+                        "on-tertiary-container": "#493f20",
+                        "tertiary-container": "#b9aa83",
+                        "on-secondary-fixed-variant": "#47464f",
+                        "primary-container": "#1a1a2e",
+                        "error-container": "#ffdad6",
+                        "secondary-fixed-dim": "#c8c5d1",
+                        "background": "#fcf8fa"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "input_height": "36px",
+                        "stack_gap": "16px",
+                        "sidebar_width": "240px",
+                        "container_padding": "32px",
+                        "base": "4px",
+                        "topbar_height": "56px"
+                    },
+                    "fontFamily": {
+                        "h2": ["Inter"],
+                        "body-medium": ["Inter"],
+                        "h1": ["Inter"],
+                        "mono": ["JetBrains Mono"],
+                        "small-medium": ["Inter"],
+                        "body": ["Inter"],
+                        "small": ["Inter"],
+                        "h3": ["Inter"],
+                        "display": ["Inter"]
+                    },
+                    "fontSize": {
+                        "h2": ["18px", {"lineHeight": "24px", "fontWeight": "600"}],
+                        "body-medium": ["14px", {"lineHeight": "20px", "fontWeight": "500"}],
+                        "h1": ["22px", {"lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "mono": ["13px", {"lineHeight": "18px", "fontWeight": "400"}],
+                        "small-medium": ["12px", {"lineHeight": "16px", "fontWeight": "500"}],
+                        "body": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "small": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+                        "h3": ["15px", {"lineHeight": "20px", "fontWeight": "600"}],
+                        "display": ["28px", {"lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-background text-on-background font-body min-h-screen antialiased flex">
+<!-- SideNavBar -->
+<nav class="docked fixed left-0 top-0 h-screen w-[240px] border-r border-outline-variant bg-primary-container dark:bg-primary-container flex flex-col h-full py-6 z-20">
+<div class="px-6 mb-8">
+<h1 class="text-h1 font-h1 text-surface-container-lowest tracking-tight">AiChain</h1>
+<p class="font-small-medium text-small-medium text-on-primary-container mt-1">Enterprise CRM</p>
+</div>
+<div class="flex-1 flex flex-col gap-1 px-2">
+<a class="flex items-center gap-3 px-4 py-2 text-surface-container-lowest bg-on-primary-fixed-variant border-l-[3px] border-primary-fixed font-body-medium text-body-medium transition-all duration-200 ease-in-out rounded-r" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+                Dashboard
+            </a>
+<a class="flex items-center gap-3 px-4 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant/50 transition-colors hover:text-surface-container-lowest font-body-medium text-body-medium transition-all duration-200 ease-in-out border-l-[3px] border-transparent rounded-r" href="#">
+<span class="material-symbols-outlined" data-icon="leaderboard">leaderboard</span>
+                Leads
+            </a>
+<a class="flex items-center gap-3 px-4 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant/50 transition-colors hover:text-surface-container-lowest font-body-medium text-body-medium transition-all duration-200 ease-in-out border-l-[3px] border-transparent rounded-r" href="#">
+<span class="material-symbols-outlined" data-icon="handshake">handshake</span>
+                Deals
+            </a>
+<a class="flex items-center gap-3 px-4 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant/50 transition-colors hover:text-surface-container-lowest font-body-medium text-body-medium transition-all duration-200 ease-in-out border-l-[3px] border-transparent rounded-r" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+                Contacts
+            </a>
+<a class="flex items-center gap-3 px-4 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant/50 transition-colors hover:text-surface-container-lowest font-body-medium text-body-medium transition-all duration-200 ease-in-out border-l-[3px] border-transparent rounded-r" href="#">
+<span class="material-symbols-outlined" data-icon="description">description</span>
+                Forms
+            </a>
+<a class="flex items-center gap-3 px-4 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant/50 transition-colors hover:text-surface-container-lowest font-body-medium text-body-medium transition-all duration-200 ease-in-out border-l-[3px] border-transparent rounded-r" href="#">
+<span class="material-symbols-outlined" data-icon="calendar_today">calendar_today</span>
+                Bookings
+            </a>
+<a class="flex items-center gap-3 px-4 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant/50 transition-colors hover:text-surface-container-lowest font-body-medium text-body-medium transition-all duration-200 ease-in-out border-l-[3px] border-transparent rounded-r" href="#">
+<span class="material-symbols-outlined" data-icon="mail">mail</span>
+                Email
+            </a>
+</div>
+<div class="mt-auto px-2">
+<a class="flex items-center gap-3 px-4 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant/50 transition-colors hover:text-surface-container-lowest font-body-medium text-body-medium transition-all duration-200 ease-in-out border-l-[3px] border-transparent rounded-r" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+                Settings
+            </a>
+</div>
+</nav>
+<!-- Main Content Wrapper -->
+<div class="flex-1 ml-[240px] flex flex-col min-h-screen">
+<!-- TopAppBar -->
+<header class="docked sticky top-0 right-0 h-topbar_height w-full border-b border-outline-variant bg-surface dark:bg-surface-dim flex justify-between items-center px-8 z-10">
+<div class="flex items-center gap-2">
+<span class="font-body-medium text-body-medium text-on-surface-variant">Dashboard</span>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-on-surface dark:text-inverse-on-surface hover:bg-surface-container-high dark:hover:bg-surface-container rounded-full p-2 transition-colors cursor-pointer active:scale-95 transition-transform">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="text-on-surface dark:text-inverse-on-surface hover:bg-surface-container-high dark:hover:bg-surface-container rounded-full p-2 transition-colors cursor-pointer active:scale-95 transition-transform">
+<span class="material-symbols-outlined" data-icon="help_outline">help_outline</span>
+</button>
+<img alt="User Profile Avatar" class="w-8 h-8 rounded-full border border-outline-variant" data-alt="A small, professional headshot of a business user in a minimal corporate environment. The image is cropped closely to the face, well-lit with soft studio lighting against a neutral background. The style fits seamlessly into a high-end, clean enterprise SaaS interface." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBuAvDFlebUK4pt59I178ZeH-izLZ_p4ZEOSPWIHTTNj3Ta8AMeqP6hBRZM-JsTb2liHrjn6Nw45FAe4BgzP3ajfn-simLn_w2YGXVA192wSCozsosmA-PEKa20pvvmh2bAjhdvZGreM9OUmYLS8UMVz_aDc0TZcwrigl_jHsy5n9J9ojLhuzcAxhJishIFeRIn6DWPYIQ8JcGABWP9Bs0VLJpI3NtbJ6H4tqLllldVXDO5b3UfbeuumcBAeS87ryzoJ3itvTIBhRM"/>
+</div>
+</header>
+<!-- Canvas -->
+<main class="flex-1 p-container_padding max-w-[1440px] w-full mx-auto flex flex-col gap-8">
+<!-- Page Header -->
+<div class="flex justify-between items-end">
+<div>
+<h2 class="font-display text-display text-on-surface">Dashboard</h2>
+</div>
+<button class="bg-primary text-on-primary h-input_height px-4 rounded font-body-medium text-body-medium flex items-center gap-2 hover:bg-surface-tint transition-colors">
+<span class="material-symbols-outlined text-[18px]">download</span>
+                    Export Report
+                </button>
+</div>
+<!-- KPI Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+<!-- Card 1 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-5 flex flex-col justify-between h-[120px]">
+<div class="flex justify-between items-start">
+<span class="font-small-medium text-small-medium text-on-surface-variant">Total Revenue</span>
+<span class="material-symbols-outlined text-outline">payments</span>
+</div>
+<div>
+<div class="font-display text-display text-on-surface">$1.2M</div>
+<div class="font-small-medium text-small-medium text-[#2b8a3e] flex items-center gap-1 mt-1">
+<span class="material-symbols-outlined text-[14px]">trending_up</span>
+                            +12.5% from last month
+                        </div>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-5 flex flex-col justify-between h-[120px]">
+<div class="flex justify-between items-start">
+<span class="font-small-medium text-small-medium text-on-surface-variant">Active Deals</span>
+<span class="material-symbols-outlined text-outline">work</span>
+</div>
+<div>
+<div class="font-display text-display text-on-surface">342</div>
+<div class="font-small-medium text-small-medium text-[#2b8a3e] flex items-center gap-1 mt-1">
+<span class="material-symbols-outlined text-[14px]">trending_up</span>
+                            +4.2% from last month
+                        </div>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-5 flex flex-col justify-between h-[120px]">
+<div class="flex justify-between items-start">
+<span class="font-small-medium text-small-medium text-on-surface-variant">Win Rate</span>
+<span class="material-symbols-outlined text-outline">emoji_events</span>
+</div>
+<div>
+<div class="font-display text-display text-on-surface">68%</div>
+<div class="font-small-medium text-small-medium text-error flex items-center gap-1 mt-1">
+<span class="material-symbols-outlined text-[14px]">trending_down</span>
+                            -2.1% from last month
+                        </div>
+</div>
+</div>
+<!-- Card 4 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-5 flex flex-col justify-between h-[120px]">
+<div class="flex justify-between items-start">
+<span class="font-small-medium text-small-medium text-on-surface-variant">New Leads</span>
+<span class="material-symbols-outlined text-outline">person_add</span>
+</div>
+<div>
+<div class="font-display text-display text-on-surface">1,024</div>
+<div class="font-small-medium text-small-medium text-[#2b8a3e] flex items-center gap-1 mt-1">
+<span class="material-symbols-outlined text-[14px]">trending_up</span>
+                            +18.9% from last month
+                        </div>
+</div>
+</div>
+</div>
+<!-- Middle Row -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<!-- Chart -->
+<div class="lg:col-span-2 bg-surface-container-lowest border border-outline-variant rounded-lg p-6 flex flex-col">
+<h3 class="font-h3 text-h3 text-on-surface mb-6">Revenue Pipeline</h3>
+<div class="flex-1 bg-surface-container-low rounded border border-outline-variant/50 relative overflow-hidden min-h-[300px] flex items-end">
+<!-- Simulated Area Chart -->
+<div class="absolute bottom-0 left-0 w-full h-[60%] bg-gradient-to-t from-primary-fixed to-transparent opacity-50"></div>
+<svg class="absolute bottom-0 left-0 w-full h-full" preserveaspectratio="none" viewbox="0 0 100 100">
+<path d="M0,100 L0,70 Q20,80 40,50 T80,30 L100,20 L100,100 Z" fill="none" stroke="#1a1a2e" stroke-width="2"></path>
+</svg>
+<!-- Grid lines -->
+<div class="absolute top-0 left-0 w-full h-full flex flex-col justify-between py-4 px-2 pointer-events-none">
+<div class="border-t border-outline-variant/30 w-full"></div>
+<div class="border-t border-outline-variant/30 w-full"></div>
+<div class="border-t border-outline-variant/30 w-full"></div>
+<div class="border-t border-outline-variant/30 w-full"></div>
+</div>
+</div>
+</div>
+<!-- Recent Leads -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg flex flex-col">
+<div class="p-4 border-b border-outline-variant flex justify-between items-center">
+<h3 class="font-h3 text-h3 text-on-surface">Recent Leads</h3>
+<button class="font-small-medium text-small-medium text-secondary hover:text-primary transition-colors">View All</button>
+</div>
+<div class="flex flex-col">
+<!-- Lead Item -->
+<div class="p-4 flex items-center justify-between border-b border-outline-variant hover:bg-surface-container transition-colors">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-secondary-fixed flex items-center justify-center font-small-medium text-small-medium text-on-secondary-fixed">SJ</div>
+<div>
+<div class="font-body-medium text-body-medium text-on-surface">Sarah Jenkins</div>
+<div class="font-small text-small text-on-surface-variant">Acme Corp</div>
+</div>
+</div>
+<span class="px-2 py-1 bg-[#e3fafc] text-[#0b7285] rounded-full font-small-medium text-[10px]">Hot</span>
+</div>
+<!-- Lead Item -->
+<div class="p-4 flex items-center justify-between border-b border-outline-variant hover:bg-surface-container transition-colors">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-secondary-fixed flex items-center justify-center font-small-medium text-small-medium text-on-secondary-fixed">MW</div>
+<div>
+<div class="font-body-medium text-body-medium text-on-surface">Marcus Webb</div>
+<div class="font-small text-small text-on-surface-variant">TechFlow</div>
+</div>
+</div>
+<span class="px-2 py-1 bg-[#fff3bf] text-[#e67700] rounded-full font-small-medium text-[10px]">Warm</span>
+</div>
+<!-- Lead Item -->
+<div class="p-4 flex items-center justify-between border-b border-outline-variant hover:bg-surface-container transition-colors">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-secondary-fixed flex items-center justify-center font-small-medium text-small-medium text-on-secondary-fixed">EL</div>
+<div>
+<div class="font-body-medium text-body-medium text-on-surface">Elena Lopez</div>
+<div class="font-small text-small text-on-surface-variant">Global Sync</div>
+</div>
+</div>
+<span class="px-2 py-1 bg-[#f8f9fa] text-[#868e96] rounded-full font-small-medium text-[10px]">Cold</span>
+</div>
+<!-- Lead Item -->
+<div class="p-4 flex items-center justify-between hover:bg-surface-container transition-colors">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-secondary-fixed flex items-center justify-center font-small-medium text-small-medium text-on-secondary-fixed">DK</div>
+<div>
+<div class="font-body-medium text-body-medium text-on-surface">David Kim</div>
+<div class="font-small text-small text-on-surface-variant">Nexus Industries</div>
+</div>
+</div>
+<span class="px-2 py-1 bg-[#e3fafc] text-[#0b7285] rounded-full font-small-medium text-[10px]">Hot</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Bottom Row: Activity Timeline -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-6">
+<h3 class="font-h3 text-h3 text-on-surface mb-6">Recent Activity</h3>
+<div class="flex flex-col gap-6 relative before:absolute before:left-[19px] before:top-2 before:bottom-2 before:w-[2px] before:bg-outline-variant/30">
+<!-- Activity Item -->
+<div class="flex gap-4 relative z-0">
+<div class="w-10 h-10 rounded-full bg-surface-container border border-outline-variant flex items-center justify-center shrink-0 z-10">
+<span class="material-symbols-outlined text-[18px] text-primary">mail</span>
+</div>
+<div class="pt-2">
+<p class="font-body-medium text-body-medium text-on-surface">Proposal sent to <span class="font-semibold">Acme Corp</span></p>
+<p class="font-small text-small text-on-surface-variant mt-1">2 hours ago by Sarah Jenkins</p>
+</div>
+</div>
+<!-- Activity Item -->
+<div class="flex gap-4 relative z-0">
+<div class="w-10 h-10 rounded-full bg-surface-container border border-outline-variant flex items-center justify-center shrink-0 z-10">
+<span class="material-symbols-outlined text-[18px] text-primary">call</span>
+</div>
+<div class="pt-2">
+<p class="font-body-medium text-body-medium text-on-surface">Discovery call completed with <span class="font-semibold">TechFlow</span></p>
+<p class="font-small text-small text-on-surface-variant mt-1">4 hours ago by Marcus Webb</p>
+</div>
+</div>
+<!-- Activity Item -->
+<div class="flex gap-4 relative z-0">
+<div class="w-10 h-10 rounded-full bg-surface-container border border-outline-variant flex items-center justify-center shrink-0 z-10">
+<span class="material-symbols-outlined text-[18px] text-[#2b8a3e]">check_circle</span>
+</div>
+<div class="pt-2">
+<p class="font-body-medium text-body-medium text-on-surface">Deal won: <span class="font-semibold">Global Sync Enterprise License</span></p>
+<p class="font-small text-small text-on-surface-variant mt-1">Yesterday at 3:45 PM</p>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

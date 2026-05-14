@@ -1,0 +1,84 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Helper functions ───────────────────────────────────────
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    function isSales() {
+      return isAuthenticated() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'sales'];
+    }
+
+    function isOwner(assignedTo) {
+      return isAuthenticated() && request.auth.uid == assignedTo;
+    }
+
+    // ── Users (team CRM) ───────────────────────────────────────
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // ── Leads ──────────────────────────────────────────────────
+    match /leads/{leadId} {
+      allow read: if isSales();
+      allow create: if isSales();
+      allow update: if isSales();
+      allow delete: if isAdmin();   // Solo admin può soft-delete
+
+      // Subcollection activities — append-only
+      match /activities/{activityId} {
+        allow read: if isSales();
+        allow create: if isSales();
+        allow update, delete: if false;   // MAI modificare activity
+      }
+
+      // Subcollection tasks
+      match /tasks/{taskId} {
+        allow read: if isSales();
+        allow create: if isSales();
+        allow update: if isSales();
+        allow delete: if isAdmin();
+      }
+    }
+
+    // ── Deals ──────────────────────────────────────────────────
+    match /deals/{dealId} {
+      allow read, write: if isSales();
+    }
+
+    // ── GDPR consents — SOLO Admin SDK (backend) ──────────────
+    // Il backend usa Admin SDK che bypassa queste regole.
+    // Il blocco totale previene scritture dirette dal client SDK.
+    match /gdpr_consents/{consentId} {
+      allow read: if isAdmin();
+      allow create, update, delete: if false;  // Solo Admin SDK — audit trail immutabile
+    }
+
+    // ── Form submissions — scritto dal backend pubblico ────────
+    // Il backend usa Admin SDK — le regole sono difesa in profondità.
+    match /form_submissions/{submissionId} {
+      allow read: if isSales();
+      allow create, update, delete: if false;  // Solo Admin SDK
+    }
+
+    // ── Bookings ───────────────────────────────────────────────
+    match /bookings/{bookingId} {
+      allow read: if isSales();
+      allow write: if isSales();
+    }
+
+    match /booking_slots/{slotId} {
+      allow read: if true;             // Pubblico per visualizzare disponibilità
+      allow write: if isSales();
+    }
+  }
+}

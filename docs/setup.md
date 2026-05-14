@@ -1,0 +1,2 @@
+# DB Connection String
+mongodb://02b5902a-e160-49f2-837f-cf3aa0855a75.europe-west1.firestore.goog:443/crm-aichain-db?loadBalanced=true&tls=true&retryWrites=false&authMechanism=MONGODB-OIDC&authMechanismProperties=ENVIRONMENT:gcp,TOKEN_RESOURCE:FIRESTORE
