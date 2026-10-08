@@ -31,7 +31,8 @@ def test_create_lead_success(mock_auth):
                 assert response.status_code == 201
                 assert response.json()["id"] == "lead_123"
                 mock_create.assert_called_once()
-                mock_enqueue.assert_called_once()
+                # enqueue called twice: recalculate-score + enrich-lead
+                assert mock_enqueue.call_count == 2
 
 def test_create_lead_conflict():
     with patch("app.routers.leads.LeadService.find_by_email", new_callable=AsyncMock) as mock_find:
@@ -82,20 +83,19 @@ def test_update_lead():
             mock_update.assert_called_once()
             mock_enqueue.assert_called_once()
 
-def test_delete_lead_not_admin():
-    from app.deps import require_admin, UserRecord
-    # User is sales, not admin. But we must override require_admin to raise 403
-    from fastapi import HTTPException
-    app.dependency_overrides[require_admin] = lambda: (_ for _ in ()).throw(HTTPException(403, "Solo admin può eliminare lead"))
-    
+def test_delete_lead_unauthenticated():
+    """Senza auth il DELETE restituisce 403."""
+    from app.deps import require_sales
+    # Nessun override: require_sales reale → nessun token → 403
+    app.dependency_overrides.pop(require_sales, None)
     response = client.delete("/api/v1/leads/lead_123")
     assert response.status_code == 403
 
-def test_delete_lead_admin():
-    from app.deps import require_admin, UserRecord
-    # User is admin
-    app.dependency_overrides[require_admin] = lambda: UserRecord(uid="user_1", role="admin", email="admin@test.com")
-    
+def test_delete_lead_sales():
+    """Un utente sales può eliminare un lead (soft-delete)."""
+    from app.deps import require_sales, UserRecord
+    app.dependency_overrides[require_sales] = lambda: UserRecord(uid="user_1", role="sales", email="sales@test.com")
+
     with patch("app.routers.leads.LeadService.delete_lead", new_callable=AsyncMock) as mock_del:
         response = client.delete("/api/v1/leads/lead_123")
         assert response.status_code == 204

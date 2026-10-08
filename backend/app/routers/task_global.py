@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, Query
 from typing import Optional
 from datetime import datetime, timezone
-from google.cloud.firestore_v1 import FieldFilter
 from app.deps import require_sales, UserRecord
-from app.firebase_admin import db
+from app.services.db_service import db
+from pymongo import ASCENDING
 
 router = APIRouter()
 
@@ -15,23 +15,19 @@ async def list_all_tasks(
     limit: int = Query(50, ge=1, le=200),
     user: UserRecord = Depends(require_sales),
 ):
-    query = (
-        db.collection_group("tasks")
-        .where(filter=FieldFilter("assignedTo", "==", user.uid))
-        .where(filter=FieldFilter("deletedAt", "==", None))
-    )
+    query = {"assignedTo": user.uid, "deletedAt": None}
 
     if status:
-        query = query.where(filter=FieldFilter("status", "==", status))
+        query["status"] = status
 
     if due_before:
         due_dt = datetime.fromisoformat(due_before).replace(tzinfo=timezone.utc)
-        query = query.where(filter=FieldFilter("dueDate", "<=", due_dt))
+        query["dueDate"] = {"$lte": due_dt}
 
-    query = query.order_by("dueDate", direction="ASCENDING").limit(limit)
-
+    cursor = db["tasks"].find(query).sort("dueDate", ASCENDING).limit(limit)
     results = []
-    async for snap in query.stream():
-        results.append({"id": snap.id, **snap.to_dict()})
-
+    async for doc in cursor:
+        doc = dict(doc)
+        doc["id"] = doc.pop("_id")
+        results.append(doc)
     return results

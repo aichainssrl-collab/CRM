@@ -1,8 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from firebase_admin import auth
 from app.deps import require_admin, UserRecord
-from app.services.db_service import utcnow
-from app.firebase_admin import db
+from app.services.db_service import db, utcnow
 from pydantic import BaseModel, EmailStr
 
 router = APIRouter()
@@ -16,11 +15,8 @@ class UserCreate(BaseModel):
 
 
 @router.post("/users", status_code=201)
-async def create_crm_user(
-    data: UserCreate,
-    admin: UserRecord = Depends(require_admin),
-):
-    """Crea utente in Firebase Auth + documento Firestore /users/{uid}."""
+async def create_crm_user(data: UserCreate, admin: UserRecord = Depends(require_admin)):
+    """Crea utente in Firebase Auth + documento MongoDB /users/{uid}."""
     if data.role not in ("admin", "sales", "readonly"):
         raise HTTPException(400, "Ruolo non valido: admin | sales | readonly")
 
@@ -35,14 +31,16 @@ async def create_crm_user(
     except Exception as exc:
         raise HTTPException(400, f"Errore creazione auth: {exc}")
 
-    await db.collection("users").document(firebase_user.uid).set({
+    now = utcnow()
+    await db["users"].insert_one({
+        "_id": firebase_user.uid,
         "uid": firebase_user.uid,
         "email": data.email,
         "displayName": data.full_name,
         "role": data.role,
         "isActive": True,
-        "createdAt": utcnow(),
-        "updatedAt": utcnow(),
+        "createdAt": now,
+        "updatedAt": now,
     })
 
     return {"uid": firebase_user.uid, "email": data.email, "role": data.role}

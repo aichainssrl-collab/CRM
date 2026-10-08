@@ -59,6 +59,9 @@ env/
 .firebase/
 firebase-export*/
 
+# Video Ads — output generati (Veo 2)
+scripts/video/output/
+
 # Test and Coverage
 .pytest_cache/
 htmlcov/
@@ -70,3 +73,5 @@ coverage.xml
 *.cover
 *.py,cover
 .hypothesis/
+.agents/
+*.db

@@ -18,6 +18,14 @@ Il sistema segue un'architettura **Client-Server** con un frontend Single Page A
 - **Rate Limiting** configurato tramite `slowapi`.
 - **Autenticazione**: Middleware che verifica i token Firebase e popola `UserRecord`.
 
+## Sicurezza e Autenticazione (⚠️ Firebase vs MongoDB)
+**ATTENZIONE:** Il sistema adotta un modello ibrido molto specifico che separa l'identità dai dati.
+1. **Firebase Authentication**: È usato *esclusivamente* per la generazione dei token JWT e la verifica dell'identità.
+2. **MongoDB**: Contiene i profili utente reali, i ruoli e **tutti** i dati dell'applicazione.
+
+Il middleware di FastAPI (`app/deps.py`) prende il token da Firebase, ne verifica la firma (per capire l'UID) ma poi interroga **sempre e solo MongoDB** per ottenere le autorizzazioni, i ruoli e lo stato dell'utente. 
+*Non tentare mai di usare Firestore o il DB di Firebase per memorizzare dati.*
+
 ## Database (MongoDB)
 - Database NoSQL per la flessibilità dei dati (Lead, Form, GDPR log, Activities).
 - La comunicazione avviene tramite `motor` (driver asincrono MongoDB) wrappato in `app/services/db_service.py` (o `app/mongodb.py` a seconda del refactoring).

@@ -50,7 +50,7 @@ export default function PlaybookForm() {
       <div className="text-center py-8">
         <span className="material-symbols-outlined text-4xl text-primary mb-4 block">check_circle</span>
         <h2 className="text-xl font-bold mb-2">Playbook richiesto con successo!</h2>
-        <p className="text-on-surface-variant mb-6">
+        <p className="text-muted-foreground mb-6">
           Controlla la tua email, ti abbiamo inviato il link per scaricare il materiale.
         </p>
       </div>
@@ -60,7 +60,7 @@ export default function PlaybookForm() {
   return (
     <div>
       <h2 className="text-xl font-bold mb-4">Scarica il Playbook</h2>
-      <p className="text-sm text-on-surface-variant mb-6">
+      <p className="text-sm text-muted-foreground mb-6">
         Compila il modulo per ricevere gratuitamente il nostro playbook sull&apos;AI aziendale.
       </p>
 
@@ -94,12 +94,12 @@ export default function PlaybookForm() {
             required 
             className="mt-1"
           />
-          <label htmlFor="consent_given" className="text-xs text-on-surface-variant">
+          <label htmlFor="consent_given" className="text-xs text-muted-foreground">
             Acconsento al trattamento dei miei dati personali in accordo con la Privacy Policy per ricevere comunicazioni di marketing e il materiale richiesto.
           </label>
         </div>
 
-        {error && <div className="text-error text-sm mt-2">{error}</div>}
+        {error && <div className="text-destructive text-sm mt-2">{error}</div>}
 
         <Button type="submit" className="w-full mt-6" disabled={loading}>
           {loading ? "Invio in corso..." : "Scarica Playbook"}

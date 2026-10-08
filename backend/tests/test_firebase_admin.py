@@ -1,9 +1,13 @@
 import pytest
 import firebase_admin
-from app.firebase_admin import db, bucket
 
-@pytest.mark.asyncio
-async def test_firebase_admin_initialized():
+
+def test_firebase_admin_initialized():
+    """Firebase Admin SDK inizializzato (solo auth JWT)."""
     assert len(firebase_admin._apps) > 0
-    assert db is not None
-    assert bucket is not None
+
+
+def test_firebase_auth_available():
+    """Modulo auth accessibile per verifica token."""
+    from firebase_admin import auth
+    assert hasattr(auth, "verify_id_token")

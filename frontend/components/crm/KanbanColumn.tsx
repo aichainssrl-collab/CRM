@@ -2,16 +2,17 @@
 
 import { Deal } from "@/hooks/useDeals";
 import { KanbanCard } from "@/components/crm/KanbanCard";
+import { Badge } from "@/components/ui/badge";
 import { Droppable } from "@hello-pangea/dnd";
 
 export function KanbanColumn({ stage, deals }: { stage: { id: string, title: string }, deals: Deal[] }) {
   return (
-    <div className="flex flex-col w-80 shrink-0 bg-muted/30 rounded-lg">
-      <div className="p-3 font-semibold text-sm border-b flex items-center justify-between">
-        {stage.title}
-        <span className="bg-muted text-muted-foreground text-xs px-2 py-0.5 rounded-full">
+    <div className="flex flex-col min-w-0 bg-muted/30 rounded-lg overflow-hidden">
+      <div className="p-3 font-semibold text-sm border-b flex items-center justify-between gap-2 min-w-0">
+        <span className="truncate">{stage.title}</span>
+        <Badge variant="secondary" className="text-xs">
           {deals.length}
-        </span>
+        </Badge>
       </div>
       <Droppable droppableId={stage.id}>
         {(provided, snapshot) => (

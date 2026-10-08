@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Lead } from "@/hooks/useLeads";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from "@/components/ui/sheet";
@@ -47,7 +48,7 @@ export function LeadForm({ open, onOpenChange, lead, onSubmit }: LeadFormProps) 
       onOpenChange(false);
     } catch (error) {
       console.error(error);
-      alert("Errore durante il salvataggio del lead.");
+      toast.error("Errore durante il salvataggio del lead");
     } finally {
       setLoading(false);
     }

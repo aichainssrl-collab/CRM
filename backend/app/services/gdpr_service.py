@@ -1,7 +1,8 @@
 import hashlib
 import json
-from app.firebase_admin import db
-from app.services.db_service import utcnow, new_id
+from app.services.db_service import db, utcnow, new_id
+from app.services.activity_service import list_activities
+from app.services.task_service import list_tasks
 
 
 async def log_consent(
@@ -11,13 +12,8 @@ async def log_consent(
     consent_text: str,
     ip: str,
     policy_version: str = "2.1",
-    db_client=None,
 ) -> str:
-    """
-    Registra consenso in gdpr_consents — APPEND-ONLY.
-    In Fase 3: il dataHash verrà ancorato su blockchain via SignSisure.
-    """
-    client = db_client or db
+    """Registra consenso in gdpr_consents — APPEND-ONLY."""
     now = utcnow()
     payload = {
         "leadId": lead_id,
@@ -33,35 +29,33 @@ async def log_consent(
     ).hexdigest()
 
     consent_id = new_id()
-    await client.collection("gdpr_consents").document(consent_id).set(payload)
+    await db["gdpr_consents"].insert_one({"_id": consent_id, **payload})
     return consent_id
 
 
 async def gdpr_export(lead_id: str) -> dict:
     """Art. 20 GDPR — Portabilità dei dati."""
-    snap = await db.collection("leads").document(lead_id).get()
-    lead = ({"id": snap.id, **snap.to_dict()} if snap.exists else None)
+    doc = await db["leads"].find_one({"_id": lead_id})
+    lead = None
+    if doc:
+        doc = dict(doc)
+        doc["id"] = doc.pop("_id")
+        lead = doc
 
-    activities = []
-    async for s in (
-        db.collection("leads").document(lead_id).collection("activities").stream()
-    ):
-        activities.append({"id": s.id, **s.to_dict()})
+    activities = await list_activities(lead_id, limit=1000)
 
+    tasks_cursor = db["tasks"].find({"leadId": lead_id})
     tasks = []
-    async for s in (
-        db.collection("leads").document(lead_id).collection("tasks").stream()
-    ):
-        tasks.append({"id": s.id, **s.to_dict()})
+    async for d in tasks_cursor:
+        d = dict(d)
+        d["id"] = d.pop("_id")
+        tasks.append(d)
 
     consents = []
-    from google.cloud.firestore_v1 import FieldFilter
-    async for s in (
-        db.collection("gdpr_consents")
-        .where(filter=FieldFilter("leadId", "==", lead_id))
-        .stream()
-    ):
-        consents.append({"id": s.id, **s.to_dict()})
+    async for d in db["gdpr_consents"].find({"leadId": lead_id}):
+        d = dict(d)
+        d["id"] = d.pop("_id")
+        consents.append(d)
 
     return {
         "exported_at": utcnow().isoformat(),
@@ -75,18 +69,20 @@ async def gdpr_export(lead_id: str) -> dict:
 async def gdpr_erase(lead_id: str, erased_by_uid: str) -> None:
     """Art. 17 GDPR — Diritto all'oblio. Anonimizza, non cancella."""
     now = utcnow()
-    anonymized = {
-        "firstName": "CANCELLATO",
-        "lastName": "GDPR",
-        "email": f"gdpr-erased-{lead_id}@deleted.invalid",
-        "phone": None,
-        "linkedinUrl": None,
-        "notes": None,
-        "customFields": {},
-        "deletedAt": now,
-        "updatedAt": now,
-    }
-    await db.collection("leads").document(lead_id).update(anonymized)
+    await db["leads"].update_one(
+        {"_id": lead_id},
+        {"$set": {
+            "firstName": "CANCELLATO",
+            "lastName": "GDPR",
+            "email": f"gdpr-erased-{lead_id}@deleted.invalid",
+            "phone": None,
+            "linkedinUrl": None,
+            "notes": None,
+            "customFields": {},
+            "deletedAt": now,
+            "updatedAt": now,
+        }},
+    )
     await log_consent(
         lead_id=lead_id,
         action="deletion_completed",

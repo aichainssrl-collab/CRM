@@ -1,29 +1,31 @@
 import pytest
-from unittest.mock import AsyncMock, patch, MagicMock
+from unittest.mock import AsyncMock, patch
 from app.services.lead_service import LeadService
 from app.schemas.lead import LeadCreate, LeadUpdate, LeadStageUpdate
 
 @pytest.mark.asyncio
 async def test_find_by_email_found():
+    doc = {"_id": "123", "email": "test@test.com", "deletedAt": None}
     with patch("app.services.lead_service.db") as mock_db:
-        mock_stream = AsyncMock()
-        
-        # Simulate returning a document from stream
-        mock_snap = MagicMock()
-        mock_snap.id = "123"
-        mock_snap.to_dict.return_value = {"email": "test@test.com", "deletedAt": None}
-        
-        # Need to implement async generator for stream()
-        async def mock_async_gen():
-            yield mock_snap
-            
-        mock_db.collection.return_value.where.return_value.where.return_value.limit.return_value.stream = mock_async_gen
-        
+        mock_db.__getitem__.return_value.find_one = AsyncMock(return_value=doc)
+
         service = LeadService()
         result = await service.find_by_email("test@test.com")
-        
+
         assert result is not None
         assert result["id"] == "123"
+        mock_db["leads"].find_one.assert_called_once_with({"email": "test@test.com", "deletedAt": None})
+
+
+@pytest.mark.asyncio
+async def test_find_by_email_not_found():
+    with patch("app.services.lead_service.db") as mock_db:
+        mock_db.__getitem__.return_value.find_one = AsyncMock(return_value=None)
+
+        service = LeadService()
+        result = await service.find_by_email("nobody@test.com")
+
+        assert result is None
 
 @pytest.mark.asyncio
 async def test_create_lead():

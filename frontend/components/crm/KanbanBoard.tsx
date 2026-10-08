@@ -33,12 +33,12 @@ export function KanbanBoard({ deals }: { deals: Deal[] }) {
 
   return (
     <DragDropContext onDragEnd={handleDragEnd}>
-      <div className="flex gap-4 overflow-x-auto pb-4 h-full min-h-[500px]">
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-2 h-full min-w-0">
         {STAGES.map(stage => (
-          <KanbanColumn 
-            key={stage.id} 
-            stage={stage} 
-            deals={deals.filter(d => d.stage === stage.id)} 
+          <KanbanColumn
+            key={stage.id}
+            stage={stage}
+            deals={deals.filter(d => d.stage === stage.id)}
           />
         ))}
       </div>

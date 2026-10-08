@@ -10,7 +10,7 @@ async def test_create_deal():
         with patch("app.services.deal_service.append_activity", new_callable=AsyncMock) as mock_append:
             
             data = DealCreate(title="Test Deal", stage="new", probability=50)
-            result = await create_deal(data, "user_1")
+            result = await create_deal(data, lead_id="lead_1", created_by="user_1")
             
             assert result["id"] == "deal_123"
             mock_create.assert_called_once()

@@ -1,51 +1,33 @@
-from typing import Optional
-from app.services.db_service import utcnow, new_id, increment_field
-from app.firebase_admin import db
+from app.services.db_service import db, utcnow, new_id, increment_field
+from pymongo import DESCENDING
 
 
 async def append_activity(lead_id: str, data: dict) -> dict:
-    """
-    Aggiunge un'activity alla subcollection leads/{id}/activities.
-    Append-only: mai modificare o cancellare.
-    """
+    """Aggiunge un'activity — append-only, mai modificare o cancellare."""
     activity_id = new_id()
     now = utcnow()
     payload = {
+        "_id": activity_id,
         "leadId": lead_id,
         **data,
         "createdAt": now,
     }
-    ref = (
-        db.collection("leads")
-        .document(lead_id)
-        .collection("activities")
-        .document(activity_id)
+    await db["activities"].insert_one(payload)
+    await db["leads"].update_one(
+        {"_id": lead_id},
+        {"$inc": {"activityCount": 1}, "$set": {"lastActivityAt": now, "updatedAt": now}},
     )
-    await ref.set(payload)
-
-    # Aggiorna contatori sul lead padre
-    await db.collection("leads").document(lead_id).update({
-        "activityCount": _increment(1),
-        "lastActivityAt": now,
-    })
-
-    return {"id": activity_id, **payload}
+    doc = dict(payload)
+    doc["id"] = doc.pop("_id")
+    return doc
 
 
 async def list_activities(lead_id: str, limit: int = 50) -> list[dict]:
-    query = (
-        db.collection("leads")
-        .document(lead_id)
-        .collection("activities")
-        .order_by("createdAt", direction="DESCENDING")
+    cursor = (
+        db["activities"]
+        .find({"leadId": lead_id})
+        .sort("createdAt", DESCENDING)
         .limit(limit)
     )
-    results = []
-    async for snap in query.stream():
-        results.append({"id": snap.id, **snap.to_dict()})
-    return results
-
-
-def _increment(amount: int):
-    from google.cloud.firestore_v1 import Increment
-    return Increment(amount)
+    docs = await cursor.to_list(length=limit)
+    return [{**{k: v for k, v in d.items() if k != "_id"}, "id": d["_id"]} for d in docs]

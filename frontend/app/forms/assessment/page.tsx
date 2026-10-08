@@ -55,7 +55,7 @@ export default function AssessmentForm() {
       <div className="text-center py-8">
         <span className="material-symbols-outlined text-4xl text-primary mb-4 block">fact_check</span>
         <h2 className="text-xl font-bold mb-2">Assessment Completato!</h2>
-        <p className="text-on-surface-variant mb-6">
+        <p className="text-muted-foreground mb-6">
           Stiamo elaborando le tue risposte. Riceverai un report dettagliato via email a breve.
         </p>
       </div>
@@ -65,7 +65,7 @@ export default function AssessmentForm() {
   return (
     <div>
       <h2 className="text-xl font-bold mb-4">AI Readiness Assessment</h2>
-      <p className="text-sm text-on-surface-variant mb-6">
+      <p className="text-sm text-muted-foreground mb-6">
         Valuta il livello di maturità della tua azienda e scopri dove l&apos;AI può portare più valore.
       </p>
 
@@ -133,12 +133,12 @@ export default function AssessmentForm() {
             required 
             className="mt-1"
           />
-          <label htmlFor="consent_given" className="text-xs text-on-surface-variant">
+          <label htmlFor="consent_given" className="text-xs text-muted-foreground">
             Acconsento al trattamento dei miei dati personali per ricevere il report di valutazione.
           </label>
         </div>
 
-        {error && <div className="text-error text-sm mt-2">{error}</div>}
+        {error && <div className="text-destructive text-sm mt-2">{error}</div>}
 
         <Button type="submit" className="w-full mt-6" disabled={loading}>
           {loading ? "Elaborazione in corso..." : "Ottieni Risultati"}

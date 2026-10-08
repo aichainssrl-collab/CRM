@@ -1,0 +1,38 @@
+# Dipendenze e ambienti virtuali
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Test e coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Secrets e configurazione locale
+.env
+*.env.local
+
+# IDE e OS
+.idea/
+.vscode/
+*.DS_Store
+*.swp
+*.swo
+
+# Git
+.git/
+.gitignore
+
+# Documentazione e script locali
+docs/
+*.md
+
+# File di build temporanei
+*.egg-info/
+dist/
+build/

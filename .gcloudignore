@@ -1,0 +1,22 @@
+.gcloudignore
+.git
+.gitignore
+
+# Frontend
+frontend/node_modules/
+frontend/.next/
+frontend/.env.local
+
+# Backend
+backend/venv/
+backend/__pycache__/
+backend/.pytest_cache/
+backend/.env
+
+# Docs e script locali
+docs/
+scripts/
+*.md
+
+# Dev tools
+.claude/

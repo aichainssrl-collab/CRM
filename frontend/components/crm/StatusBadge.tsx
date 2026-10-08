@@ -10,9 +10,10 @@ const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   lost: { label: "Lost", color: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400" },
 };
 
-export function StatusBadge({ status }: { status: string }) {
-  const config = STATUS_CONFIG[status.toLowerCase()] || {
-    label: status,
+export function StatusBadge({ status }: { status?: string }) {
+  const key = (status ?? "new").toLowerCase();
+  const config = STATUS_CONFIG[key] || {
+    label: status ?? "Unknown",
     color: "bg-muted text-muted-foreground",
   };
 

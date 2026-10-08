@@ -1,59 +1,52 @@
 from typing import Optional
 from app.schemas.booking import BookingCreate
-from app.services.db_service import (
-    create_document, update_document, get_document,
-    list_collection, utcnow, new_id,
-)
-from app.firebase_admin import db
-from google.cloud.firestore_v1 import FieldFilter
+from app.services.db_service import db, get_document, utcnow, new_id
+from pymongo import ASCENDING
 
 
 async def list_available_slots() -> list[dict]:
-    query = (
-        db.collection("booking_slots")
-        .where(filter=FieldFilter("isAvailable", "==", True))
-        .order_by("startTime")
-    )
+    cursor = db["booking_slots"].find({"isAvailable": True}).sort("startTime", ASCENDING)
     results = []
-    async for snap in query.stream():
-        results.append({"id": snap.id, **snap.to_dict()})
+    async for doc in cursor:
+        doc = dict(doc)
+        doc["id"] = doc.pop("_id")
+        results.append(doc)
     return results
 
 
 async def get_slot(slot_id: str) -> Optional[dict]:
-    snap = await db.collection("booking_slots").document(slot_id).get()
-    return {"id": snap.id, **snap.to_dict()} if snap.exists else None
+    doc = await db["booking_slots"].find_one({"_id": slot_id})
+    if not doc:
+        return None
+    doc = dict(doc)
+    doc["id"] = doc.pop("_id")
+    return doc
 
 
 async def create_booking(data: BookingCreate, lead_id: str = None) -> dict:
-    # Verifica slot disponibile (transazione per evitare doppia prenotazione)
-    slot_ref = db.collection("booking_slots").document(data.slotId)
+    slot = await db["booking_slots"].find_one({"_id": data.slotId, "isAvailable": True})
+    if not slot:
+        raise ValueError("Slot non disponibile")
 
-    @db.transaction
-    async def _book(transaction):
-        snap = await transaction.get(slot_ref)
-        if not snap.exists or not snap.to_dict().get("isAvailable", False):
-            raise ValueError("Slot non disponibile")
-        booking_id = new_id()
-        booking_ref = db.collection("bookings").document(booking_id)
-        now = utcnow()
-        payload = {
-            **data.model_dump(exclude={"consent_given", "consent_text"}),
-            "leadId": lead_id,
-            "status": "confirmed",
-            "createdAt": now,
-            "updatedAt": now,
-        }
-        transaction.set(booking_ref, payload)
-        transaction.update(slot_ref, {
-            "isAvailable": False,
-            "bookedBy": data.email,
-            "bookingId": booking_id,
-            "updatedAt": now,
-        })
-        return {"id": booking_id, **payload}
-
-    return await _book()
+    booking_id = new_id()
+    now = utcnow()
+    payload = {
+        "_id": booking_id,
+        **data.model_dump(exclude={"consent_given", "consent_text"}),
+        "leadId": lead_id,
+        "status": "confirmed",
+        "createdAt": now,
+        "updatedAt": now,
+        "deletedAt": None,
+    }
+    await db["bookings"].insert_one(payload)
+    await db["booking_slots"].update_one(
+        {"_id": data.slotId},
+        {"$set": {"isAvailable": False, "bookedBy": data.email, "bookingId": booking_id, "updatedAt": now}},
+    )
+    doc = dict(payload)
+    doc["id"] = doc.pop("_id")
+    return doc
 
 
 async def get_booking(booking_id: str) -> Optional[dict]:
@@ -61,21 +54,19 @@ async def get_booking(booking_id: str) -> Optional[dict]:
 
 
 async def cancel_booking(booking_id: str) -> Optional[dict]:
-    now = utcnow()
     booking = await get_document("bookings", booking_id)
     if not booking:
         return None
 
-    await db.collection("bookings").document(booking_id).update({
-        "status": "cancelled",
-        "cancelledAt": now,
-        "updatedAt": now,
-    })
-    # Libera lo slot
-    await db.collection("booking_slots").document(booking["slotId"]).update({
-        "isAvailable": True,
-        "bookedBy": None,
-        "bookingId": None,
-        "updatedAt": now,
-    })
+    now = utcnow()
+    await db["bookings"].update_one(
+        {"_id": booking_id},
+        {"$set": {"status": "cancelled", "cancelledAt": now, "updatedAt": now}},
+    )
+    slot_id = booking.get("slotId")
+    if slot_id:
+        await db["booking_slots"].update_one(
+            {"_id": slot_id},
+            {"$set": {"isAvailable": True, "bookedBy": None, "bookingId": None, "updatedAt": now}},
+        )
     return await get_document("bookings", booking_id)

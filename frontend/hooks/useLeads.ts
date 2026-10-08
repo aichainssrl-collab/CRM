@@ -12,6 +12,23 @@ export interface Lead {
   leadScore: number;
   assignedTo?: string;
   createdAt: string;
+  // Campi CRM completi
+  linkedinUrl?: string;
+  website?: string;
+  industry?: string;
+  companySize?: string;
+  numEmployeesRange?: string;
+  roleTitle?: string;
+  roleSeniority?: string;
+  source?: string;
+  status?: string;
+  tags?: string[];
+  notes?: string;
+  // Enrichment
+  enrichedAt?: string;
+  enrichmentSource?: string;
+  // campi annidati da MongoDB
+  customFields?: Record<string, unknown>;
 }
 
 export function useLeads(filters?: Record<string, any>) {
@@ -26,8 +43,9 @@ export function useLeads(filters?: Record<string, any>) {
           }
         });
       }
+      searchParams.set("limit", "100");
       const qs = searchParams.toString();
-      const endpoint = qs ? `/api/v1/leads?${qs}` : "/api/v1/leads";
+      const endpoint = `/api/v1/leads?${qs}`;
       return apiFetch(endpoint) as Promise<Lead[]>;
     },
   });
@@ -82,8 +100,10 @@ export function useDeleteLead() {
         method: "DELETE",
       });
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["leads"] });
+    onSuccess: (_data, id) => {
+      queryClient.setQueriesData<Lead[]>({ queryKey: ["leads"] }, (old) =>
+        old ? old.filter((l) => l.id !== id) : old
+      );
     },
   });
 }

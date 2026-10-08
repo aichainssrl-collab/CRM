@@ -1,8 +1,7 @@
 from fastapi import APIRouter, Depends, Query
 from datetime import datetime, timezone, timedelta
-from google.cloud.firestore_v1 import FieldFilter
 from app.deps import require_sales, UserRecord
-from app.firebase_admin import db
+from app.services.db_service import db
 
 router = APIRouter()
 
@@ -17,37 +16,28 @@ async def get_dashboard_metrics(
     days = _TIME_RANGE_DAYS.get(time_range, 30)
     since = datetime.now(timezone.utc) - timedelta(days=days)
 
-    total_leads = 0
-    new_leads = 0
-    async for snap in (
-        db.collection("leads")
-        .where(filter=FieldFilter("deletedAt", "==", None))
-        .stream()
-    ):
-        total_leads += 1
-        doc = snap.to_dict()
-        created_at = doc.get("createdAt")
-        if created_at and created_at >= since:
-            new_leads += 1
+    total_leads = await db["leads"].count_documents({"deletedAt": None})
+    new_leads = await db["leads"].count_documents({"deletedAt": None, "createdAt": {"$gte": since}})
 
-    active_deals = 0
+    pipeline = [
+        {"$match": {"deletedAt": None}},
+        {"$group": {
+            "_id": "$stage",
+            "count": {"$sum": 1},
+            "value": {"$sum": "$value"},
+        }},
+    ]
+    won_count = lost_count = active_deals = 0
     pipeline_value = 0.0
-    won_count = 0
-    lost_count = 0
-    async for snap in (
-        db.collection("deals")
-        .where(filter=FieldFilter("deletedAt", "==", None))
-        .stream()
-    ):
-        doc = snap.to_dict()
-        stage = doc.get("stage", "")
+    async for row in db["deals"].aggregate(pipeline):
+        stage = row["_id"] or ""
         if stage == "won":
-            won_count += 1
+            won_count += row["count"]
         elif stage == "lost":
-            lost_count += 1
+            lost_count += row["count"]
         else:
-            active_deals += 1
-            pipeline_value += float(doc.get("value") or 0)
+            active_deals += row["count"]
+            pipeline_value += float(row.get("value") or 0)
 
     closed = won_count + lost_count
     conversion_rate = round(won_count / closed * 100, 2) if closed > 0 else 0.0

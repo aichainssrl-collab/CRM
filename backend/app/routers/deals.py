@@ -2,9 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from typing import Optional
 from app.deps import require_sales, UserRecord
 from app.schemas.deal import DealCreate, DealUpdate
-from app.services.deal_service import (
-    create_deal, get_deal, list_deals, update_deal, delete_deal,
-)
+from app.services.deal_service import create_deal, get_deal, list_deals, update_deal, delete_deal
 from app.services.db_service import get_document
 
 router = APIRouter()
@@ -38,12 +36,7 @@ async def create_new_deal(
     if not lead:
         raise HTTPException(404, "Lead non trovato")
 
-    # Inietta leadId nel payload
-    from app.services.db_service import create_document
-    payload = {**data.model_dump(), "leadId": lead_id, "createdBy": user.uid}
-    from app.services.db_service import create_document as _create
-    deal = await _create("deals", payload)
-    return deal
+    return await create_deal(data, lead_id=lead_id, created_by=user.uid)
 
 
 @router.get("/{deal_id}")

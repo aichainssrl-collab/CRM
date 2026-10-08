@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
 from typing import Optional
-from app.deps import require_sales, require_admin, UserRecord
+from app.deps import require_sales, UserRecord
 from app.schemas.lead import LeadCreate, LeadUpdate, LeadStageUpdate
 from app.services.lead_service import LeadService
 from app.utils.cloud_tasks import enqueue_task
@@ -13,7 +13,7 @@ async def list_leads(
     status: Optional[str] = Query(None),
     pipeline_stage: Optional[str] = Query(None),
     assigned_to: Optional[str] = Query(None),
-    limit: int = Query(20, ge=1, le=100),
+    limit: int = Query(20, ge=1, le=500),
     last_doc_id: Optional[str] = Query(None),
     user: UserRecord = Depends(require_sales),
 ):
@@ -39,6 +39,8 @@ async def create_lead(
 
     lead = await service.create_lead(data, created_by=user.uid)
     await enqueue_task("recalculate-score", {"lead_id": lead["id"]})
+    # Enrichment automatico: ritardo 5s per non appesantire la risposta
+    await enqueue_task("enrich-lead", {"lead_id": lead["id"]}, delay_seconds=5)
     return lead
 
 
@@ -84,24 +86,45 @@ async def update_stage(
 @router.delete("/{lead_id}", status_code=204)
 async def delete_lead(
     lead_id: str,
-    user: UserRecord = Depends(require_admin),
+    user: UserRecord = Depends(require_sales),
 ):
     service = LeadService()
     await service.delete_lead(lead_id)
 
 
+@router.post("/{lead_id}/enrich")
+async def enrich_lead(
+    lead_id: str,
+    user: UserRecord = Depends(require_sales),
+):
+    """
+    Forza re-enrichment manuale di un lead.
+    I dati arrivano in background entro pochi secondi via Cloud Task.
+    """
+    from app.services.lead_service import LeadService as _LS
+    svc = _LS()
+    lead = await svc.get_lead(lead_id)
+    if not lead:
+        raise HTTPException(404, "Lead non trovato")
+    await enqueue_task("enrich-lead", {"lead_id": lead_id})
+    return {"message": "Enrichment avviato — i dati saranno disponibili tra pochi secondi"}
+
+
 @router.post("/import", status_code=201)
-async def import_leads_csv(
+async def import_leads(
     file: UploadFile = File(...),
     user: UserRecord = Depends(require_sales),
 ):
-    if not file.filename.endswith('.csv'):
-        raise HTTPException(400, "Il file deve essere in formato CSV")
-    
-    content = await file.read()
-    csv_content = content.decode('utf-8')
-    
+    filename = file.filename.lower()
     service = LeadService()
-    results = await service.import_csv(csv_content, user.uid)
-    
+
+    if filename.endswith('.csv'):
+        content = await file.read()
+        results = await service.import_csv(content.decode('utf-8'), user.uid)
+    elif filename.endswith(('.xlsx', '.xls')):
+        content = await file.read()
+        results = await service.import_excel(content, user.uid)
+    else:
+        raise HTTPException(400, "Formato non supportato. Usa CSV o XLSX.")
+
     return results

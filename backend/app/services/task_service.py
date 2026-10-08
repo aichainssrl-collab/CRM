@@ -1,100 +1,88 @@
 from typing import Optional
 from app.schemas.task import TaskCreate, TaskUpdate
-from app.services.db_service import (
-    create_document, update_document, get_document,
-    list_subcollection, soft_delete, utcnow, new_id,
-)
+from app.services.db_service import db, utcnow, new_id
 from app.services.activity_service import append_activity
-from app.firebase_admin import db
+from pymongo import DESCENDING
 
 
 async def create_task(lead_id: str, data: TaskCreate, created_by: str) -> dict:
     task_id = new_id()
+    now = utcnow()
     payload = {
-        **data.model_dump(),
+        "_id": task_id,
         "leadId": lead_id,
+        **data.model_dump(),
         "status": "open",
         "createdBy": created_by,
+        "createdAt": now,
+        "updatedAt": now,
+        "deletedAt": None,
     }
-    ref = db.collection("leads").document(lead_id).collection("tasks").document(task_id)
-    from app.services.db_service import utcnow
-    now = utcnow()
-    full_payload = {**payload, "createdAt": now, "updatedAt": now, "deletedAt": None}
-    await ref.set(full_payload)
-
-    await db.collection("leads").document(lead_id).update({
-        "taskCount": _increment(1),
-    })
-
-    return {"id": task_id, **full_payload}
+    await db["tasks"].insert_one(payload)
+    await db["leads"].update_one(
+        {"_id": lead_id},
+        {"$inc": {"taskCount": 1}, "$set": {"updatedAt": now}},
+    )
+    doc = dict(payload)
+    doc["id"] = doc.pop("_id")
+    return doc
 
 
 async def list_tasks(lead_id: str, status: str = None) -> list[dict]:
-    query = (
-        db.collection("leads")
-        .document(lead_id)
-        .collection("tasks")
-        .order_by("createdAt", direction="DESCENDING")
-    )
-    results = []
-    async for snap in query.stream():
-        doc = {"id": snap.id, **snap.to_dict()}
-        if doc.get("deletedAt"):
-            continue
-        if status and doc.get("status") != status:
-            continue
-        results.append(doc)
-    return results
+    query = {"leadId": lead_id, "deletedAt": None}
+    if status:
+        query["status"] = status
+    cursor = db["tasks"].find(query).sort("createdAt", DESCENDING)
+    docs = await cursor.to_list(length=200)
+    return [{**{k: v for k, v in d.items() if k != "_id"}, "id": d["_id"]} for d in docs]
 
 
 async def get_task(lead_id: str, task_id: str) -> Optional[dict]:
-    snap = await (
-        db.collection("leads")
-        .document(lead_id)
-        .collection("tasks")
-        .document(task_id)
-        .get()
-    )
-    if not snap.exists:
+    doc = await db["tasks"].find_one({"_id": task_id, "leadId": lead_id, "deletedAt": None})
+    if not doc:
         return None
-    doc = {"id": snap.id, **snap.to_dict()}
-    return None if doc.get("deletedAt") else doc
+    doc = dict(doc)
+    doc["id"] = doc.pop("_id")
+    return doc
 
 
 async def update_task(lead_id: str, task_id: str, data: TaskUpdate, updated_by: str) -> Optional[dict]:
-    update_data = data.model_dump(exclude_unset=True)
-    update_data["updatedAt"] = utcnow()
-    ref = db.collection("leads").document(lead_id).collection("tasks").document(task_id)
-    await ref.update(update_data)
-    snap = await ref.get()
-    return {"id": snap.id, **snap.to_dict()} if snap.exists else None
+    update_data = {**data.model_dump(exclude_unset=True), "updatedAt": utcnow()}
+    doc = await db["tasks"].find_one_and_update(
+        {"_id": task_id, "leadId": lead_id, "deletedAt": None},
+        {"$set": update_data},
+        return_document=True,
+    )
+    if not doc:
+        return None
+    doc = dict(doc)
+    doc["id"] = doc.pop("_id")
+    return doc
 
 
 async def complete_task(lead_id: str, task_id: str, completed_by: str) -> Optional[dict]:
     now = utcnow()
-    ref = db.collection("leads").document(lead_id).collection("tasks").document(task_id)
-    await ref.update({"status": "completed", "completedAt": now, "updatedAt": now})
+    doc = await db["tasks"].find_one_and_update(
+        {"_id": task_id, "leadId": lead_id, "deletedAt": None},
+        {"$set": {"status": "completed", "completedAt": now, "updatedAt": now}},
+        return_document=True,
+    )
+    if not doc:
+        return None
     await append_activity(lead_id, {
         "type": "task_completed",
         "title": "Task completato",
         "userId": completed_by,
         "metadata": {"taskId": task_id},
     })
-    snap = await ref.get()
-    return {"id": snap.id, **snap.to_dict()} if snap.exists else None
+    doc = dict(doc)
+    doc["id"] = doc.pop("_id")
+    return doc
 
 
 async def delete_task(lead_id: str, task_id: str) -> None:
     now = utcnow()
-    await (
-        db.collection("leads")
-        .document(lead_id)
-        .collection("tasks")
-        .document(task_id)
-        .update({"deletedAt": now, "updatedAt": now})
+    await db["tasks"].update_one(
+        {"_id": task_id, "leadId": lead_id},
+        {"$set": {"deletedAt": now, "updatedAt": now}},
     )
-
-
-def _increment(amount: int):
-    from google.cloud.firestore_v1 import Increment
-    return Increment(amount)

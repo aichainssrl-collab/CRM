@@ -3,6 +3,7 @@
 import { Deal } from "@/hooks/useDeals";
 import { Draggable } from "@hello-pangea/dnd";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { DollarSign, Calendar } from "lucide-react";
 
 export function KanbanCard({ deal, index }: { deal: Deal, index: number }) {
@@ -33,9 +34,9 @@ export function KanbanCard({ deal, index }: { deal: Deal, index: number }) {
                   </div>
                 )}
                 <div className="mt-2 flex items-center justify-between">
-                  <div className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded">
-                    {deal.probability}% probability
-                  </div>
+                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5">
+                    {deal.probability}%
+                  </Badge>
                   {deal.assignedTo && (
                     <div className="h-5 w-5 rounded-full bg-muted flex items-center justify-center text-[10px] font-medium">
                       {deal.assignedTo.charAt(0).toUpperCase()}

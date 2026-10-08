@@ -53,7 +53,7 @@ export default function BookingForm() {
       <div className="text-center py-8">
         <span className="material-symbols-outlined text-4xl text-primary mb-4 block">event_available</span>
         <h2 className="text-xl font-bold mb-2">Prenotazione Confermata!</h2>
-        <p className="text-on-surface-variant mb-6">
+        <p className="text-muted-foreground mb-6">
           Riceverai a breve un&apos;email con il link per accedere alla videocall e i dettagli dell&apos;incontro.
         </p>
       </div>
@@ -63,7 +63,7 @@ export default function BookingForm() {
   return (
     <div>
       <h2 className="text-xl font-bold mb-4">Prenota una Demo</h2>
-      <p className="text-sm text-on-surface-variant mb-6">
+      <p className="text-sm text-muted-foreground mb-6">
         Scegli una data e un orario per parlare con uno dei nostri esperti.
       </p>
 
@@ -117,12 +117,12 @@ export default function BookingForm() {
             required 
             className="mt-1"
           />
-          <label htmlFor="consent_given" className="text-xs text-on-surface-variant">
+          <label htmlFor="consent_given" className="text-xs text-muted-foreground">
             Acconsento al trattamento dei miei dati personali per gestire la prenotazione.
           </label>
         </div>
 
-        {error && <div className="text-error text-sm mt-2">{error}</div>}
+        {error && <div className="text-destructive text-sm mt-2">{error}</div>}
 
         <Button type="submit" className="w-full mt-6" disabled={loading}>
           {loading ? "Conferma in corso..." : "Conferma Prenotazione"}

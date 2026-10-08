@@ -7,6 +7,15 @@ from fastapi.testclient import TestClient
 from app.main import app
 from app.config import settings
 
+
+@pytest.fixture(autouse=True)
+def _clear_overrides():
+    """Pulisce dependency_overrides prima e dopo ogni test."""
+    app.dependency_overrides.clear()
+    yield
+    app.dependency_overrides.clear()
+
+
 client = TestClient(app)
 
 
@@ -14,6 +23,7 @@ client = TestClient(app)
 
 class TestAuthentication:
     def test_leads_requires_auth(self):
+        """GET /api/v1/leads senza token → 403 (HTTPBearer)."""
         response = client.get("/api/v1/leads")
         assert response.status_code == 403
 
@@ -131,7 +141,6 @@ class TestInputValidation:
                 json={"confirm": False},
             )
 
-        app.dependency_overrides.clear()
         assert response.status_code == 422
 
     def test_lead_list_limit_bounded(self):
@@ -145,7 +154,6 @@ class TestInputValidation:
             instance.list_leads = AsyncMock(return_value=[])
             response = client.get("/api/v1/leads?limit=9999")
 
-        app.dependency_overrides.clear()
         assert response.status_code == 422
 
 
@@ -198,12 +206,12 @@ class TestDataIsolation:
         from app.services import gdpr_service
         import inspect, ast
         src = inspect.getsource(gdpr_service.gdpr_erase)
-        assert ".update(" in src
+        assert ".update_one(" in src
         assert "CANCELLATO" in src
-        # Nessuna chiamata a .delete() (non nei commenti — cerca nei token del codice)
+        # Nessuna chiamata a .delete_one() (non nei commenti — cerca nei token del codice)
         tree = ast.parse(src)
         delete_calls = [
             node for node in ast.walk(tree)
-            if isinstance(node, ast.Attribute) and node.attr == "delete"
+            if isinstance(node, ast.Attribute) and node.attr == "delete_one"
         ]
-        assert len(delete_calls) == 0, "gdpr_erase non deve chiamare .delete()"
+        assert len(delete_calls) == 0, "gdpr_erase non deve chiamare .delete_one()"

@@ -52,7 +52,7 @@ export default function ContactForm() {
       <div className="text-center py-8">
         <span className="material-symbols-outlined text-4xl text-primary mb-4 block">check_circle</span>
         <h2 className="text-xl font-bold mb-2">Richiesta inviata!</h2>
-        <p className="text-on-surface-variant mb-6">
+        <p className="text-muted-foreground mb-6">
           Grazie per averci contattato. Il nostro team ti risponderà al più presto.
         </p>
       </div>
@@ -62,7 +62,7 @@ export default function ContactForm() {
   return (
     <div>
       <h2 className="text-xl font-bold mb-4">Contattaci</h2>
-      <p className="text-sm text-on-surface-variant mb-6">
+      <p className="text-sm text-muted-foreground mb-6">
         Compila il modulo sottostante per richiedere informazioni sui nostri servizi.
       </p>
 
@@ -114,12 +114,12 @@ export default function ContactForm() {
             required 
             className="mt-1"
           />
-          <label htmlFor="consent_given" className="text-xs text-on-surface-variant">
+          <label htmlFor="consent_given" className="text-xs text-muted-foreground">
             Acconsento al trattamento dei miei dati personali per gestire la mia richiesta di contatto.
           </label>
         </div>
 
-        {error && <div className="text-error text-sm mt-2">{error}</div>}
+        {error && <div className="text-destructive text-sm mt-2">{error}</div>}
 
         <Button type="submit" className="w-full mt-6" disabled={loading}>
           {loading ? "Invio in corso..." : "Invia Messaggio"}

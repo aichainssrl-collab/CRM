@@ -51,7 +51,7 @@ fi
 
 # 3. Setup Secret Manager (creazione placeholder)
 echo "✅ Creazione Secret in Secret Manager..."
-SECRETS=("FIREBASE_CREDENTIALS" "RESEND_API_KEY" "APOLLO_API_KEY")
+SECRETS=("FIREBASE_CREDENTIALS" "RESEND_API_KEY" "APOLLO_API_KEY" "MONGODB_URI")
 
 for SECRET in "${SECRETS[@]}"; do
     if ! gcloud secrets describe $SECRET >/dev/null 2>&1; then

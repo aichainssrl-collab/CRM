@@ -7,10 +7,10 @@ from app.services.db_service import (
 from app.services.activity_service import append_activity
 
 
-async def create_deal(data: DealCreate, created_by: str) -> dict:
-    payload = {**data.model_dump(), "createdBy": created_by}
+async def create_deal(data: DealCreate, lead_id: str, created_by: str) -> dict:
+    payload = {**data.model_dump(), "leadId": lead_id, "createdBy": created_by}
     deal = await create_document("deals", payload)
-    await append_activity(deal["leadId"], {
+    await append_activity(lead_id, {
         "type": "deal_created",
         "title": f"Opportunità creata: {deal['title']}",
         "userId": created_by,

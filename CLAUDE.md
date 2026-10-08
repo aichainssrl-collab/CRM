@@ -1,22 +1,147 @@
 # AiChain CRM — Guida per sviluppatori Claude
 
-> 🧠 **NOTA IMPORTANTE PER GLI LLM**: Questo progetto utilizza una Wiki (Obsidian Vault) situata in `docs/wiki/` per mantenere la memoria di progetto. 
+> 🧠 **NOTA IMPORTANTE PER GLI LLM**: Questo progetto utilizza una Wiki (Obsidian Vault) situata in `docs/wiki/` per mantenere la memoria di progetto.
 > - Consulta **sempre** i file in `docs/wiki/` prima di fare scelte architetturali.
 > - Se aggiungi nuove librerie, paradigmi o prendi decisioni tecniche, **aggiorna** la Wiki e/o crea un nuovo ADR in `docs/wiki/04_ADRs/`.
 
+---
+
+## ⚠️ CORREZIONE ARCHITETTURALE IMPORTANTE
+
+Il database è **MongoDB** (NON Firestore). Firebase viene usato SOLO per l'autenticazione JWT.
+- **Auth**: Firebase Auth → verifica token JWT lato backend
+- **Database**: MongoDB — gestito via `motor` (driver async) — collezione `crm-aichain-db`
+- **In locale**: MongoDB gira tramite Docker (vedi sezione "Avvio locale")
+- **In produzione**: MongoDB Atlas oppure istanza self-hosted
+
+Qualsiasi riferimento a "Firestore" come database è **obsoleto e incorretto**.
+
+---
+
 ## Panoramica progetto
 
-CRM B2B per AiChain Solutions. Stack:
-- **Backend**: Python 3.12, FastAPI, firebase-admin, Pydantic v2 — Cloud Run (europe-west1)
-- **Frontend**: Next.js 14 (App Router), shadcn/ui, Tailwind CSS — Cloud Run (europe-west1)
-- **Database**: Firestore (eur3 EU multi-region) — NoSQL document-based, nessun ORM
+CRM B2B per AiChain Solutions. Stack reale:
+- **Backend**: Python 3.12, FastAPI, firebase-admin (solo auth), motor (MongoDB async), Pydantic v2 — porta 8088
+- **Frontend**: Next.js 14 (App Router), shadcn/ui, Tailwind CSS — porta 3000
+- **Database**: MongoDB — `crm-aichain-db` — in locale via Docker su porta 27017
 - **Auth**: Firebase Auth (JWT — verifica lato backend, mai lato frontend)
 - **Storage**: Firebase Storage (europe-west1)
-- **Job asincroni**: Cloud Tasks (europe-west1) — non Celery, nessun worker attivo
 - **Email**: Resend API su server EU (api.eu.resend.com)
-- **CI/CD**: Cloud Build → Artifact Registry EU → Cloud Run
 
 Specifiche complete: `CRM_ARCHITECTURE_PHASE1_v2.md`
+
+---
+
+## 🚀 Avvio locale — Procedura corretta
+
+### Ordine di avvio obbligatorio
+
+```bash
+# PASSO 1: Avviare MongoDB (Docker)
+docker start mongodb-crm
+# oppure, se il container non esiste ancora:
+docker run -d --name mongodb-crm -p 27017:27017 -e MONGO_INITDB_DATABASE=crm-aichain-db mongo:7
+docker update --restart unless-stopped mongodb-crm
+
+# Verifica che MongoDB sia attivo:
+docker ps | grep mongodb-crm
+
+# PASSO 2: Backend FastAPI (in un terminale separato)
+cd /Users/fred/dev/CRM-AICHAIN/backend
+source venv/bin/activate
+uvicorn app.main:app --host 0.0.0.0 --port 8088 --reload
+# Docs: http://localhost:8088/api/docs
+
+# PASSO 3: Frontend Next.js (in un altro terminale)
+cd /Users/fred/dev/CRM-AICHAIN/frontend
+npm run dev
+# CRM: http://localhost:3000
+```
+
+### Seed dati iniziali (primo avvio o container ricreato)
+
+Dopo aver avviato MongoDB, popolare gli utenti e i dati di esempio:
+
+```bash
+cd /Users/fred/dev/CRM-AICHAIN/backend
+source venv/bin/activate
+python seed_local.py   # se esiste
+```
+
+Se lo script non esiste, creare manualmente gli utenti nel DB. Gli utenti devono avere:
+- Campo `uid` corrispondente al Firebase Auth UID
+- Campo `role`: `"admin"` o `"sales"`
+- Campo `isActive`: `true`
+- Campo `email`: email dell'utente Firebase
+
+**Utenti di sviluppo attuali** (MongoDB `users` collection):
+| Email | Firebase UID | Ruolo |
+|---|---|---|
+| fred@it.it | `eHFeSPGP8cWxWHFcM5In4KVYQQ42` | admin |
+| admin@aichain.it | `fFW6zJBJxCYQ77y0vXskwuFQEIH3` | admin |
+| marketing@aichainsolutions.net | `JY9qlgBlfWMmtSLo4n2bjte6q8Z2` | sales |
+
+---
+
+## 🚨 Troubleshooting — Problemi comuni
+
+### API restituisce 403 su tutti gli endpoint
+
+**Causa più probabile**: MongoDB non è avviato oppure la collection `users` è vuota.
+
+Il flusso di autenticazione è:
+1. Frontend invia Firebase JWT nell'header `Authorization: Bearer <token>`
+2. Backend verifica il token con firebase-admin
+3. Backend cerca l'utente in MongoDB `users` collection (per `uid`)
+4. Se non trovato → **403 "Utente non registrato nel CRM"**
+
+**Fix**:
+```bash
+# 1. Verificare che MongoDB sia up
+docker ps | grep mongodb-crm
+# Se non è nella lista:
+docker start mongodb-crm
+
+# 2. Verificare che la collection users non sia vuota
+docker exec -it mongodb-crm mongosh crm-aichain-db --eval "db.users.countDocuments()"
+# Se ritorna 0 → eseguire il seed (vedi sopra)
+
+# 3. Riavviare il backend dopo aver fixato MongoDB
+```
+
+### MongoDB container non esiste
+
+```bash
+docker run -d \
+  --name mongodb-crm \
+  -p 27017:27017 \
+  -e MONGO_INITDB_DATABASE=crm-aichain-db \
+  mongo:7
+docker update --restart unless-stopped mongodb-crm
+# Poi eseguire il seed degli utenti!
+```
+
+### I lead non si vedono nella UI
+
+1. Verificare che l'API `/api/v1/leads` ritorni 200 (non 403)
+2. Se 403 → problema MongoDB/utenti (vedi sopra)
+3. Se 200 ma array vuoto → il DB è vuoto, eseguire il seed dei lead
+
+### TypeScript / Build errors
+
+```bash
+cd frontend
+npx tsc --noEmit   # verifica errori di tipo
+npm run build      # build completa
+```
+
+### Classi Tailwind non funzionanti (colori non applicati)
+
+- Questo progetto usa **shadcn/ui con Tailwind v3** e variabili CSS oklch
+- I token di colore Material Design 3 (`text-on-primary`, `bg-surface-variant`, ecc.) sono stati **rimossi**
+- Usare sempre token shadcn standard: `text-primary-foreground`, `bg-card`, `text-muted-foreground`, ecc.
+- Le variabili CSS sono definite in `frontend/app/globals.css`
+- I colori Tailwind sono mappati in `frontend/tailwind.config.ts` come `"var(--CSS-VAR)"`
 
 ---
 
@@ -27,14 +152,13 @@ aichain-crm/
 ├── backend/                    # FastAPI
 │   ├── app/
 │   │   ├── main.py
-│   │   ├── config.py           # Settings da env / Secret Manager
-│   │   ├── firebase_admin.py   # Init SDK firebase-admin
-│   │   ├── deps.py             # Dependency injection (auth, db)
-│   │   ├── models/             # Pydantic models (dati Firestore)
+│   │   ├── config.py           # Settings da env
+│   │   ├── firebase_admin.py   # Init SDK firebase-admin (solo auth JWT)
+│   │   ├── deps.py             # Dependency injection (auth, db MongoDB)
+│   │   ├── models/             # Pydantic models (dati MongoDB)
 │   │   ├── schemas/            # Pydantic schemas request/response API
 │   │   ├── routers/            # FastAPI routers
 │   │   ├── services/           # Business logic
-│   │   ├── tasks/              # Cloud Tasks handlers
 │   │   └── utils/
 │   ├── tests/
 │   ├── Dockerfile
@@ -45,16 +169,18 @@ aichain-crm/
 │   │   ├── ui/                 # shadcn/ui (auto-generati, non modificare)
 │   │   └── crm/                # Componenti business
 │   ├── lib/
-│   │   ├── firebase.ts         # Firebase client SDK init + emulator
+│   │   ├── firebase.ts         # Firebase client SDK init (solo auth)
 │   │   ├── api.ts              # Axios client con Firebase token interceptor
 │   │   └── auth.ts             # Firebase Auth helpers
 │   ├── hooks/
 │   └── Dockerfile
-├── firestore.rules
-├── firestore.indexes.json
-├── firebase.json
-├── .firebaserc
-└── docker-compose.yml          # Dev locale con emulatori Firebase
+└── docs/
+    ├── setup.md                # Setup locale completo
+    └── wiki/                   # Wiki di progetto (Obsidian Vault)
+        ├── 03_Tech_Stack.md
+        └── 04_ADRs/
+            ├── 001_Firebase_Auth_MongoDB.md
+            └── 002_MongoDB_Docker_LocalDev.md
 ```
 
 ---
@@ -63,89 +189,47 @@ aichain-crm/
 
 ### Backend (Python)
 
-- Tutto il codice async/await — Firestore usa `firestore_async.client()`
-- UUID v4 come document ID di Firestore (generati lato backend, non da Firestore)
+- Tutto il codice async/await — MongoDB via `motor` client async
+- UUID v4 come `_id` dei documenti MongoDB (generati lato backend)
 - Timestamp sempre in UTC: `datetime.now(timezone.utc)`
-- Soft delete: campo `deletedAt: Timestamp | null` — mai cancellare documenti lead/deals
-- Activities sono **append-only** — mai update/delete su `/leads/{id}/activities/{id}`
+- Soft delete: campo `deletedAt: datetime | None` — mai cancellare documenti lead/deals
+- Activities sono **append-only** — mai update/delete
 - `gdpr_consents` è **append-only** — audit trail immutabile
-- Naming Firestore: `camelCase` per i campi dei documenti
-- Paginazione: cursor-based con `last_doc_id` (non offset) — Firestore non supporta OFFSET
-- Firestore non ha UNIQUE constraint — verificare unicità email lato applicazione prima di creare lead
+- Naming MongoDB: `camelCase` per i campi dei documenti
+- Unicità email: verificare lato applicazione prima di creare lead (MongoDB non ha UNIQUE constraint nativo in questo setup)
 
 ### Frontend (TypeScript)
 
 - App Router Next.js 14 — usare `"use client"` solo dove strettamente necessario
-- shadcn/ui per tutti i componenti UI base — non reinventare componenti già presenti
+- **shadcn/ui per tutti i componenti UI base** — non usare bottoni/input HTML grezzi
 - Axios (`lib/api.ts`) per tutte le chiamate al backend FastAPI
 - Token Firebase iniettato automaticamente dall'interceptor in `lib/api.ts`
 - TanStack Query per data fetching e cache
-- Tailwind CSS per lo stile — applicare classi direttamente, non creare CSS custom
+- Tailwind CSS per lo stile — token shadcn standard, no MD3 tokens
+- Design system: Charter-inspired — navy primario `oklch(0.338 0.189 264)`, sfondo perla `oklch(0.978 0.007 264)`, card bianche
 
 ### Sicurezza
 
 - **Nessun dato lascia l'UE** — verificare sempre regione prima di aggiungere servizi
 - CORS: solo `crm.aichainsolutions.net` in produzione
 - Rate limiting su endpoint pubblici (`/api/v1/forms/*`)
-- Endpoint `/tasks/handlers/*` protetti da OIDC token Cloud Tasks
 - Firebase Auth: verificare token lato backend su OGNI richiesta protetta
 
 ---
 
-## Avvio sviluppo locale
-
-```bash
-# 1. Emulatori Firebase (Firestore + Auth + Storage)
-firebase emulators:start --project aichain-crm-dev
-# UI: http://localhost:4000
-
-# 2. Backend (altro terminale)
-cd backend
-python -m venv venv && source venv/bin/activate
-pip install -r requirements.txt
-cp .env.example .env   # compilare con valori dev
-uvicorn app.main:app --reload
-# API docs: http://localhost:8000/api/docs
-
-# 3. Frontend (altro terminale)
-cd frontend
-npm install
-cp .env.example .env.local  # compilare con valori dev
-npm run dev
-# CRM: http://localhost:3000
-```
-
-Con Docker Compose:
-```bash
-docker-compose up
-```
-
-Variabili d'ambiente critiche backend (`.env`):
-```
-FIREBASE_PROJECT_ID=aichain-crm-dev
-FIREBASE_STORAGE_BUCKET=aichain-crm-dev.appspot.com
-GOOGLE_APPLICATION_CREDENTIALS_JSON=<json service account>
-GCP_LOCATION=europe-west1
-BACKEND_INTERNAL_URL=http://localhost:8000
-RESEND_API_KEY=re_...
-ALLOWED_ORIGINS=["http://localhost:3000"]
-```
-
----
-
-## Firestore — Collezioni principali
+## MongoDB — Collezioni principali
 
 | Collezione | Descrizione | Note |
 |---|---|---|
-| `users/{uid}` | Team CRM | uid = Firebase Auth UID |
-| `leads/{leadId}` | Lead/contatti | Soft delete, unicità email gestita lato app |
-| `leads/{id}/activities/{id}` | Log attività | **Append-only** — mai modificare |
-| `leads/{id}/tasks/{id}` | Attività pianificate | CRUD completo |
-| `deals/{dealId}` | Opportunità commerciali | |
-| `gdpr_consents/{id}` | Log consensi GDPR | **Append-only** — audit trail |
-| `form_submissions/{id}` | Invii form pubblici | Create via endpoint pubblico, poi processati |
-| `bookings/{id}` | Prenotazioni demo | |
-| `booking_slots/{id}` | Slot disponibili | Lettura pubblica |
+| `users` | Team CRM | `uid` = Firebase Auth UID, campi: `role`, `isActive`, `email` |
+| `leads` | Lead/contatti | Soft delete, unicità email gestita lato app |
+| `deals` | Opportunità commerciali | |
+| `tasks` | Attività pianificate | |
+| `form_submissions` | Invii form pubblici | |
+| `bookings` | Prenotazioni demo | |
+| `gdpr_consents` | Log consensi GDPR | **Append-only** — audit trail |
+
+Connessione locale: `mongodb://localhost:27017` — DB: `crm-aichain-db`
 
 ---
 
@@ -158,33 +242,28 @@ ALLOWED_ORIGINS=["http://localhost:3000"]
 3. Aggiungere service in `backend/app/services/` se la logica è complessa
 4. Registrare in `backend/app/main.py`: `app.include_router(router, prefix="/api/v1/nuovo")`
 
-### Aggiungere un Cloud Task
-
-1. Aggiungere handler in `backend/app/tasks/handlers.py`
-2. Registrare il router task in `main.py` (prefix `/tasks/handlers`)
-3. Chiamare tramite `await enqueue_task("nome-task", payload)` nel service
-
 ### Aggiungere una pagina frontend
 
 1. Creare `frontend/app/crm/nuova-pagina/page.tsx`
 2. Usare hook in `hooks/` per data fetching
 3. Usare componenti shadcn/ui di base + componenti `crm/` per logica business
+4. NON usare token colore Material Design 3 — usare token shadcn standard
 
 ---
 
-## Progetti Firebase
+## Ambienti Firebase
 
 | Ambiente | Firebase Project ID |
 |---|---|
 | Sviluppo | `aichain-crm-dev` |
 | Produzione | `aichain-crm-prod` |
 
+> Firebase è usato **solo per Auth** (JWT). I dati applicativi sono in MongoDB.
+
 ---
 
 ## Sprint plan (Fase 1)
 
-**Sprint 1 (sett. 1–3):** Setup Firebase/GCP, backend core (auth, leads, forms, GDPR, Cloud Tasks)
+**Sprint 1 (sett. 1–3):** Setup Firebase/GCP, backend core (auth, leads, forms, GDPR)
 **Sprint 2 (sett. 4–6):** Frontend (login, lead table, kanban, forms, dashboard, email Resend)
-**Sprint 3 (sett. 7–8):** CI/CD Cloud Build, deploy Cloud Run, monitoring, security review
-
-Checklist dettagliata: sezione 15 di `CRM_ARCHITECTURE_PHASE1_v2.md`
+**Sprint 3 (sett. 7–8):** CI/CD, deploy, monitoring, security review

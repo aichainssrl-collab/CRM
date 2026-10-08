@@ -1,20 +1,18 @@
 import asyncio
 import functools
 from fastapi import APIRouter, Request, HTTPException
-from app.firebase_admin import db
+from app.services.db_service import db, utcnow
 from app.config import settings
 from app.services.scoring_service import calculate_lead_score
 from app.services.email_service import send_welcome_email, send_sequence_email
 from app.services.lead_service import LeadService
+from app.services.enrichment_service import EnrichmentService
 
 router = APIRouter()
 
 
 async def verify_cloud_tasks_request(request: Request) -> None:
-    """
-    Verifica che la request provenga da Cloud Tasks tramite OIDC token.
-    In sviluppo (DEBUG=True) salta la verifica.
-    """
+    """Verifica OIDC token Cloud Tasks. In DEBUG mode salta la verifica."""
     auth_header = request.headers.get("Authorization", "")
     if not auth_header.startswith("Bearer "):
         raise HTTPException(403, "Richiesta non autorizzata")
@@ -44,8 +42,7 @@ async def verify_cloud_tasks_request(request: Request) -> None:
 async def handle_recalculate_score(request: Request):
     await verify_cloud_tasks_request(request)
     payload = await request.json()
-    lead_id = payload["lead_id"]
-    new_score = await calculate_lead_score(lead_id)
+    new_score = await calculate_lead_score(payload["lead_id"])
     return {"success": True, "score": new_score}
 
 
@@ -55,21 +52,18 @@ async def handle_send_welcome_email(request: Request):
     payload = await request.json()
     lead_id = payload["lead_id"]
 
-    snap = await db.collection("leads").document(lead_id).get()
-    if not snap.exists:
+    lead = await db["leads"].find_one({"_id": lead_id})
+    if not lead:
         return {"success": False, "reason": "lead_not_found"}
 
-    lead = {"id": snap.id, **snap.to_dict()}
+    lead = dict(lead)
+    lead["id"] = lead.pop("_id")
     await send_welcome_email(lead)
     return {"success": True}
 
 
 @router.post("/process-form-submission")
 async def handle_process_form_submission(request: Request):
-    """
-    Elabora una form_submission in coda.
-    Crea/aggiorna il lead e lancia le azioni downstream.
-    """
     await verify_cloud_tasks_request(request)
     payload = await request.json()
 
@@ -77,27 +71,24 @@ async def handle_process_form_submission(request: Request):
     if not submission_id:
         raise HTTPException(400, "submission_id richiesto")
 
-    snap = await db.collection("form_submissions").document(submission_id).get()
-    if not snap.exists:
+    sub_doc = await db["form_submissions"].find_one({"_id": submission_id})
+    if not sub_doc:
         return {"success": False, "reason": "submission_not_found"}
 
-    sub = snap.to_dict()
     service = LeadService()
     lead = await service.create_or_update_from_form(
-        email=sub["email"],
-        form_data=sub.get("data", {}),
-        form_type=sub.get("formType", "unknown"),
-        source=sub.get("source", "form"),
-        ip=sub.get("ip", ""),
-        user_agent=sub.get("userAgent", ""),
+        email=sub_doc["email"],
+        form_data=sub_doc.get("data", {}),
+        form_type=sub_doc.get("formType", "unknown"),
+        source=sub_doc.get("source", "form"),
+        ip=sub_doc.get("ip", ""),
+        user_agent=sub_doc.get("userAgent", ""),
     )
 
-    # Marca submission come processata
-    from app.services.db_service import utcnow
-    await db.collection("form_submissions").document(submission_id).update({
-        "processedAt": utcnow(),
-        "leadId": lead["id"],
-    })
+    await db["form_submissions"].update_one(
+        {"_id": submission_id},
+        {"$set": {"processedAt": utcnow(), "leadId": lead["id"]}},
+    )
     return {"success": True, "lead_id": lead["id"]}
 
 
@@ -109,9 +100,30 @@ async def handle_email_sequence(request: Request):
         lead_id=payload["lead_id"],
         sequence=payload["sequence"],
         step=payload.get("step", 0),
-        db=db,
     )
     return {"success": True}
+
+
+@router.post("/enrich-lead")
+async def handle_enrich_lead(request: Request):
+    """
+    Arricchisce un lead con dati estratti dal web tramite Scrapling.
+    Chiamato automaticamente alla creazione del lead (delay 5s) o manualmente
+    tramite POST /api/v1/leads/{id}/enrich.
+    """
+    await verify_cloud_tasks_request(request)
+    payload = await request.json()
+    lead_id = payload.get("lead_id")
+    if not lead_id:
+        return {"success": False, "reason": "missing lead_id"}
+
+    service = EnrichmentService()
+    updates = await service.enrich(lead_id)
+    return {
+        "success": True,
+        "lead_id": lead_id,
+        "fields_updated": [k for k in updates if k not in ("enrichedAt", "enrichmentSource", "updatedAt")],
+    }
 
 
 @router.post("/notify-sales")
@@ -120,9 +132,11 @@ async def handle_notify_sales(request: Request):
     payload = await request.json()
     lead_id = payload.get("lead_id")
 
-    snap = await db.collection("leads").document(lead_id).get()
-    if snap.exists:
+    lead = await db["leads"].find_one({"_id": lead_id})
+    if lead:
         from app.services.email_service import send_sales_notification
-        await send_sales_notification({"id": snap.id, **snap.to_dict()})
+        lead = dict(lead)
+        lead["id"] = lead.pop("_id")
+        await send_sales_notification(lead)
 
     return {"success": True}
