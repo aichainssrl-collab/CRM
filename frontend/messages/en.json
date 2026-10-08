@@ -349,5 +349,67 @@
     "ott": "Oct",
     "nov": "Nov",
     "dic": "Dec"
+  },
+  "forms": {
+    "common": {
+      "firstName": "First Name",
+      "lastName": "Last Name",
+      "company": "Company",
+      "email": "Work Email",
+      "phone": "Phone (optional)",
+      "sending": "Sending...",
+      "confirming": "Confirming...",
+      "processing": "Processing...",
+      "error": "Error submitting the form"
+    },
+    "contact": {
+      "title": "Contact Us",
+      "subtitle": "Fill out the form below to request information about our services.",
+      "message": "Message",
+      "messagePlaceholder": "How can we help you?",
+      "consent": "I consent to the processing of my personal data to manage my contact request.",
+      "submit": "Send Message",
+      "successTitle": "Request sent!",
+      "successDesc": "Thank you for contacting us. Our team will get back to you as soon as possible."
+    },
+    "booking": {
+      "title": "Book a Demo",
+      "subtitle": "Choose a date and time to speak with one of our experts.",
+      "preferredDate": "Preferred Date",
+      "timeSlot": "Time Slot",
+      "selectTime": "Select...",
+      "morning": "Morning (09:00 - 12:00)",
+      "afternoon": "Afternoon (14:00 - 18:00)",
+      "consent": "I consent to the processing of my personal data to manage the booking.",
+      "submit": "Confirm Booking",
+      "successTitle": "Booking Confirmed!",
+      "successDesc": "You will shortly receive an email with the link to join the video call and meeting details."
+    },
+    "assessment": {
+      "title": "AI Readiness Assessment",
+      "subtitle": "Evaluate your company's maturity level and discover where AI can bring the most value.",
+      "industry": "Industry",
+      "industryPlaceholder": "e.g. Manufacturing, Services...",
+      "aiMaturity": "Current AI Adoption Level",
+      "selectLevel": "Select...",
+      "none": "No current usage",
+      "exploring": "We are exploring the possibilities",
+      "pilots": "We have some pilot projects underway",
+      "production": "We have AI solutions in production",
+      "painPoints": "What is your main challenge today?",
+      "painPointsPlaceholder": "Briefly describe the processes you would like to optimize...",
+      "consent": "I consent to the processing of my personal data to receive the assessment report.",
+      "submit": "Get Results",
+      "successTitle": "Assessment Completed!",
+      "successDesc": "We are processing your answers. You will receive a detailed report via email shortly."
+    },
+    "playbook": {
+      "title": "Download the Playbook",
+      "subtitle": "Fill out the form to receive our enterprise AI playbook for free.",
+      "consent": "I consent to the processing of my personal data in accordance with the Privacy Policy to receive marketing communications and the requested material.",
+      "submit": "Download Playbook",
+      "successTitle": "Playbook requested successfully!",
+      "successDesc": "Check your email, we have sent you the link to download the material."
+    }
   }
 }

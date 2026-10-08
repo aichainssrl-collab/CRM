@@ -349,5 +349,67 @@
     "ott": "Ott",
     "nov": "Nov",
     "dic": "Dic"
+  },
+  "forms": {
+    "common": {
+      "firstName": "Nome",
+      "lastName": "Cognome",
+      "company": "Azienda",
+      "email": "Email lavorativa",
+      "phone": "Telefono (opzionale)",
+      "sending": "Invio in corso...",
+      "confirming": "Conferma in corso...",
+      "processing": "Elaborazione in corso...",
+      "error": "Errore durante l'invio del form"
+    },
+    "contact": {
+      "title": "Contattaci",
+      "subtitle": "Compila il modulo sottostante per richiedere informazioni sui nostri servizi.",
+      "message": "Messaggio",
+      "messagePlaceholder": "Come possiamo aiutarti?",
+      "consent": "Acconsento al trattamento dei miei dati personali per gestire la mia richiesta di contatto.",
+      "submit": "Invia Messaggio",
+      "successTitle": "Richiesta inviata!",
+      "successDesc": "Grazie per averci contattato. Il nostro team ti risponderà al più presto."
+    },
+    "booking": {
+      "title": "Prenota una Demo",
+      "subtitle": "Scegli una data e un orario per parlare con uno dei nostri esperti.",
+      "preferredDate": "Data Preferita",
+      "timeSlot": "Fascia Oraria",
+      "selectTime": "Seleziona...",
+      "morning": "Mattina (09:00 - 12:00)",
+      "afternoon": "Pomeriggio (14:00 - 18:00)",
+      "consent": "Acconsento al trattamento dei miei dati personali per gestire la prenotazione.",
+      "submit": "Conferma Prenotazione",
+      "successTitle": "Prenotazione Confermata!",
+      "successDesc": "Riceverai a breve un'email con il link per accedere alla videocall e i dettagli dell'incontro."
+    },
+    "assessment": {
+      "title": "AI Readiness Assessment",
+      "subtitle": "Valuta il livello di maturità della tua azienda e scopri dove l'AI può portare più valore.",
+      "industry": "Settore",
+      "industryPlaceholder": "Es. Manifatturiero, Servizi...",
+      "aiMaturity": "Livello attuale di adozione AI",
+      "selectLevel": "Seleziona...",
+      "none": "Nessun utilizzo attuale",
+      "exploring": "Stiamo esplorando le possibilità",
+      "pilots": "Abbiamo alcuni progetti pilota in corso",
+      "production": "Abbiamo soluzioni AI in produzione",
+      "painPoints": "Qual è la tua sfida principale oggi?",
+      "painPointsPlaceholder": "Descrivi brevemente i processi che vorresti ottimizzare...",
+      "consent": "Acconsento al trattamento dei miei dati personali per ricevere il report di valutazione.",
+      "submit": "Ottieni Risultati",
+      "successTitle": "Assessment Completato!",
+      "successDesc": "Stiamo elaborando le tue risposte. Riceverai un report dettagliato via email a breve."
+    },
+    "playbook": {
+      "title": "Scarica il Playbook",
+      "subtitle": "Compila il modulo per ricevere gratuitamente il nostro playbook sull'AI aziendale.",
+      "consent": "Acconsento al trattamento dei miei dati personali in accordo con la Privacy Policy per ricevere comunicazioni di marketing e il materiale richiesto.",
+      "submit": "Scarica Playbook",
+      "successTitle": "Playbook richiesto con successo!",
+      "successDesc": "Controlla la tua email, ti abbiamo inviato il link per scaricare il materiale."
+    }
   }
 }
