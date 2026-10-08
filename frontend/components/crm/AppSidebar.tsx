@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   LayoutDashboard,
   Users,
@@ -39,24 +40,25 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-const mainNav = [
-  { name: "Dashboard", href: "/crm", icon: LayoutDashboard },
-  { name: "Leads", href: "/crm/leads", icon: Users },
-  { name: "Pipeline", href: "/crm/pipeline", icon: KanbanSquare },
-  { name: "Tasks", href: "/crm/tasks", icon: CheckSquare },
-  { name: "Reports", href: "/crm/reports", icon: BarChart3 },
-  { name: "Marketing", href: "/crm/marketing", icon: Megaphone },
-];
-
-const settingsNav = [
-  { name: "Impostazioni", href: "/crm/settings", icon: Settings },
-  { name: "Utenti", href: "/crm/user-admin", icon: UserCog },
-];
-
 export function AppSidebar() {
+  const t = useTranslations("sidebar");
   const pathname = usePathname();
   const router = useRouter();
   const { user } = useAuth();
+
+  const mainNav = [
+    { name: t("dashboard"), href: "/crm", icon: LayoutDashboard },
+    { name: t("leads"), href: "/crm/leads", icon: Users },
+    { name: t("pipeline"), href: "/crm/pipeline", icon: KanbanSquare },
+    { name: t("tasks"), href: "/crm/tasks", icon: CheckSquare },
+    { name: t("reports"), href: "/crm/reports", icon: BarChart3 },
+    { name: t("marketing"), href: "/crm/marketing", icon: Megaphone },
+  ];
+
+  const settingsNav = [
+    { name: t("settings"), href: "/crm/settings", icon: Settings },
+    { name: t("users"), href: "/crm/user-admin", icon: UserCog },
+  ];
 
   const isActive = (href: string) =>
     href === "/crm"
@@ -88,7 +90,7 @@ export function AppSidebar() {
       <SidebarContent className="py-2">
         <SidebarGroup>
           <SidebarGroupLabel className="text-[11px] uppercase tracking-wider text-muted-foreground/50 px-3 mb-1">
-            Principale
+            {t("main")}
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -111,7 +113,7 @@ export function AppSidebar() {
 
         <SidebarGroup className="mt-auto">
           <SidebarGroupLabel className="text-[11px] uppercase tracking-wider text-muted-foreground/50 px-3 mb-1">
-            Configurazione
+            {t("config")}
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -167,7 +169,7 @@ export function AppSidebar() {
               >
                 <DropdownMenuItem onClick={() => router.push("/crm/settings")}>
                   <Settings className="mr-2 h-4 w-4" />
-                  Impostazioni
+                  {t("settings")}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
@@ -175,7 +177,7 @@ export function AppSidebar() {
                   variant="destructive"
                 >
                   <LogOut className="mr-2 h-4 w-4" />
-                  Esci
+                  {t("logout")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

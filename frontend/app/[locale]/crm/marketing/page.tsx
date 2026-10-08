@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   useMetaStatus,
   useMetaSummary,
@@ -65,6 +66,7 @@ function fPct(v: number) {
 // ── Status badge campagna ─────────────────────────────────────────────────────
 
 function StatusBadge({ status }: { status: string }) {
+  const t = useTranslations("marketing");
   const map: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
     ACTIVE: "default",
     PAUSED: "secondary",
@@ -73,7 +75,7 @@ function StatusBadge({ status }: { status: string }) {
   };
   return (
     <Badge variant={map[status] ?? "secondary"} className="text-[10px] uppercase">
-      {status === "ACTIVE" ? "Attiva" : status === "PAUSED" ? "In pausa" : status}
+      {status === "ACTIVE" ? t("active") : status === "PAUSED" ? t("paused") : status}
     </Badge>
   );
 }
@@ -120,52 +122,47 @@ const spendChartConfig = {
   clicks: { label: "Click", color: "var(--chart-2)" },
 } satisfies ChartConfig;
 
-const DATE_RANGES: { label: string; value: DatePreset }[] = [
-  { label: "7 giorni", value: "7d" },
-  { label: "30 giorni", value: "30d" },
-  { label: "90 giorni", value: "90d" },
-];
-
 // ── Blocco non configurato ────────────────────────────────────────────────────
 
 function NotConfiguredAlert() {
+  const t = useTranslations("marketing");
   return (
     <div className="flex flex-col gap-6 p-6 max-w-[900px] mx-auto">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Marketing — Meta Ads</h1>
-        <p className="text-sm text-muted-foreground">Analisi campagne pubblicitarie Facebook & Instagram</p>
+        <h1 className="text-2xl font-bold tracking-tight">{t("title")}</h1>
+        <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
       </div>
       <Alert>
         <AlertCircle className="h-4 w-4" />
-        <AlertTitle>Meta Ads non configurato</AlertTitle>
+        <AlertTitle>{t("notConfigured")}</AlertTitle>
         <AlertDescription className="mt-2 space-y-3">
-          <p>Per visualizzare le analisi, configura le credenziali Meta nelle variabili d&apos;ambiente del backend:</p>
+          <p>{t("notConfiguredDesc")}</p>
           <pre className="rounded bg-muted px-4 py-3 text-xs font-mono">
 {`META_ACCESS_TOKEN=EAAxxxxx...   # Token accesso Meta
 META_AD_ACCOUNT_ID=act_123456789  # ID Ad Account`}
           </pre>
           <p className="text-sm">
-            Ottieni il token su{" "}
+            {t("getToken")}{" "}
             <a
               href="https://developers.facebook.com/tools/explorer/"
               target="_blank"
               rel="noopener noreferrer"
               className="underline inline-flex items-center gap-1"
             >
-              Meta Graph API Explorer <ExternalLink className="h-3 w-3" />
+              {t("graphApi")} <ExternalLink className="h-3 w-3" />
             </a>
-            {" "}con permessi: <code className="text-xs bg-muted px-1 rounded">ads_read</code>,{" "}
+            {" "}{t("withPerms")} <code className="text-xs bg-muted px-1 rounded">ads_read</code>,{" "}
             <code className="text-xs bg-muted px-1 rounded">read_insights</code>.
           </p>
           <p className="text-sm">
-            L&apos;ID Ad Account lo trovi su{" "}
+            {t("adAccountId")}{" "}
             <a
               href="https://business.facebook.com/adsmanager"
               target="_blank"
               rel="noopener noreferrer"
               className="underline inline-flex items-center gap-1"
             >
-              Ads Manager <ExternalLink className="h-3 w-3" />
+              {t("adsManager")} <ExternalLink className="h-3 w-3" />
             </a>
             {" "}→ in alto a sinistra (formato: <code className="text-xs bg-muted px-1 rounded">act_XXXXXXXXX</code>).
           </p>
@@ -178,6 +175,8 @@ META_AD_ACCOUNT_ID=act_123456789  # ID Ad Account`}
 // ── Pagina principale ─────────────────────────────────────────────────────────
 
 export default function MarketingPage() {
+  const t = useTranslations("marketing");
+  const tTime = useTranslations("timeRanges");
   const [datePreset, setDatePreset] = useState<DatePreset>("30d");
   const queryClient = useQueryClient();
 
@@ -187,6 +186,12 @@ export default function MarketingPage() {
   const { data: trendData, isLoading: trendLoading } = useMetaTrend(datePreset);
 
   const isLoading = summaryLoading || statusLoading;
+
+  const DATE_RANGES: { label: string; value: DatePreset }[] = [
+    { label: tTime("7d"), value: "7d" },
+    { label: tTime("30d"), value: "30d" },
+    { label: tTime("90d"), value: "90d" },
+  ];
 
   const handleRefresh = () => {
     queryClient.invalidateQueries({ queryKey: ["meta"] });
@@ -214,10 +219,10 @@ export default function MarketingPage() {
       {/* Header */}
       <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Marketing — Meta Ads</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{t("title")}</h1>
           <p className="text-sm text-muted-foreground">
             {status.account_name
-              ? `Account: ${status.account_name} · ${status.account_id}`
+              ? `${t("account")}: ${status.account_name} · ${status.account_id}`
               : "Facebook & Instagram Ads"}
           </p>
         </div>
@@ -241,43 +246,43 @@ export default function MarketingPage() {
       {/* KPI Cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <KpiCard
-          title="Spesa Totale"
+          title={t("totalSpend")}
           value={summary ? fEUR(summary.spend) : "—"}
           subtitle={`CPM: ${summary ? fEUR(summary.cpm) : "—"}`}
           icon={Euro}
           loading={isLoading}
         />
         <KpiCard
-          title="Impressioni"
+          title={t("impressions")}
           value={summary ? fNum(summary.impressions) : "—"}
           icon={Eye}
           loading={isLoading}
         />
         <KpiCard
-          title="Click"
+          title={t("clicks")}
           value={summary ? fNum(summary.clicks) : "—"}
           subtitle={`CTR: ${summary ? fPct(summary.ctr) : "—"}`}
           icon={MousePointerClick}
           loading={isLoading}
         />
         <KpiCard
-          title="CPC Medio"
+          title={t("avgCpc")}
           value={summary ? fEUR(summary.cpc) : "—"}
-          subtitle="Cost per click"
+          subtitle={t("costPerClick")}
           icon={TrendingUp}
           loading={isLoading}
         />
         <KpiCard
-          title="Reach"
+          title={t("reach")}
           value={summary ? fNum(summary.reach) : "—"}
-          subtitle="Persone raggiunte"
+          subtitle={t("peopleReached")}
           icon={Users}
           loading={isLoading}
         />
         <KpiCard
-          title="Conversioni"
+          title={t("conversions")}
           value={summary ? fNum(summary.conversions) : "—"}
-          subtitle="Lead / acquisti"
+          subtitle={t("leadAcquisitions")}
           icon={Target}
           loading={isLoading}
         />
@@ -286,15 +291,15 @@ export default function MarketingPage() {
       {/* Trend chart */}
       <Card>
         <CardHeader>
-          <CardTitle>Andamento Spesa & Click</CardTitle>
-          <CardDescription>Breakdown giornaliero nel periodo selezionato</CardDescription>
+          <CardTitle>{t("spendTrend")}</CardTitle>
+          <CardDescription>{t("dailyBreakdown")}</CardDescription>
         </CardHeader>
         <CardContent>
           {trendLoading ? (
             <Skeleton className="h-[260px] w-full" />
           ) : trend.length === 0 ? (
             <div className="flex h-[260px] items-center justify-center text-sm text-muted-foreground">
-              Nessun dato disponibile per questo periodo
+              {t("noDataPeriod")}
             </div>
           ) : (
             <ChartContainer config={spendChartConfig} className="h-[260px] w-full">
@@ -363,11 +368,11 @@ export default function MarketingPage() {
       {/* Tabella campagne */}
       <Card>
         <CardHeader>
-          <CardTitle>Campagne</CardTitle>
+          <CardTitle>{t("campaigns")}</CardTitle>
           <CardDescription>
             {campaignsLoading
               ? "Caricamento..."
-              : `${campaignsData?.total ?? 0} campagne · ordinate per spesa`}
+              : t("campaignsLoaded", { count: campaignsData?.total ?? 0 })}
           </CardDescription>
         </CardHeader>
         <CardContent className="p-0">
@@ -386,14 +391,14 @@ export default function MarketingPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="min-w-[200px]">Campagna</TableHead>
+                    <TableHead className="min-w-[200px]">{t("campaign")}</TableHead>
                     <TableHead>Stato</TableHead>
-                    <TableHead className="text-right">Spesa</TableHead>
-                    <TableHead className="text-right">Impression</TableHead>
-                    <TableHead className="text-right">Click</TableHead>
+                    <TableHead className="text-right">{t("totalSpend")}</TableHead>
+                    <TableHead className="text-right">{t("impressions")}</TableHead>
+                    <TableHead className="text-right">{t("clicks")}</TableHead>
                     <TableHead className="text-right">CTR</TableHead>
                     <TableHead className="text-right">CPC</TableHead>
-                    <TableHead className="text-right">Reach</TableHead>
+                    <TableHead className="text-right">{t("reach")}</TableHead>
                     <TableHead className="text-right">Conv.</TableHead>
                   </TableRow>
                 </TableHeader>

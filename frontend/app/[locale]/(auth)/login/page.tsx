@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { login } from "@/lib/auth";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,7 @@ import { Zap, AlertCircle, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function LoginPage() {
+  const t = useTranslations("auth");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -25,7 +27,7 @@ export default function LoginPage() {
       await login(email, password);
       router.push("/crm");
     } catch {
-      setError("Credenziali non valide. Controlla email e password.");
+      setError(t("invalidCredentials"));
     } finally {
       setIsLoading(false);
     }
@@ -54,18 +56,18 @@ export default function LoginPage() {
         <div className="relative mt-auto space-y-8">
           <div className="space-y-3">
             <h2 className="text-3xl font-bold tracking-tight leading-tight">
-              Trasforma i lead<br />in relazioni.
+              {t("heroTitle")}
             </h2>
             <p className="text-base text-primary-foreground/70 leading-relaxed max-w-sm">
-              Gestisci ogni contatto commerciale con precisione, velocità e intelligence artificiale.
+              {t("heroSubtitle")}
             </p>
           </div>
 
           <div className="flex items-center gap-4">
             {[
-              { value: "3x", label: "Conversione" },
-              { value: "40%", label: "Piu veloce" },
-              { value: "100%", label: "GDPR" },
+              { value: "3x", label: t("statConversion") },
+              { value: "40%", label: t("statFaster") },
+              { value: "100%", label: t("statGdpr") },
             ].map((stat) => (
               <div key={stat.label} className="flex-1 rounded-lg bg-white/8 backdrop-blur-sm px-3 py-2.5">
                 <div className="text-lg font-bold">{stat.value}</div>
@@ -75,7 +77,7 @@ export default function LoginPage() {
           </div>
 
           <footer className="text-xs text-primary-foreground/40">
-            AiChain Solutions &middot; Catania, Italia
+            {t("brandLocation")}
           </footer>
         </div>
       </div>
@@ -92,9 +94,9 @@ export default function LoginPage() {
           </div>
 
           <div className="flex flex-col gap-2 text-center lg:text-left">
-            <h1 className="text-2xl font-bold tracking-tight">Bentornato</h1>
+            <h1 className="text-2xl font-bold tracking-tight">{t("welcomeBack")}</h1>
             <p className="text-sm text-muted-foreground">
-              Accedi con le tue credenziali per continuare
+              {t("loginSubtitle")}
             </p>
           </div>
 
@@ -107,7 +109,7 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <div className="grid gap-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t("email")}</Label>
               <Input
                 id="email"
                 type="email"
@@ -122,12 +124,12 @@ export default function LoginPage() {
 
             <div className="grid gap-2">
               <div className="flex items-center">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">{t("password")}</Label>
                 <a
                   href="#"
                   className="ml-auto text-xs text-muted-foreground underline-offset-4 hover:underline"
                 >
-                  Password dimenticata?
+                  {t("forgotPassword")}
                 </a>
               </div>
               <Input
@@ -150,22 +152,22 @@ export default function LoginPage() {
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Accesso in corso...
+                  {t("loggingIn")}
                 </>
               ) : (
-                "Accedi"
+                t("login")
               )}
             </Button>
           </form>
 
           <p className="text-center text-xs text-muted-foreground">
-            Accedendo accetti i{" "}
+            {t("termsAccept")}{" "}
             <a href="#" className="underline underline-offset-4 hover:text-foreground">
-              Termini di Servizio
+              {t("termsOfService")}
             </a>{" "}
-            e la{" "}
+            {t("and")}{" "}
             <a href="#" className="underline underline-offset-4 hover:text-foreground">
-              Privacy Policy
+              {t("privacyPolicy")}
             </a>
             .
           </p>

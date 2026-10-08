@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -34,12 +35,6 @@ const MONTHS_IT = ["Gen", "Feb", "Mar", "Apr", "Mag", "Giu", "Lug", "Ago", "Set"
 const chartConfig = {
   revenue: { label: "Pipeline (€)", color: "var(--primary)" },
 } satisfies ChartConfig;
-
-const TIME_RANGES = [
-  { label: "7 giorni", value: "7d" },
-  { label: "30 giorni", value: "30d" },
-  { label: "90 giorni", value: "90d" },
-];
 
 function formatEUR(value: number) {
   return new Intl.NumberFormat("it-IT", {
@@ -101,12 +96,20 @@ function KpiCard({
 }
 
 export default function DashboardPage() {
+  const t = useTranslations("dashboard");
+  const tTime = useTranslations("timeRanges");
   const [timeRange, setTimeRange] = useState("30d");
   const { data: metrics, isLoading } = useDashboardMetrics(timeRange);
   const { data: leads = [] } = useLeads({});
   const { data: deals = [] } = useDeals();
 
   const recentLeads = leads.slice(0, 5);
+
+  const TIME_RANGES = [
+    { label: tTime("7d"), value: "7d" },
+    { label: tTime("30d"), value: "30d" },
+    { label: tTime("90d"), value: "90d" },
+  ];
 
   // Derive chart data from real deals — group by creation month
   const chartData = useMemo(() => {
@@ -136,8 +139,8 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-sm text-muted-foreground">Panoramica delle performance commerciali</p>
+          <h1 className="text-2xl font-bold tracking-tight">{t("title")}</h1>
+          <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
         </div>
         <Tabs value={timeRange} onValueChange={(v) => v && setTimeRange(v)}>
           <TabsList>
@@ -153,7 +156,7 @@ export default function DashboardPage() {
       {/* KPI Cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <KpiCard
-          title="Valore Pipeline"
+          title={t("pipelineValue")}
           value={isLoading || !metrics ? "—" : formatEUR(metrics.pipelineValue)}
           trend={12}
           icon={Euro}
@@ -161,7 +164,7 @@ export default function DashboardPage() {
           accent="bg-emerald-500/10 text-emerald-600"
         />
         <KpiCard
-          title="Deal Attivi"
+          title={t("activeDeals")}
           value={isLoading || !metrics ? "—" : String(metrics.activeDeals)}
           trend={4}
           icon={Briefcase}
@@ -169,7 +172,7 @@ export default function DashboardPage() {
           accent="bg-blue-500/10 text-blue-600"
         />
         <KpiCard
-          title="Tasso di Conversione"
+          title={t("conversionRate")}
           value={isLoading || !metrics ? "—" : `${metrics.conversionRate}%`}
           trend={-2}
           icon={Target}
@@ -177,7 +180,7 @@ export default function DashboardPage() {
           accent="bg-amber-500/10 text-amber-600"
         />
         <KpiCard
-          title="Nuovi Lead"
+          title={t("newLeads")}
           value={isLoading || !metrics ? "—" : String(metrics.newLeads ?? leads.length)}
           trend={8}
           icon={Users}
@@ -191,16 +194,16 @@ export default function DashboardPage() {
         {/* Revenue chart — derived from real deals */}
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>Pipeline Revenue</CardTitle>
-            <CardDescription>Valore deal creati negli ultimi 6 mesi</CardDescription>
+            <CardTitle>{t("pipelineRevenue")}</CardTitle>
+            <CardDescription>{t("chartDescription")}</CardDescription>
           </CardHeader>
           <CardContent>
             {chartData.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-[280px] gap-2 text-muted-foreground">
                 <Euro className="h-8 w-8 text-muted-foreground/30" />
-                <p className="text-sm">Nessun deal presente. Crea il primo deal per vedere il grafico.</p>
+                <p className="text-sm">{t("noDealsChart")}</p>
                 <Button variant="outline" size="sm" render={<Link href="/crm/pipeline" />} className="mt-1">
-                  Vai alla Pipeline
+                  {t("goToPipeline")}
                 </Button>
               </div>
             ) : (
@@ -249,15 +252,15 @@ export default function DashboardPage() {
         {/* Recent Leads */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-3">
-            <CardTitle>Lead Recenti</CardTitle>
+            <CardTitle>{t("recentLeads")}</CardTitle>
             <Link href="/crm/leads" className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors">
-              Vedi tutti <ArrowRight className="h-3 w-3" />
+              {t("viewAll")} <ArrowRight className="h-3 w-3" />
             </Link>
           </CardHeader>
           <CardContent className="p-0">
             {recentLeads.length === 0 ? (
               <div className="px-6 py-8 text-center text-sm text-muted-foreground">
-                Nessun lead ancora. <Link href="/crm/leads" className="underline">Importa leads</Link>
+                {t("noLeads")} <Link href="/crm/leads" className="underline">{t("importLeads")}</Link>
               </div>
             ) : (
               <div className="divide-y">
@@ -288,17 +291,17 @@ export default function DashboardPage() {
       {/* Activity — real data or empty state */}
       <Card>
         <CardHeader>
-          <CardTitle>Attività Recenti</CardTitle>
-          <CardDescription>Ultime interazioni del team commerciale</CardDescription>
+          <CardTitle>{t("recentActivity")}</CardTitle>
+          <CardDescription>{t("activityDescription")}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col items-center justify-center py-10 text-center gap-3">
             <Activity className="h-10 w-10 text-muted-foreground/30" />
             <p className="text-sm text-muted-foreground">
-              Le attività del team verranno visualizzate qui quando disponibili.
+              {t("activityEmpty")}
             </p>
             <Button variant="outline" size="sm" render={<Link href="/crm/leads" />}>
-              Vai ai Lead
+              {t("goToLeads")}
             </Button>
           </div>
         </CardContent>

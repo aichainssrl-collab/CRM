@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { useLeads, useCreateLead, useUpdateLead, useDeleteLead, Lead } from "@/hooks/useLeads";
 import { useQueryClient } from "@tanstack/react-query";
@@ -32,6 +33,7 @@ function buildPageNumbers(current: number, total: number): (number | "…")[] {
 }
 
 export default function LeadsPage() {
+  const t = useTranslations("leads");
   const router = useRouter();
 
   const [filters, setFilters] = useState<Record<string, string>>({});
@@ -75,15 +77,15 @@ export default function LeadsPage() {
       if (deleteConfirm?.type === "single" && deleteConfirm.id) {
         await deleteLead.mutateAsync(deleteConfirm.id);
         queryClient.invalidateQueries({ queryKey: ["leads"] });
-        toast.success("Lead eliminato");
+        toast.success(t("leadDeleted"));
       } else if (deleteConfirm?.type === "bulk") {
         await Promise.all(Array.from(selectedIds).map((id) => deleteLead.mutateAsync(id)));
         setSelectedIds(new Set());
         queryClient.invalidateQueries({ queryKey: ["leads"] });
-        toast.success(`${selectedIds.size} lead eliminati`);
+        toast.success(t("leadsDeleted", { count: selectedIds.size }));
       }
     } catch (err: unknown) {
-      toast.error("Errore durante l'eliminazione", { description: err instanceof Error ? err.message : String(err) });
+      toast.error(t("deleteError"), { description: err instanceof Error ? err.message : String(err) });
     }
   };
 
@@ -92,10 +94,10 @@ export default function LeadsPage() {
   const handleFormSubmit = async (data: Partial<Lead>) => {
     if (selectedLead) {
       await updateLead.mutateAsync({ id: selectedLead.id, data });
-      toast.success("Lead aggiornato");
+      toast.success(t("leadUpdated"));
     } else {
       await createLead.mutateAsync(data);
-      toast.success("Lead creato");
+      toast.success(t("leadCreated"));
     }
   };
 
@@ -121,25 +123,25 @@ export default function LeadsPage() {
       <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between shrink-0">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">
-            Leads
+            {t("title")}
             <span className="ml-2 text-base font-normal text-muted-foreground">({leads.length})</span>
           </h1>
-          <p className="text-sm text-muted-foreground">Gestisci e monitora i tuoi contatti commerciali</p>
+          <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           {selectedIds.size > 0 && (
             <Button variant="destructive" size="sm" onClick={() => setDeleteConfirm({ type: "bulk" })} disabled={deleteLead.isPending} className="gap-2">
               <Trash2 className="h-4 w-4" />
-              Elimina ({selectedIds.size})
+              {t("deleteSelected")} ({selectedIds.size})
             </Button>
           )}
           <Button variant="outline" size="sm" onClick={() => setIsImportOpen(true)} className="gap-2">
             <Upload className="h-4 w-4" />
-            Importa
+            {t("importCsv")}
           </Button>
           <Button size="sm" onClick={() => { setSelectedLead(null); setIsFormOpen(true); }} className="gap-2">
             <Plus className="h-4 w-4" />
-            Nuovo Lead
+            {t("newLead")}
           </Button>
         </div>
       </div>
@@ -167,7 +169,7 @@ export default function LeadsPage() {
       {!isLoading && leads.length > PAGE_SIZE && (
         <div className="shrink-0 flex items-center justify-between gap-4">
           <p className="text-sm text-muted-foreground">
-            {(safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, leads.length)} di {leads.length} lead
+            {(safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, leads.length)} {t("of")} {leads.length}
           </p>
           <Pagination className="w-auto mx-0">
             <PaginationContent>
@@ -232,13 +234,13 @@ export default function LeadsPage() {
       <ConfirmDialog
         open={!!deleteConfirm}
         onOpenChange={(open) => { if (!open) setDeleteConfirm(null); }}
-        title={deleteConfirm?.type === "bulk" ? `Elimina ${selectedIds.size} lead` : "Elimina lead"}
+        title={deleteConfirm?.type === "bulk" ? t("confirmDeleteTitlePlural", { count: selectedIds.size }) : t("confirmDeleteTitle")}
         description={
           deleteConfirm?.type === "bulk"
-            ? `Stai per eliminare ${selectedIds.size} lead. Questa azione non può essere annullata.`
-            : "Stai per eliminare questo lead. Questa azione non può essere annullata."
+            ? t("confirmDeleteDescPlural", { count: selectedIds.size })
+            : t("confirmDeleteDesc")
         }
-        confirmLabel="Elimina"
+        confirmLabel={t("deleteSelected")}
         variant="destructive"
         onConfirm={executeDelete}
         loading={deleteLead.isPending}

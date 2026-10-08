@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { useTasks } from "@/hooks/useTasks";
 import { TaskList } from "@/components/crm/TaskList";
 import { TaskForm } from "@/components/crm/TaskForm";
@@ -10,6 +11,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, ClipboardCheck } from "lucide-react";
 
 export default function TasksPage() {
+  const t = useTranslations("tasks");
   const [tab, setTab] = useState<"all" | "pending" | "completed">("all");
   const [dueToday, setDueToday] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
@@ -22,9 +24,9 @@ export default function TasksPage() {
   const { data: tasks, isLoading } = useTasks(undefined, status, dueBefore);
 
   const tabs: { label: string; value: typeof tab }[] = [
-    { label: "Tutti", value: "all" },
-    { label: "In corso", value: "pending" },
-    { label: "Completati", value: "completed" },
+    { label: t("all"), value: "all" },
+    { label: t("inProgress"), value: "pending" },
+    { label: t("completed"), value: "completed" },
   ];
 
   return (
@@ -32,12 +34,12 @@ export default function TasksPage() {
       {/* Header */}
       <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Tasks</h1>
-          <p className="text-sm text-muted-foreground">Gestisci le attività del team commerciale</p>
+          <h1 className="text-2xl font-bold tracking-tight">{t("title")}</h1>
+          <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
         </div>
         <Button onClick={() => setFormOpen(true)} className="gap-2 self-start sm:self-auto">
           <Plus className="h-4 w-4" />
-          Nuovo Task
+          {t("newTask")}
         </Button>
       </div>
 
@@ -45,9 +47,9 @@ export default function TasksPage() {
       <div className="flex flex-wrap items-center gap-3">
         <Tabs value={tab} onValueChange={(v) => v && setTab(v as typeof tab)}>
           <TabsList>
-            {tabs.map((t) => (
-              <TabsTrigger key={t.value} value={t.value}>
-                {t.label}
+            {tabs.map((tabItem) => (
+              <TabsTrigger key={tabItem.value} value={tabItem.value}>
+                {tabItem.label}
               </TabsTrigger>
             ))}
           </TabsList>
@@ -57,7 +59,7 @@ export default function TasksPage() {
           size="sm"
           onClick={() => setDueToday((d) => !d)}
         >
-          Scaduti oggi
+          {t("dueToday")}
         </Button>
       </div>
 
@@ -71,10 +73,10 @@ export default function TasksPage() {
       ) : !tasks || tasks.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed py-16 text-center">
           <ClipboardCheck className="h-10 w-10 text-muted-foreground/40" />
-          <p className="text-sm text-muted-foreground">Nessun task trovato.</p>
+          <p className="text-sm text-muted-foreground">{t("noTasks")}</p>
           <Button variant="outline" size="sm" onClick={() => setFormOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />
-            Crea il primo task
+            {t("createFirst")}
           </Button>
         </div>
       ) : (

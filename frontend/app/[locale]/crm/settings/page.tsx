@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -23,14 +24,8 @@ import { updateProfile } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { getAuthToken } from "@/lib/auth";
 
-const NAV_ITEMS = [
-  { label: "Profilo", icon: User, id: "profile" },
-  { label: "Notifiche", icon: Bell, id: "notifications" },
-  { label: "Sicurezza", icon: Shield, id: "security" },
-  { label: "Integrazioni", icon: Plug, id: "integrations" },
-];
-
 export default function SettingsPage() {
+  const t = useTranslations("settings");
   const { data: currentUser } = useCurrentUser();
   const { user: firebaseUser } = useAuth();
   const updateUser = useUpdateUser();
@@ -42,6 +37,13 @@ export default function SettingsPage() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
 
+  const NAV_ITEMS = [
+    { label: t("profile"), icon: User, id: "profile" },
+    { label: t("notifications"), icon: Bell, id: "notifications" },
+    { label: t("security"), icon: Shield, id: "security" },
+    { label: t("integrations"), icon: Plug, id: "integrations" },
+  ];
+
   useEffect(() => {
     if (currentUser?.displayName) {
       const parts = currentUser.displayName.split(" ");
@@ -52,7 +54,6 @@ export default function SettingsPage() {
 
   useEffect(() => {
     const url = firebaseUser?.photoURL ?? null;
-    // Ignora photoURL che puntano all'endpoint backend (URL non valido come immagine)
     const isBackendUrl = url && (url.includes("localhost:8088") || url.includes("/api/v1/"));
     setAvatarURL(isBackendUrl ? null : url);
   }, [firebaseUser]);
@@ -61,7 +62,7 @@ export default function SettingsPage() {
     const file = e.target.files?.[0];
     if (!file || !auth.currentUser) return;
     if (file.size > 1 * 1024 * 1024) {
-      toast.error("Il file supera 1MB.");
+      toast.error(t("avatarTooLarge"));
       return;
     }
     setAvatarUploading(true);
@@ -75,14 +76,14 @@ export default function SettingsPage() {
       );
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.detail ?? "Upload fallito");
+        throw new Error(err.detail ?? t("avatarError"));
       }
       const { photoURL } = await res.json();
       await updateProfile(auth.currentUser, { photoURL });
       setAvatarURL(photoURL);
-      toast.success("Avatar aggiornato.");
+      toast.success(t("avatarUpdated"));
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Errore nel caricamento dell'avatar.");
+      toast.error(err instanceof Error ? err.message : t("avatarError"));
     } finally {
       setAvatarUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -95,9 +96,9 @@ export default function SettingsPage() {
     try {
       await updateProfile(auth.currentUser, { photoURL: null });
       setAvatarURL(null);
-      toast.success("Avatar rimosso.");
+      toast.success(t("avatarRemoved"));
     } catch {
-      toast.error("Errore nella rimozione dell'avatar.");
+      toast.error(t("avatarRemoveError"));
     } finally {
       setAvatarUploading(false);
     }
@@ -109,9 +110,9 @@ export default function SettingsPage() {
     const displayName = [firstName, lastName].filter(Boolean).join(" ");
     try {
       await updateUser.mutateAsync({ uid: currentUser.uid, data: { displayName } });
-      toast.success("Profilo salvato correttamente.");
+      toast.success(t("profileSaved"));
     } catch {
-      toast.error("Errore nel salvataggio. Riprova.");
+      toast.error(t("profileSaveError"));
     }
   }
 
@@ -131,8 +132,8 @@ export default function SettingsPage() {
   return (
     <div className="flex flex-col gap-6 p-6 max-w-[1400px] mx-auto w-full">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Impostazioni</h1>
-        <p className="text-sm text-muted-foreground">Gestisci il tuo account e le preferenze</p>
+        <h1 className="text-2xl font-bold tracking-tight">{t("title")}</h1>
+        <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
       </div>
 
       <Tabs value={activeTab} onValueChange={(v) => v && setActiveTab(v)} orientation="vertical" className="flex flex-col md:flex-row gap-6 items-start">
@@ -155,9 +156,9 @@ export default function SettingsPage() {
           <TabsContent value="profile">
             <Card>
               <CardHeader>
-                <CardTitle>Profilo</CardTitle>
+                <CardTitle>{t("profile")}</CardTitle>
                 <CardDescription>
-                  Gestisci le tue informazioni personali e come vengono visualizzate nel workspace.
+                  {t("profileDesc")}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -184,7 +185,7 @@ export default function SettingsPage() {
                         onClick={() => fileInputRef.current?.click()}
                       >
                         {avatarUploading ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
-                        Carica avatar
+                        {t("uploadAvatar")}
                       </Button>
                       {avatarURL && (
                         <Button
@@ -195,11 +196,11 @@ export default function SettingsPage() {
                           disabled={avatarUploading}
                           onClick={handleAvatarRemove}
                         >
-                          Rimuovi
+                          {t("remove")}
                         </Button>
                       )}
                     </div>
-                    <p className="text-xs text-muted-foreground">JPG, GIF o PNG. Max 1MB.</p>
+                    <p className="text-xs text-muted-foreground">{t("avatarHint")}</p>
                   </div>
                 </div>
 
@@ -208,7 +209,7 @@ export default function SettingsPage() {
                 <form onSubmit={handleSave} className="space-y-4">
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
-                      <Label htmlFor="firstName">Nome</Label>
+                      <Label htmlFor="firstName">{t("firstName")}</Label>
                       <Input
                         id="firstName"
                         value={firstName}
@@ -217,7 +218,7 @@ export default function SettingsPage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="lastName">Cognome</Label>
+                      <Label htmlFor="lastName">{t("lastName")}</Label>
                       <Input
                         id="lastName"
                         value={lastName}
@@ -228,7 +229,7 @@ export default function SettingsPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
+                    <Label htmlFor="email">{t("emailLabel")}</Label>
                     <Input
                       id="email"
                       type="email"
@@ -236,15 +237,15 @@ export default function SettingsPage() {
                       value={currentUser?.email ?? ""}
                     />
                     <p className="text-xs text-muted-foreground">
-                      L&apos;email non può essere modificata. Contatta un admin per aggiornamenti.
+                      {t("emailHint")}
                     </p>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="timezone">Fuso orario</Label>
+                    <Label htmlFor="timezone">{t("timezone")}</Label>
                     <Select defaultValue="gmt+1">
                       <SelectTrigger id="timezone">
-                        <SelectValue placeholder="Seleziona fuso orario" />
+                        <SelectValue placeholder={t("selectTimezone")} />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="gmt-8">(GMT-08:00) Pacific Time</SelectItem>
@@ -259,10 +260,10 @@ export default function SettingsPage() {
 
                   <div className="flex justify-end gap-2">
                     <Button type="button" variant="outline" onClick={handleDiscard}>
-                      Annulla
+                      {t("discard")}
                     </Button>
                     <Button type="submit" disabled={updateUser.isPending}>
-                      {updateUser.isPending ? "Salvataggio..." : "Salva modifiche"}
+                      {updateUser.isPending ? t("saving") : t("saveChanges")}
                     </Button>
                   </div>
                 </form>
@@ -275,12 +276,12 @@ export default function SettingsPage() {
               <Card>
                 <CardHeader>
                   <CardTitle>{item.label}</CardTitle>
-                  <CardDescription>Questa sezione sarà disponibile prossimamente.</CardDescription>
+                  <CardDescription>{t("comingSoon")}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="flex flex-col items-center justify-center py-16 text-center gap-3 text-muted-foreground">
                     <item.icon className="h-10 w-10 opacity-30" />
-                    <p className="text-sm">In arrivo nelle prossime versioni.</p>
+                    <p className="text-sm">{t("comingSoonDetail")}</p>
                   </div>
                 </CardContent>
               </Card>

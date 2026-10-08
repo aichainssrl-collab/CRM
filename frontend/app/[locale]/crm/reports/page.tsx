@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -20,18 +21,6 @@ import { useLeads } from "@/hooks/useLeads";
 import { useDeals } from "@/hooks/useDeals";
 import { Users, Briefcase, Target, UserPlus, BarChart3 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
-const TIME_RANGES = [
-  { label: "7 giorni", value: "7d" },
-  { label: "30 giorni", value: "30d" },
-  { label: "90 giorni", value: "90d" },
-];
-
-function formatEUR(value: number): string {
-  return new Intl.NumberFormat("it-IT", {
-    style: "currency", currency: "EUR", maximumFractionDigits: 0,
-  }).format(value);
-}
 
 // ── Source label mapping ──────────────────────────────────────
 const SOURCE_LABELS: Record<string, string> = {
@@ -97,7 +86,7 @@ function ChartSkeleton() {
   return <Skeleton className="w-full h-[260px] rounded-lg" />;
 }
 
-function EmptyChart({ message = "Nessun dato disponibile" }: { message?: string }) {
+function EmptyChart({ message }: { message?: string }) {
   return (
     <div className="flex flex-col items-center justify-center h-[260px] gap-2 text-muted-foreground">
       <BarChart3 className="h-8 w-8 text-muted-foreground/30" />
@@ -144,11 +133,19 @@ function renderPieLabel({ cx, cy, midAngle, innerRadius, outerRadius, percent, n
 
 // ── Main Page ────────────────────────────────────────────────
 export default function ReportsPage() {
+  const t = useTranslations("reports");
+  const tTime = useTranslations("timeRanges");
   const [timeRange, setTimeRange] = useState("30d");
 
   const { data: metrics, isLoading: metricsLoading } = useDashboardMetrics(timeRange);
   const { data: leads, isLoading: leadsLoading } = useLeads({ limit: 500 });
   const { data: deals, isLoading: dealsLoading } = useDeals({ limit: 100 });
+
+  const TIME_RANGES = [
+    { label: tTime("7d"), value: "7d" },
+    { label: tTime("30d"), value: "30d" },
+    { label: tTime("90d"), value: "90d" },
+  ];
 
   // ── Source data with translated labels ──
   const sourceData = useMemo(() => {
@@ -224,8 +221,8 @@ export default function ReportsPage() {
       {/* Header */}
       <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Reports & Analytics</h1>
-          <p className="text-sm text-muted-foreground">Analisi delle performance commerciali</p>
+          <h1 className="text-2xl font-bold tracking-tight">{t("title")}</h1>
+          <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
         </div>
         <Tabs value={timeRange} onValueChange={(v) => v && setTimeRange(v)}>
           <TabsList>
@@ -238,10 +235,10 @@ export default function ReportsPage() {
 
       {/* KPI Cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <KpiCard title="Lead Totali" value={dash(metrics?.totalLeads)} icon={Users} loading={metricsLoading} accent="bg-violet-500/10 text-violet-600" />
-        <KpiCard title="Nuovi Lead" value={dash(metrics?.newLeads)} icon={UserPlus} loading={metricsLoading} accent="bg-blue-500/10 text-blue-600" />
-        <KpiCard title="Deal Attivi" value={dash(metrics?.activeDeals)} icon={Briefcase} loading={metricsLoading} accent="bg-emerald-500/10 text-emerald-600" />
-        <KpiCard title="Tasso Conversione" value={metricsLoading || metrics?.conversionRate === undefined ? "\u2014" : `${metrics.conversionRate}%`} icon={Target} loading={metricsLoading} accent="bg-amber-500/10 text-amber-600" />
+        <KpiCard title={t("totalLeads")} value={dash(metrics?.totalLeads)} icon={Users} loading={metricsLoading} accent="bg-violet-500/10 text-violet-600" />
+        <KpiCard title={t("newLeads")} value={dash(metrics?.newLeads)} icon={UserPlus} loading={metricsLoading} accent="bg-blue-500/10 text-blue-600" />
+        <KpiCard title={t("activeDeals")} value={dash(metrics?.activeDeals)} icon={Briefcase} loading={metricsLoading} accent="bg-emerald-500/10 text-emerald-600" />
+        <KpiCard title={t("conversionRate")} value={metricsLoading || metrics?.conversionRate === undefined ? "\u2014" : `${metrics.conversionRate}%`} icon={Target} loading={metricsLoading} accent="bg-amber-500/10 text-amber-600" />
       </div>
 
       {/* Row 1: Source + Industry */}
@@ -249,11 +246,11 @@ export default function ReportsPage() {
         {/* Leads per Source — horizontal bar */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Leads per Fonte</CardTitle>
-            <CardDescription>Canali di acquisizione principali</CardDescription>
+            <CardTitle className="text-base">{t("leadsPerSource")}</CardTitle>
+            <CardDescription>{t("acquisitionChannels")}</CardDescription>
           </CardHeader>
           <CardContent>
-            {leadsLoading ? <ChartSkeleton /> : sourceData.length === 0 ? <EmptyChart /> : (
+            {leadsLoading ? <ChartSkeleton /> : sourceData.length === 0 ? <EmptyChart message={t("noData")} /> : (
               <ChartContainer config={sourceChartConfig} className="w-full h-[260px]">
                 <BarChart data={sourceData} layout="vertical" margin={{ top: 0, right: 16, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" horizontal={false} className="stroke-muted/50" />
@@ -274,13 +271,13 @@ export default function ReportsPage() {
         {/* Industry donut */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Distribuzione Settore</CardTitle>
+            <CardTitle className="text-base">{t("sectorDistribution")}</CardTitle>
             <CardDescription>
-              {totalLeadsWithIndustry} lead con settore assegnato
+              {t("leadsWithSector", { count: totalLeadsWithIndustry })}
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {leadsLoading ? <ChartSkeleton /> : industryData.length === 0 ? <EmptyChart message="Nessun settore assegnato" /> : (
+            {leadsLoading ? <ChartSkeleton /> : industryData.length === 0 ? <EmptyChart message={t("noSector")} /> : (
               <ChartContainer config={industryChartConfig} className="w-full h-[260px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -314,11 +311,11 @@ export default function ReportsPage() {
         {/* Pipeline per stage — colored bars */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Pipeline per Stage</CardTitle>
-            <CardDescription>Valore totale deal per fase di vendita</CardDescription>
+            <CardTitle className="text-base">{t("pipelinePerStage")}</CardTitle>
+            <CardDescription>{t("pipelineValueDesc")}</CardDescription>
           </CardHeader>
           <CardContent>
-            {dealsLoading ? <ChartSkeleton /> : stageData.length === 0 ? <EmptyChart /> : (
+            {dealsLoading ? <ChartSkeleton /> : stageData.length === 0 ? <EmptyChart message={t("noData")} /> : (
               <ChartContainer config={stageChartConfig} className="w-full h-[260px]">
                 <BarChart data={stageData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-muted/50" />
@@ -339,11 +336,11 @@ export default function ReportsPage() {
         {/* Score distribution — area chart with gradient */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Distribuzione Lead Score</CardTitle>
-            <CardDescription>Qualita del parco lead per fascia di punteggio</CardDescription>
+            <CardTitle className="text-base">{t("scoreDistribution")}</CardTitle>
+            <CardDescription>{t("scoreQuality")}</CardDescription>
           </CardHeader>
           <CardContent>
-            {leadsLoading ? <ChartSkeleton /> : (leads?.length ?? 0) === 0 ? <EmptyChart /> : (
+            {leadsLoading ? <ChartSkeleton /> : (leads?.length ?? 0) === 0 ? <EmptyChart message={t("noData")} /> : (
               <ChartContainer config={scoreChartConfig} className="w-full h-[260px]">
                 <AreaChart data={scoreData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
                   <defs>
@@ -375,4 +372,10 @@ export default function ReportsPage() {
       </div>
     </div>
   );
+}
+
+function formatEUR(value: number): string {
+  return new Intl.NumberFormat("it-IT", {
+    style: "currency", currency: "EUR", maximumFractionDigits: 0,
+  }).format(value);
 }

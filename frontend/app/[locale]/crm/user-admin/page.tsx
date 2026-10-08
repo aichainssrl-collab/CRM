@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -48,6 +49,7 @@ function getInitials(user: CRMUser): string {
 }
 
 export default function UserAdminPage() {
+  const t = useTranslations("userAdmin");
   const { data: users, isLoading } = useUsers();
   const updateUser = useUpdateUser();
   const createUser = useCreateUser();
@@ -87,12 +89,12 @@ export default function UserAdminPage() {
       {/* Header */}
       <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Gestione Utenti</h1>
-          <p className="text-sm text-muted-foreground">Accessi, ruoli e inviti al workspace</p>
+          <h1 className="text-2xl font-bold tracking-tight">{t("title")}</h1>
+          <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
         </div>
         <Button onClick={() => setAddOpen(true)} className="gap-2 self-start sm:self-auto">
           <Plus className="h-4 w-4" />
-          Aggiungi Utente
+          {t("addUser")}
         </Button>
       </div>
 
@@ -100,7 +102,7 @@ export default function UserAdminPage() {
       <div className="grid gap-4 sm:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Utenti Totali</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t("totalUsers")}</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -109,7 +111,7 @@ export default function UserAdminPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Admin Attivi</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t("activeAdmins")}</CardTitle>
             <ShieldCheck className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -118,7 +120,7 @@ export default function UserAdminPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Inviti in Attesa</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t("pendingInvites")}</CardTitle>
             <UserCheck className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -134,7 +136,7 @@ export default function UserAdminPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               className="pl-9"
-              placeholder="Cerca utenti..."
+              placeholder={t("searchUsers")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -145,10 +147,10 @@ export default function UserAdminPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Utente</TableHead>
-                <TableHead>Ruolo</TableHead>
-                <TableHead>Stato</TableHead>
-                <TableHead>Creato il</TableHead>
+                <TableHead>{t("user")}</TableHead>
+                <TableHead>{t("role")}</TableHead>
+                <TableHead>{t("status")}</TableHead>
+                <TableHead>{t("createdAt")}</TableHead>
                 <TableHead className="w-10" />
               </TableRow>
             </TableHeader>
@@ -191,11 +193,11 @@ export default function UserAdminPage() {
                         {user.isActive ? (
                           <Badge variant="secondary" className="gap-1.5 text-emerald-700 bg-emerald-50 border-emerald-200 hover:bg-emerald-50">
                             <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                            Attivo
+                            {t("active")}
                           </Badge>
                         ) : (
                           <Badge variant="secondary" className="text-amber-700 bg-amber-50 hover:bg-amber-50">
-                            Inattivo
+                            {t("inactive")}
                           </Badge>
                         )}
                       </TableCell>
@@ -209,14 +211,14 @@ export default function UserAdminPage() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={() => handleChangeRole(user.uid, user.role === "admin" ? "sales" : "admin")}>
-                              {user.role === "admin" ? "Imposta Sales" : "Imposta Admin"}
+                              {user.role === "admin" ? t("setSales") : t("setAdmin")}
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => handleChangeRole(user.uid, "readonly")}>
-                              Imposta Readonly
+                              {t("setReadonly")}
                             </DropdownMenuItem>
                             {user.isActive && (
                               <DropdownMenuItem variant="destructive" onClick={() => handleDeactivate(user.uid)}>
-                                Disattiva
+                                {t("deactivate")}
                               </DropdownMenuItem>
                             )}
                           </DropdownMenuContent>
@@ -230,7 +232,7 @@ export default function UserAdminPage() {
 
         <div className="px-4 py-3 border-t">
           <span className="text-xs text-muted-foreground">
-            {isLoading ? "Caricamento..." : `${filtered.length} di ${totalUsers} utenti`}
+            {isLoading ? t("loading") : t("userCount", { filtered: filtered.length, total: totalUsers })}
           </span>
         </div>
       </Card>
@@ -239,7 +241,7 @@ export default function UserAdminPage() {
       <Sheet open={addOpen} onOpenChange={setAddOpen}>
         <SheetContent className="sm:max-w-md">
           <SheetHeader>
-            <SheetTitle>Aggiungi Utente</SheetTitle>
+            <SheetTitle>{t("addUser")}</SheetTitle>
           </SheetHeader>
           <div className="flex flex-col gap-4 py-6">
             <div className="space-y-2">
@@ -252,7 +254,7 @@ export default function UserAdminPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="new-email">Email</Label>
+              <Label htmlFor="new-email">{t("email")}</Label>
               <Input
                 id="new-email"
                 placeholder="user@example.com"
@@ -262,7 +264,7 @@ export default function UserAdminPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="new-name">Nome completo</Label>
+              <Label htmlFor="new-name">{t("fullName")}</Label>
               <Input
                 id="new-name"
                 placeholder="Mario Rossi"
@@ -271,10 +273,10 @@ export default function UserAdminPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="new-role">Ruolo</Label>
+              <Label htmlFor="new-role">{t("role")}</Label>
               <Select value={newUser.role} onValueChange={(v) => setNewUser((p) => ({ ...p, role: v ?? p.role }))}>
                 <SelectTrigger id="new-role">
-                  <SelectValue placeholder="Seleziona ruolo" />
+                  <SelectValue placeholder={t("selectRole")} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="admin">Admin</SelectItem>
@@ -287,7 +289,7 @@ export default function UserAdminPage() {
           <SheetFooter>
             <Button variant="outline" onClick={() => setAddOpen(false)}>Annulla</Button>
             <Button onClick={handleCreateUser} disabled={createUser.isPending}>
-              {createUser.isPending ? "Creazione..." : "Crea Utente"}
+              {createUser.isPending ? t("creating") : t("createUser")}
             </Button>
           </SheetFooter>
         </SheetContent>

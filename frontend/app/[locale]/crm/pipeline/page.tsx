@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { useDeals, useCreateDeal } from "@/hooks/useDeals";
 import { useLeads } from "@/hooks/useLeads";
 import { KanbanBoard } from "@/components/crm/KanbanBoard";
@@ -34,6 +35,7 @@ function formatCurrency(value: number) {
 }
 
 export default function PipelinePage() {
+  const t = useTranslations("pipeline");
   const { data: deals, isLoading } = useDeals();
   const { mutateAsync: createDeal } = useCreateDeal();
   const { data: leads = [] } = useLeads();
@@ -47,7 +49,7 @@ export default function PipelinePage() {
   async function handleCreate(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!selectedLeadId) {
-      toast.error("Seleziona un lead");
+      toast.error(t("selectLeadError"));
       return;
     }
     setSubmitting(true);
@@ -63,10 +65,10 @@ export default function PipelinePage() {
       setSheetOpen(false);
       setSelectedLeadId("");
       setSelectedStage("new");
-      toast.success("Deal creato");
+      toast.success(t("dealCreated"));
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      toast.error("Errore durante la creazione del deal", { description: msg });
+      toast.error(t("createError"), { description: msg });
     } finally {
       setSubmitting(false);
     }
@@ -76,16 +78,16 @@ export default function PipelinePage() {
     <div className="flex flex-1 flex-col overflow-hidden p-6 gap-4">
       <div className="flex items-center justify-between shrink-0">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Deals Pipeline</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{t("title")}</h1>
           {!isLoading && deals && (
             <p className="text-sm text-muted-foreground mt-0.5">
-              {deals.length} deal{deals.length !== 1 ? "s" : ""} · {formatCurrency(totalValue)} totale
+              {t("deals", { count: deals.length })} · {formatCurrency(totalValue)} {t("total")}
             </p>
           )}
         </div>
         <Button onClick={() => setSheetOpen(true)} className="gap-2">
           <Plus className="h-4 w-4" />
-          Nuovo Deal
+          {t("newDeal")}
         </Button>
       </div>
 
@@ -108,15 +110,15 @@ export default function PipelinePage() {
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
         <SheetContent className="sm:max-w-md">
           <SheetHeader>
-            <SheetTitle>Nuovo Deal</SheetTitle>
-            <SheetDescription>Crea una nuova opportunità commerciale.</SheetDescription>
+            <SheetTitle>{t("formTitle")}</SheetTitle>
+            <SheetDescription>{t("formDesc")}</SheetDescription>
           </SheetHeader>
           <form onSubmit={handleCreate} className="space-y-4 py-6">
             <div className="space-y-2">
-              <Label>Lead *</Label>
+              <Label>{t("selectLeadLabel")}</Label>
               <Select value={selectedLeadId} onValueChange={(v) => setSelectedLeadId(v ?? "")} required>
                 <SelectTrigger>
-                  <SelectValue placeholder="Seleziona un lead..." />
+                  <SelectValue placeholder={t("selectLead")} />
                 </SelectTrigger>
                 <SelectContent>
                   {leads.map(l => (
@@ -129,15 +131,15 @@ export default function PipelinePage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="title">Titolo *</Label>
+              <Label htmlFor="title">{t("titleRequired")}</Label>
               <Input id="title" name="title" required />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="value">Valore (€)</Label>
+              <Label htmlFor="value">{t("value")}</Label>
               <Input id="value" name="value" type="number" min={0} step={100} placeholder="0" />
             </div>
             <div className="space-y-2">
-              <Label>Stage *</Label>
+              <Label>{t("stageRequired")}</Label>
               <Select value={selectedStage} onValueChange={(v) => setSelectedStage(v ?? "new")} required>
                 <SelectTrigger>
                   <SelectValue />
@@ -150,7 +152,7 @@ export default function PipelinePage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="probability">Probabilità (0–100)</Label>
+              <Label htmlFor="probability">{t("probability")}</Label>
               <Input id="probability" name="probability" type="number" min={0} max={100} step={5} placeholder="0" />
             </div>
             <SheetFooter className="mt-6">
@@ -158,7 +160,7 @@ export default function PipelinePage() {
                 Annulla
               </Button>
               <Button type="submit" disabled={submitting}>
-                {submitting ? "Salvataggio..." : "Crea Deal"}
+                {submitting ? "Salvataggio..." : t("formTitle")}
               </Button>
             </SheetFooter>
           </form>
