@@ -5,7 +5,7 @@ import { useLocale } from "next-intl";
 import { Draggable } from "@hello-pangea/dnd";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { DollarSign, Calendar } from "lucide-react";
+import { Euro, Calendar } from "lucide-react";
 
 export function KanbanCard({ deal, index }: { deal: Deal, index: number }) {
   const locale = useLocale();
@@ -26,7 +26,7 @@ export function KanbanCard({ deal, index }: { deal: Deal, index: number }) {
               <div className="flex flex-col gap-1.5 mt-2">
                 {deal.value !== undefined && (
                   <div className="flex items-center text-xs text-muted-foreground">
-                    <DollarSign className="h-3 w-3 mr-1" />
+                    <Euro className="h-3 w-3 mr-1" />
                     {new Intl.NumberFormat(locale === "it" ? "it-IT" : "en-US", { style: "currency", currency: "EUR" }).format(deal.value)}
                   </div>
                 )}

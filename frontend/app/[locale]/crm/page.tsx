@@ -6,7 +6,6 @@ import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Area, AreaChart, CartesianGrid, XAxis, ResponsiveContainer, YAxis } from "recharts";
 import {
   ChartConfig,
@@ -18,10 +17,8 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDashboardMetrics } from "@/hooks/useDashboard";
 import { useLeads } from "@/hooks/useLeads";
 import { useDeals } from "@/hooks/useDeals";
+import { KpiCard } from "@/components/crm/KpiCard";
 import {
-  TrendingUp,
-  TrendingDown,
-  Minus,
   Users,
   Briefcase,
   Euro,
@@ -44,60 +41,10 @@ function formatEUR(value: number) {
   }).format(value);
 }
 
-function TrendIcon({ value }: { value?: number }) {
-  if (value === undefined) return <Minus className="h-3 w-3 text-muted-foreground" />;
-  if (value > 0) return <TrendingUp className="h-3 w-3 text-emerald-500" />;
-  if (value < 0) return <TrendingDown className="h-3 w-3 text-destructive" />;
-  return <Minus className="h-3 w-3 text-muted-foreground" />;
-}
-
-function KpiCard({
-  title,
-  value,
-  trend,
-  icon: Icon,
-  loading,
-  accent,
-}: {
-  title: string;
-  value: string;
-  trend?: number;
-  icon: React.ElementType;
-  loading: boolean;
-  accent?: string;
-}) {
-  return (
-    <Card className="group relative overflow-hidden transition-shadow duration-200 hover:shadow-md hover:shadow-primary/5">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-[13px] font-medium text-muted-foreground">{title}</CardTitle>
-        <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${accent ?? "bg-primary/8 text-primary"}`}>
-          <Icon className="h-4 w-4" />
-        </div>
-      </CardHeader>
-      <CardContent>
-        {loading ? (
-          <Skeleton className="h-8 w-28 mb-1" />
-        ) : (
-          <div className="text-2xl font-bold tracking-tight">{value}</div>
-        )}
-        {trend !== undefined && !loading && (
-          <p className="flex items-center gap-1 text-xs text-muted-foreground mt-1.5">
-            <TrendIcon value={trend} />
-            <span className={trend > 0 ? "text-emerald-600 font-medium" : trend < 0 ? "text-destructive font-medium" : ""}>
-              {trend > 0 ? "+" : ""}{trend}%
-            </span>
-            <span>vs mese precedente</span>
-          </p>
-        )}
-      </CardContent>
-      <div className={`absolute bottom-0 left-0 h-0.5 w-full opacity-0 transition-opacity duration-200 group-hover:opacity-100 ${accent ?? "bg-primary"}`} />
-    </Card>
-  );
-}
-
 export default function DashboardPage() {
   const t = useTranslations("dashboard");
   const tTime = useTranslations("timeRanges");
+  const tCommon = useTranslations("common");
   const [timeRange, setTimeRange] = useState("30d");
   const { data: metrics, isLoading } = useDashboardMetrics(timeRange);
   const { data: leads = [] } = useLeads({});
@@ -159,33 +106,37 @@ export default function DashboardPage() {
           title={t("pipelineValue")}
           value={isLoading || !metrics ? "—" : formatEUR(metrics.pipelineValue)}
           trend={12}
+          trendLabel={tCommon("vsPreviousMonth")}
           icon={Euro}
           loading={isLoading}
-          accent="bg-emerald-500/10 text-emerald-600"
+          accent="bg-success-muted text-success"
         />
         <KpiCard
           title={t("activeDeals")}
           value={isLoading || !metrics ? "—" : String(metrics.activeDeals)}
           trend={4}
+          trendLabel={tCommon("vsPreviousMonth")}
           icon={Briefcase}
           loading={isLoading}
-          accent="bg-blue-500/10 text-blue-600"
+          accent="bg-info-muted text-info"
         />
         <KpiCard
           title={t("conversionRate")}
           value={isLoading || !metrics ? "—" : `${metrics.conversionRate}%`}
           trend={-2}
+          trendLabel={tCommon("vsPreviousMonth")}
           icon={Target}
           loading={isLoading}
-          accent="bg-amber-500/10 text-amber-600"
+          accent="bg-warning-muted text-warning"
         />
         <KpiCard
           title={t("newLeads")}
           value={isLoading || !metrics ? "—" : String(metrics.newLeads ?? leads.length)}
           trend={8}
+          trendLabel={tCommon("vsPreviousMonth")}
           icon={Users}
           loading={isLoading}
-          accent="bg-violet-500/10 text-violet-600"
+          accent="bg-status-proposal-muted text-status-proposal"
         />
       </div>
 
@@ -202,7 +153,7 @@ export default function DashboardPage() {
               <div className="flex flex-col items-center justify-center h-[280px] gap-2 text-muted-foreground">
                 <Euro className="h-8 w-8 text-muted-foreground/30" />
                 <p className="text-sm">{t("noDealsChart")}</p>
-                <Button variant="outline" size="sm" render={<Link href="/crm/pipeline" />} className="mt-1">
+                <Button variant="outline" size="sm" nativeButton={false} render={<Link href="/crm/pipeline" />} className="mt-1">
                   {t("goToPipeline")}
                 </Button>
               </div>
@@ -300,7 +251,7 @@ export default function DashboardPage() {
             <p className="text-sm text-muted-foreground">
               {t("activityEmpty")}
             </p>
-            <Button variant="outline" size="sm" render={<Link href="/crm/leads" />}>
+            <Button variant="outline" size="sm" nativeButton={false} render={<Link href="/crm/leads" />}>
               {t("goToLeads")}
             </Button>
           </div>

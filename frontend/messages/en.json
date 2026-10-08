@@ -95,6 +95,8 @@
   "leads": {
     "title": "Leads",
     "subtitle": "Manage and monitor your business contacts",
+    "of": "of",
+    "search": "Search leads...",
     "newLead": "New Lead",
     "importCsv": "Import",
     "deleteSelected": "Delete",
@@ -163,6 +165,13 @@
     "consentAudit": "Consent Audit Trail",
     "addActivity": "Add activity"
   },
+  "leadFilters": {
+    "allStatuses": "All Statuses",
+    "anyScore": "Any Score",
+    "highScore": "High (>80)",
+    "mediumScore": "Medium (50-79)",
+    "lowScore": "Low (<50)"
+  },
   "leadForm": {
     "editLead": "Edit Lead",
     "addLead": "New Lead",
@@ -173,7 +182,8 @@
     "lastName": "Last Name",
     "company": "Company",
     "phone": "Phone",
-    "saveError": "Error saving lead"
+    "saveError": "Error saving lead",
+    "selectLead": "Select lead"
   },
   "csvImport": {
     "title": "Import Leads",
@@ -212,6 +222,12 @@
     "dealCreated": "Deal created",
     "createError": "Error creating deal",
     "selectLeadError": "Select a lead"
+  },
+  "taskItem": {
+    "assignedTo": "Assigned to",
+    "markComplete": "Mark as complete",
+    "markIncomplete": "Mark as incomplete",
+    "deleteTask": "Delete task"
   },
   "tasks": {
     "title": "Tasks",
@@ -298,7 +314,8 @@
     "avatarRemoveError": "Error removing avatar.",
     "avatarTooLarge": "File exceeds 1MB.",
     "comingSoon": "This section will be available soon.",
-    "comingSoonDetail": "Coming in future versions."
+    "comingSoonDetail": "Coming in future versions.",
+    "saving": "Saving..."
   },
   "userAdmin": {
     "title": "User Management",

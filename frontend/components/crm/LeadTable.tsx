@@ -100,7 +100,7 @@ export function LeadTable({ leads, isLoading, selectedIds, onToggleSelect, onTog
               </TableCell>
               <TableCell>
                 {lead.industry ? (
-                  <span className="inline-flex items-center rounded-md bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                  <span className="inline-flex items-center rounded-md bg-info-muted px-2 py-0.5 text-xs font-medium text-info">
                     {lead.industry}
                   </span>
                 ) : (
@@ -118,8 +118,10 @@ export function LeadTable({ leads, isLoading, selectedIds, onToggleSelect, onTog
               </TableCell>
               <TableCell>
                 <DropdownMenu>
-                  <DropdownMenuTrigger className="h-8 w-8 p-0 outline-none focus:ring-2 focus:ring-primary rounded-md flex items-center justify-center">
-                    <span className="sr-only">{tCommon("actions")}</span>
+                  <DropdownMenuTrigger
+                    className="h-8 w-8 p-0 outline-none focus:ring-2 focus:ring-primary rounded-md flex items-center justify-center hover:bg-muted transition-colors"
+                    aria-label={tCommon("actions")}
+                  >
                     <MoreHorizontal className="h-4 w-4" />
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">

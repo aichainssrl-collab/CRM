@@ -21,6 +21,7 @@ import { useLeads } from "@/hooks/useLeads";
 import { useDeals } from "@/hooks/useDeals";
 import { Users, Briefcase, Target, UserPlus, BarChart3 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { KpiCard } from "@/components/crm/KpiCard";
 
 // ── Source label mapping ──────────────────────────────────────
 const SOURCE_LABELS: Record<string, string> = {
@@ -92,27 +93,6 @@ function EmptyChart({ message }: { message?: string }) {
       <BarChart3 className="h-8 w-8 text-muted-foreground/30" />
       <p className="text-sm text-muted-foreground/60">{message}</p>
     </div>
-  );
-}
-
-function KpiCard({
-  title, value, icon: Icon, loading, accent,
-}: {
-  title: string; value: string; icon: React.ElementType; loading: boolean; accent?: string;
-}) {
-  return (
-    <Card className="group relative overflow-hidden transition-shadow duration-200 hover:shadow-md hover:shadow-primary/5">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-[13px] font-medium text-muted-foreground">{title}</CardTitle>
-        <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${accent ?? "bg-primary/8 text-primary"}`}>
-          <Icon className="h-4 w-4" />
-        </div>
-      </CardHeader>
-      <CardContent>
-        {loading ? <Skeleton className="h-8 w-24" /> : <div className="text-2xl font-bold tracking-tight">{value}</div>}
-      </CardContent>
-      <div className={`absolute bottom-0 left-0 h-0.5 w-full opacity-0 transition-opacity duration-200 group-hover:opacity-100 ${accent ?? "bg-primary"}`} />
-    </Card>
   );
 }
 
@@ -235,10 +215,10 @@ export default function ReportsPage() {
 
       {/* KPI Cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <KpiCard title={t("totalLeads")} value={dash(metrics?.totalLeads)} icon={Users} loading={metricsLoading} accent="bg-violet-500/10 text-violet-600" />
-        <KpiCard title={t("newLeads")} value={dash(metrics?.newLeads)} icon={UserPlus} loading={metricsLoading} accent="bg-blue-500/10 text-blue-600" />
-        <KpiCard title={t("activeDeals")} value={dash(metrics?.activeDeals)} icon={Briefcase} loading={metricsLoading} accent="bg-emerald-500/10 text-emerald-600" />
-        <KpiCard title={t("conversionRate")} value={metricsLoading || metrics?.conversionRate === undefined ? "\u2014" : `${metrics.conversionRate}%`} icon={Target} loading={metricsLoading} accent="bg-amber-500/10 text-amber-600" />
+        <KpiCard title={t("totalLeads")} value={dash(metrics?.totalLeads)} icon={Users} loading={metricsLoading} accent="bg-status-proposal-muted text-status-proposal" />
+        <KpiCard title={t("newLeads")} value={dash(metrics?.newLeads)} icon={UserPlus} loading={metricsLoading} accent="bg-info-muted text-info" />
+        <KpiCard title={t("activeDeals")} value={dash(metrics?.activeDeals)} icon={Briefcase} loading={metricsLoading} accent="bg-success-muted text-success" />
+        <KpiCard title={t("conversionRate")} value={metricsLoading || metrics?.conversionRate === undefined ? "\u2014" : `${metrics.conversionRate}%`} icon={Target} loading={metricsLoading} accent="bg-warning-muted text-warning" />
       </div>
 
       {/* Row 1: Source + Industry */}

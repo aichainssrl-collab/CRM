@@ -95,11 +95,13 @@
   "leads": {
     "title": "Leads",
     "subtitle": "Gestisci e monitora i tuoi contatti commerciali",
+    "of": "di",
+    "search": "Cerca lead...",
     "newLead": "Nuovo Lead",
     "importCsv": "Importa",
     "deleteSelected": "Elimina",
-    "noLeads": "No leads found",
-    "noLeadsDesc": "Adjust your filters or add a new lead.",
+    "noLeads": "Nessun lead trovato",
+    "noLeadsDesc": "Modifica i filtri o aggiungi un nuovo lead.",
     "name": "Nome",
     "email": "Email",
     "company": "Azienda",
@@ -154,14 +156,21 @@
     "tags": "Tag & Specializzazioni",
     "assignedTo": "Assegnato a:",
     "unassigned": "Non assegnato",
-    "activity": "Activity",
-    "tasks": "Tasks",
+    "activity": "Attività",
+    "tasks": "Task",
     "gdpr": "GDPR",
-    "timeline": "Timeline",
-    "addTask": "Add Task",
-    "taskCount": "Tasks ({count})",
-    "consentAudit": "Consent Audit Trail",
+    "timeline": "Cronologia",
+    "addTask": "Aggiungi Task",
+    "taskCount": "Task ({count})",
+    "consentAudit": "Registro Consensi",
     "addActivity": "Aggiungi attività"
+  },
+  "leadFilters": {
+    "allStatuses": "Tutti gli stati",
+    "anyScore": "Qualsiasi score",
+    "highScore": "Alto (>80)",
+    "mediumScore": "Medio (50-79)",
+    "lowScore": "Basso (<50)"
   },
   "leadForm": {
     "editLead": "Modifica Lead",
@@ -173,7 +182,8 @@
     "lastName": "Cognome",
     "company": "Azienda",
     "phone": "Telefono",
-    "saveError": "Errore durante il salvataggio del lead"
+    "saveError": "Errore durante il salvataggio del lead",
+    "selectLead": "Seleziona lead"
   },
   "csvImport": {
     "title": "Importa Lead",
@@ -212,6 +222,12 @@
     "dealCreated": "Deal creato",
     "createError": "Errore durante la creazione del deal",
     "selectLeadError": "Seleziona un lead"
+  },
+  "taskItem": {
+    "assignedTo": "Assegnato a",
+    "markComplete": "Segna come completato",
+    "markIncomplete": "Segna come non completato",
+    "deleteTask": "Elimina task"
   },
   "tasks": {
     "title": "Tasks",
@@ -298,7 +314,8 @@
     "avatarRemoveError": "Errore nella rimozione dell'avatar.",
     "avatarTooLarge": "Il file supera 1MB.",
     "comingSoon": "Questa sezione sarà disponibile prossimamente.",
-    "comingSoonDetail": "In arrivo nelle prossime versioni."
+    "comingSoonDetail": "In arrivo nelle prossime versioni.",
+    "saving": "Salvataggio..."
   },
   "userAdmin": {
     "title": "Gestione Utenti",

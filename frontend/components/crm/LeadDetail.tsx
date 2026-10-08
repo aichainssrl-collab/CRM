@@ -29,7 +29,7 @@ function EnrichmentBadge({ enrichedAt, source }: { enrichedAt?: string; source?:
         <TooltipTrigger>
           <Badge
             variant="secondary"
-            className="gap-1 text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-200"
+            className="gap-1 text-[10px] text-success bg-success-muted border border-success/20"
           >
             <CheckCircle2 className="h-3 w-3" />
             {t("enriched")}
@@ -210,7 +210,7 @@ export function LeadDetail({ lead }: { lead: Lead }) {
                   <span className="text-[11px] text-muted-foreground uppercase tracking-wide block">
                     {t("privacyPolicy")}
                   </span>
-                  <span className={hasPrivacy ? "text-emerald-600 text-sm" : "text-orange-500 text-sm"}>
+                  <span className={hasPrivacy ? "text-success text-sm" : "text-warning text-sm"}>
                     {hasPrivacy ? t("present") : t("notDetected")}
                   </span>
                 </div>

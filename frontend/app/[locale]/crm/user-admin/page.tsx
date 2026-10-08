@@ -191,12 +191,12 @@ export default function UserAdminPage() {
                       </TableCell>
                       <TableCell>
                         {user.isActive ? (
-                          <Badge variant="secondary" className="gap-1.5 text-emerald-700 bg-emerald-50 border-emerald-200 hover:bg-emerald-50">
-                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                          <Badge variant="secondary" className="gap-1.5 text-success bg-success-muted border-success/20 hover:bg-success-muted">
+                            <span className="h-1.5 w-1.5 rounded-full bg-success" />
                             {t("active")}
                           </Badge>
                         ) : (
-                          <Badge variant="secondary" className="text-amber-700 bg-amber-50 hover:bg-amber-50">
+                          <Badge variant="secondary" className="text-warning bg-warning-muted hover:bg-warning-muted">
                             {t("inactive")}
                           </Badge>
                         )}

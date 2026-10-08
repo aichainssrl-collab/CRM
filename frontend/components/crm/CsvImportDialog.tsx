@@ -67,9 +67,9 @@ export function CsvImportDialog({ open, onOpenChange }: CsvImportDialogProps) {
           {file ? (
             <div className="flex items-center gap-2 text-sm">
               {isExcel ? (
-                <FileSpreadsheet className="h-5 w-5 text-emerald-500" />
+                <FileSpreadsheet className="h-5 w-5 text-success" />
               ) : (
-                <FileText className="h-5 w-5 text-blue-500" />
+                <FileText className="h-5 w-5 text-info" />
               )}
               <span className="font-medium">{file.name}</span>
               <span className="text-muted-foreground">({(file.size / 1024).toFixed(0)} KB)</span>

@@ -6,6 +6,7 @@ import { Lead } from "@/hooks/useLeads";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from "@/components/ui/sheet";
 
 interface LeadFormProps {
@@ -24,7 +25,7 @@ export function LeadForm({ open, onOpenChange, lead, onSubmit }: LeadFormProps) 
     e.preventDefault();
     setLoading(true);
     const formData = new FormData(e.currentTarget);
-    
+
     try {
       if (lead) {
         const updateData = {
@@ -64,38 +65,38 @@ export function LeadForm({ open, onOpenChange, lead, onSubmit }: LeadFormProps) 
             {lead ? t("editDesc") : t("addDesc")}
           </SheetDescription>
         </SheetHeader>
-        
+
         <form onSubmit={handleSubmit} className="space-y-6 py-6">
           <div className="space-y-2">
-            <label htmlFor="email" className="text-sm font-medium">{t("emailRequired")}</label>
-            <Input 
-              id="email" 
-              name="email" 
-              type="email" 
-              required 
-              defaultValue={lead?.email} 
+            <Label htmlFor="email">{t("emailRequired")}</Label>
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              required
+              defaultValue={lead?.email}
               disabled={!!lead}
             />
           </div>
-          
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label htmlFor="firstName" className="text-sm font-medium">{t("firstName")}</label>
+              <Label htmlFor="firstName">{t("firstName")}</Label>
               <Input id="firstName" name="firstName" defaultValue={lead?.firstName} />
             </div>
             <div className="space-y-2">
-              <label htmlFor="lastName" className="text-sm font-medium">{t("lastName")}</label>
+              <Label htmlFor="lastName">{t("lastName")}</Label>
               <Input id="lastName" name="lastName" defaultValue={lead?.lastName} />
             </div>
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="companyName" className="text-sm font-medium">{t("company")}</label>
+            <Label htmlFor="companyName">{t("company")}</Label>
             <Input id="companyName" name="companyName" defaultValue={lead?.companyName} />
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="phone" className="text-sm font-medium">{t("phone")}</label>
+            <Label htmlFor="phone">{t("phone")}</Label>
             <Input id="phone" name="phone" type="tel" defaultValue={lead?.phone} />
           </div>
 

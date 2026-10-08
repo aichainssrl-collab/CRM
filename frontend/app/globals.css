@@ -56,7 +56,8 @@
     --muted-foreground: oklch(0.52 0.018 264);    /* slate-500 with blue hue */
     --accent: oklch(0.95 0.022 264);              /* Charter light-blue section bg */
     --accent-foreground: oklch(0.338 0.189 264);
-    --destructive: oklch(0.577 0.245 27.325);
+    --destructive: oklch(0.55 0.22 25);           /* refined red — richer, less harsh */
+    --destructive-foreground: oklch(0.985 0 0);   /* white on destructive */
     --border: oklch(0.913 0.012 264);             /* #e1e7f4 — subtle blue border */
     --input: oklch(0.913 0.012 264);
     --ring: oklch(0.338 0.189 264);
@@ -67,6 +68,20 @@
     --chart-4: oklch(0.714 0.110 264);
     --chart-5: oklch(0.824 0.065 264);
     --radius: 0.5rem;
+    /* Semantic status colors — harmonized with Charter navy palette */
+    --success: oklch(0.45 0.14 155);              /* muted emerald */
+    --success-foreground: oklch(0.98 0 0);
+    --success-muted: oklch(0.94 0.03 155);        /* pale green tint */
+    --warning: oklch(0.55 0.15 75);               /* warm amber */
+    --warning-foreground: oklch(0.98 0 0);
+    --warning-muted: oklch(0.95 0.03 75);         /* pale amber tint */
+    --info: oklch(0.52 0.17 240);                  /* crisp blue — fresh, not muddy */
+    --info-foreground: oklch(0.98 0 0);
+    --info-muted: oklch(0.95 0.04 240);            /* light blue wash */
+    --status-proposal: oklch(0.45 0.15 300);      /* muted violet */
+    --status-proposal-muted: oklch(0.94 0.03 300);
+    --status-qualified: oklch(0.42 0.14 270);     /* indigo-navy */
+    --status-qualified-muted: oklch(0.93 0.03 270);
     /* Sidebar — white, navy accent */
     --sidebar: oklch(1 0 0);
     --sidebar-foreground: oklch(0.13 0.025 264);
@@ -93,7 +108,8 @@
     --muted-foreground: oklch(0.672 0.020 264);
     --accent: oklch(0.248 0.042 264);
     --accent-foreground: oklch(0.97 0.005 264);
-    --destructive: oklch(0.704 0.191 22.216);
+    --destructive: oklch(0.65 0.20 22);           /* dark-mode red — visible but not searing */
+    --destructive-foreground: oklch(0.985 0 0);
     --border: oklch(1 0 0 / 10%);
     --input: oklch(1 0 0 / 15%);
     --ring: oklch(0.488 0.178 264);
@@ -110,6 +126,20 @@
     --sidebar-accent-foreground: oklch(0.97 0.005 264);
     --sidebar-border: oklch(1 0 0 / 10%);
     --sidebar-ring: oklch(0.488 0.178 264);
+    /* Dark semantic status colors */
+    --success: oklch(0.55 0.14 155);
+    --success-foreground: oklch(0.98 0 0);
+    --success-muted: oklch(0.22 0.04 155);
+    --warning: oklch(0.65 0.14 75);
+    --warning-foreground: oklch(0.98 0 0);
+    --warning-muted: oklch(0.22 0.04 75);
+    --info: oklch(0.62 0.17 240);
+    --info-foreground: oklch(0.98 0 0);
+    --info-muted: oklch(0.22 0.05 240);
+    --status-proposal: oklch(0.55 0.15 300);
+    --status-proposal-muted: oklch(0.22 0.04 300);
+    --status-qualified: oklch(0.52 0.14 270);
+    --status-qualified-muted: oklch(0.22 0.04 270);
   }
 
   * {

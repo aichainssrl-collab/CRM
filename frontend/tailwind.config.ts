@@ -38,6 +38,30 @@ const config: Config = {
         },
         destructive: {
           DEFAULT: "var(--destructive)",
+          foreground: "var(--destructive-foreground)",
+        },
+        success: {
+          DEFAULT: "var(--success)",
+          foreground: "var(--success-foreground)",
+          muted: "var(--success-muted)",
+        },
+        warning: {
+          DEFAULT: "var(--warning)",
+          foreground: "var(--warning-foreground)",
+          muted: "var(--warning-muted)",
+        },
+        info: {
+          DEFAULT: "var(--info)",
+          foreground: "var(--info-foreground)",
+          muted: "var(--info-muted)",
+        },
+        "status-proposal": {
+          DEFAULT: "var(--status-proposal)",
+          muted: "var(--status-proposal-muted)",
+        },
+        "status-qualified": {
+          DEFAULT: "var(--status-qualified)",
+          muted: "var(--status-qualified-muted)",
         },
         border: "var(--border)",
         input: "var(--input)",
