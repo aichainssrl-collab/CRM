@@ -1,21 +1,23 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Deal } from "@/hooks/useDeals";
 import { KanbanColumn } from "@/components/crm/KanbanColumn";
 import { DragDropContext, DropResult } from "@hello-pangea/dnd";
 import { useUpdateDeal } from "@/hooks/useDeals";
 
-const STAGES = [
-  { id: "new", title: "New" },
-  { id: "contacted", title: "Contacted" },
-  { id: "qualified", title: "Qualified" },
-  { id: "proposal", title: "Proposal" },
-  { id: "won", title: "Won" },
-  { id: "lost", title: "Lost" },
-];
-
 export function KanbanBoard({ deals }: { deals: Deal[] }) {
+  const t = useTranslations("pipeline.stages");
   const { mutate: updateDeal } = useUpdateDeal();
+
+  const STAGES = [
+    { id: "new", title: t("new") },
+    { id: "contacted", title: t("contacted") },
+    { id: "qualified", title: t("qualified") },
+    { id: "proposal", title: t("proposal") },
+    { id: "won", title: t("won") },
+    { id: "lost", title: t("lost") },
+  ];
 
   const handleDragEnd = (result: DropResult) => {
     if (!result.destination) return;

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Lead } from "@/hooks/useLeads";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,8 @@ interface LeadFormProps {
 }
 
 export function LeadForm({ open, onOpenChange, lead, onSubmit }: LeadFormProps) {
+  const t = useTranslations("leadForm");
+  const tCommon = useTranslations("common");
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -24,7 +27,6 @@ export function LeadForm({ open, onOpenChange, lead, onSubmit }: LeadFormProps) 
     
     try {
       if (lead) {
-        // Edit mode: backend LeadUpdate schema doesn't accept email or pipelineStage
         const updateData = {
           firstName: formData.get("firstName") as string,
           lastName: formData.get("lastName") as string,
@@ -33,7 +35,6 @@ export function LeadForm({ open, onOpenChange, lead, onSubmit }: LeadFormProps) 
         };
         await onSubmit(updateData);
       } else {
-        // Create mode: needs email and pipelineStage
         const createData = {
           email: formData.get("email") as string,
           firstName: formData.get("firstName") as string,
@@ -48,7 +49,7 @@ export function LeadForm({ open, onOpenChange, lead, onSubmit }: LeadFormProps) 
       onOpenChange(false);
     } catch (error) {
       console.error(error);
-      toast.error("Errore durante il salvataggio del lead");
+      toast.error(t("saveError"));
     } finally {
       setLoading(false);
     }
@@ -58,15 +59,15 @@ export function LeadForm({ open, onOpenChange, lead, onSubmit }: LeadFormProps) 
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="sm:max-w-md overflow-y-auto">
         <SheetHeader>
-          <SheetTitle>{lead ? "Edit Lead" : "Add New Lead"}</SheetTitle>
+          <SheetTitle>{lead ? t("editLead") : t("addLead")}</SheetTitle>
           <SheetDescription>
-            {lead ? "Update lead details below." : "Fill in the details to create a new lead."}
+            {lead ? t("editDesc") : t("addDesc")}
           </SheetDescription>
         </SheetHeader>
         
         <form onSubmit={handleSubmit} className="space-y-6 py-6">
           <div className="space-y-2">
-            <label htmlFor="email" className="text-sm font-medium">Email *</label>
+            <label htmlFor="email" className="text-sm font-medium">{t("emailRequired")}</label>
             <Input 
               id="email" 
               name="email" 
@@ -79,31 +80,31 @@ export function LeadForm({ open, onOpenChange, lead, onSubmit }: LeadFormProps) 
           
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label htmlFor="firstName" className="text-sm font-medium">First Name</label>
+              <label htmlFor="firstName" className="text-sm font-medium">{t("firstName")}</label>
               <Input id="firstName" name="firstName" defaultValue={lead?.firstName} />
             </div>
             <div className="space-y-2">
-              <label htmlFor="lastName" className="text-sm font-medium">Last Name</label>
+              <label htmlFor="lastName" className="text-sm font-medium">{t("lastName")}</label>
               <Input id="lastName" name="lastName" defaultValue={lead?.lastName} />
             </div>
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="companyName" className="text-sm font-medium">Company</label>
+            <label htmlFor="companyName" className="text-sm font-medium">{t("company")}</label>
             <Input id="companyName" name="companyName" defaultValue={lead?.companyName} />
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="phone" className="text-sm font-medium">Phone</label>
+            <label htmlFor="phone" className="text-sm font-medium">{t("phone")}</label>
             <Input id="phone" name="phone" type="tel" defaultValue={lead?.phone} />
           </div>
 
           <SheetFooter className="mt-6">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
+              {tCommon("cancel")}
             </Button>
             <Button type="submit" disabled={loading}>
-              {loading ? "Saving..." : "Save"}
+              {loading ? tCommon("saving") : tCommon("save")}
             </Button>
           </SheetFooter>
         </form>

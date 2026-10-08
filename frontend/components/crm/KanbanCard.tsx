@@ -1,12 +1,15 @@
 "use client";
 
 import { Deal } from "@/hooks/useDeals";
+import { useLocale } from "next-intl";
 import { Draggable } from "@hello-pangea/dnd";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { DollarSign, Calendar } from "lucide-react";
 
 export function KanbanCard({ deal, index }: { deal: Deal, index: number }) {
+  const locale = useLocale();
+
   return (
     <Draggable draggableId={deal.id} index={index}>
       {(provided, snapshot) => (
@@ -24,13 +27,13 @@ export function KanbanCard({ deal, index }: { deal: Deal, index: number }) {
                 {deal.value !== undefined && (
                   <div className="flex items-center text-xs text-muted-foreground">
                     <DollarSign className="h-3 w-3 mr-1" />
-                    {new Intl.NumberFormat("en-US", { style: "currency", currency: "EUR" }).format(deal.value)}
+                    {new Intl.NumberFormat(locale === "it" ? "it-IT" : "en-US", { style: "currency", currency: "EUR" }).format(deal.value)}
                   </div>
                 )}
                 {deal.expectedClose && (
                   <div className="flex items-center text-xs text-muted-foreground">
                     <Calendar className="h-3 w-3 mr-1" />
-                    {new Date(deal.expectedClose).toLocaleDateString()}
+                    {new Date(deal.expectedClose).toLocaleDateString(locale === "it" ? "it-IT" : "en-US")}
                   </div>
                 )}
                 <div className="mt-2 flex items-center justify-between">
