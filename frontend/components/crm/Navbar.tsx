@@ -80,7 +80,7 @@ export function Navbar() {
       <div className="flex items-center gap-1.5">
         <Button variant="ghost" size="icon" className="relative h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-all">
           <Bell className="h-4 w-4" />
-          <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-rose-500 ring-2 ring-card" />
+          <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-destructive ring-2 ring-card" />
           <span className="sr-only">{tNav("notifications")}</span>
         </Button>
       </div>

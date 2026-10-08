@@ -3,6 +3,9 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { CheckCircle } from "lucide-react";
 
 export default function PlaybookForm() {
   const [loading, setLoading] = useState(false);
@@ -48,7 +51,7 @@ export default function PlaybookForm() {
   if (success) {
     return (
       <div className="text-center py-8">
-        <span className="material-symbols-outlined text-4xl text-primary mb-4 block">check_circle</span>
+        <CheckCircle className="h-10 w-10 text-primary mx-auto mb-4" />
         <h2 className="text-xl font-bold mb-2">Playbook richiesto con successo!</h2>
         <p className="text-muted-foreground mb-6">
           Controlla la tua email, ti abbiamo inviato il link per scaricare il materiale.
@@ -65,38 +68,32 @@ export default function PlaybookForm() {
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <label htmlFor="firstName" className="text-sm font-medium">Nome</label>
+            <Label htmlFor="firstName">Nome</Label>
             <Input id="firstName" name="firstName" required placeholder="Mario" />
           </div>
           <div className="space-y-2">
-            <label htmlFor="lastName" className="text-sm font-medium">Cognome</label>
+            <Label htmlFor="lastName">Cognome</Label>
             <Input id="lastName" name="lastName" required placeholder="Rossi" />
           </div>
         </div>
 
         <div className="space-y-2">
-          <label htmlFor="companyName" className="text-sm font-medium">Azienda</label>
+          <Label htmlFor="companyName">Azienda</Label>
           <Input id="companyName" name="companyName" placeholder="La tua azienda" />
         </div>
 
         <div className="space-y-2">
-          <label htmlFor="email" className="text-sm font-medium">Email lavorativa</label>
+          <Label htmlFor="email">Email lavorativa</Label>
           <Input id="email" name="email" type="email" required placeholder="mario.rossi@azienda.com" />
         </div>
 
         <div className="flex items-start gap-2 mt-4">
-          <input 
-            type="checkbox" 
-            id="consent_given" 
-            name="consent_given" 
-            required 
-            className="mt-1"
-          />
-          <label htmlFor="consent_given" className="text-xs text-muted-foreground">
+          <Checkbox id="consent_given" name="consent_given" required className="mt-0.5" />
+          <Label htmlFor="consent_given" className="text-xs text-muted-foreground font-normal leading-relaxed">
             Acconsento al trattamento dei miei dati personali in accordo con la Privacy Policy per ricevere comunicazioni di marketing e il materiale richiesto.
-          </label>
+          </Label>
         </div>
 
         {error && <div className="text-destructive text-sm mt-2">{error}</div>}

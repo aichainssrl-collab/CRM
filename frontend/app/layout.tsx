@@ -1,17 +1,8 @@
 import "./globals.css";
 import type { Metadata } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import { GeistSans } from "geist/font/sans";
+import { GeistMono } from "geist/font/mono";
 import { cn } from "@/lib/utils";
-
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-});
-
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ["latin"],
-  variable: "--font-jetbrains-mono",
-});
 
 export const metadata: Metadata = {
   title: "AiChain CRM",
@@ -24,12 +15,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="it" className={cn("light", "font-sans", inter.variable)} suppressHydrationWarning>
-      <head>
-        <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
-      </head>
+    <html lang="it" className={cn("light", GeistSans.variable, GeistMono.variable)} suppressHydrationWarning>
       <body
-        className={`${inter.variable} ${jetbrainsMono.variable} antialiased bg-background selection:bg-primary/10 selection:text-primary`}
+        className={`${GeistSans.variable} ${GeistMono.variable} antialiased bg-background selection:bg-primary/10 selection:text-primary`}
       >
         {children}
       </body>

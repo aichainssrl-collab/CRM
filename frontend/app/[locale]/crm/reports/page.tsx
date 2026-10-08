@@ -22,6 +22,7 @@ import { useDeals } from "@/hooks/useDeals";
 import { Users, Briefcase, Target, UserPlus, BarChart3 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { KpiCard } from "@/components/crm/KpiCard";
+import { formatEUR } from "@/lib/format";
 
 // ── Source label mapping ──────────────────────────────────────
 const SOURCE_LABELS: Record<string, string> = {
@@ -52,21 +53,28 @@ const STAGE_LABELS: Record<string, string> = {
   lost: "Lost",
 };
 const STAGE_COLORS: Record<string, string> = {
-  new: "#94a3b8",
-  contacted: "#60a5fa",
-  qualified: "#818cf8",
-  proposal: "#a78bfa",
-  negotiation: "#f59e0b",
-  won: "#22c55e",
-  lost: "#ef4444",
+  new: "var(--stage-new)",
+  contacted: "var(--stage-contacted)",
+  qualified: "var(--stage-qualified)",
+  proposal: "var(--stage-proposal)",
+  negotiation: "var(--stage-negotiation)",
+  won: "var(--stage-won)",
+  lost: "var(--stage-lost)",
 };
 
 // ── Pie colors ───────────────────────────────────────────────
-const PIE_COLORS = ["#1d3173", "#3b5bdb", "#5c7cfa", "#748ffc", "#91a7ff", "#bac8ff", "#dbe4ff", "#e7ecff"];
+const PIE_COLORS = [
+  "var(--chart-1)", "var(--chart-2)", "var(--chart-3)",
+  "var(--chart-4)", "var(--chart-5)",
+  "var(--primary)", "var(--stage-qualified)", "var(--stage-contacted)",
+];
 
 // ── Score gradient buckets ───────────────────────────────────
 const SCORE_BUCKETS = ["0-20", "21-40", "41-60", "61-80", "81-100"];
-const SCORE_COLORS = ["#ef4444", "#f97316", "#eab308", "#22c55e", "#15803d"];
+const SCORE_COLORS = [
+  "var(--stage-lost)", "var(--stage-negotiation)",
+  "var(--warning)", "var(--stage-won)", "var(--success)",
+];
 
 // ── Chart configs ────────────────────────────────────────────
 const sourceChartConfig: ChartConfig = {
@@ -152,7 +160,7 @@ export default function ReportsPage() {
       .map(([stage, value]) => ({
         stage: STAGE_LABELS[stage] || stage,
         value,
-        fill: STAGE_COLORS[stage] || "#94a3b8",
+        fill: STAGE_COLORS[stage] || "var(--stage-new)",
       }))
       .sort((a, b) => b.value - a.value);
   }, [deals]);
@@ -352,10 +360,4 @@ export default function ReportsPage() {
       </div>
     </div>
   );
-}
-
-function formatEUR(value: number): string {
-  return new Intl.NumberFormat("it-IT", {
-    style: "currency", currency: "EUR", maximumFractionDigits: 0,
-  }).format(value);
 }

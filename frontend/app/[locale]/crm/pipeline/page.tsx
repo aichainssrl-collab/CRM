@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
+import { formatEUR } from "@/lib/format";
 import {
   Sheet,
   SheetContent,
@@ -29,10 +30,6 @@ const STAGES = [
   { id: "won", label: "Won" },
   { id: "lost", label: "Lost" },
 ];
-
-function formatCurrency(value: number) {
-  return new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(value);
-}
 
 export default function PipelinePage() {
   const t = useTranslations("pipeline");
@@ -81,7 +78,7 @@ export default function PipelinePage() {
           <h1 className="text-2xl font-bold tracking-tight">{t("title")}</h1>
           {!isLoading && deals && (
             <p className="text-sm text-muted-foreground mt-0.5">
-              {t("deals", { count: deals.length })} · {formatCurrency(totalValue)} {t("total")}
+              {t("deals", { count: deals.length })} · {formatEUR(totalValue)} {t("total")}
             </p>
           )}
         </div>

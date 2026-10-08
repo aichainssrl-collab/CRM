@@ -3,6 +3,10 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { CheckCircle } from "lucide-react";
 
 export default function ContactForm() {
   const [loading, setLoading] = useState(false);
@@ -50,7 +54,7 @@ export default function ContactForm() {
   if (success) {
     return (
       <div className="text-center py-8">
-        <span className="material-symbols-outlined text-4xl text-primary mb-4 block">check_circle</span>
+        <CheckCircle className="h-10 w-10 text-primary mx-auto mb-4" />
         <h2 className="text-xl font-bold mb-2">Richiesta inviata!</h2>
         <p className="text-muted-foreground mb-6">
           Grazie per averci contattato. Il nostro team ti risponderà al più presto.
@@ -67,56 +71,49 @@ export default function ContactForm() {
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <label htmlFor="firstName" className="text-sm font-medium">Nome</label>
+            <Label htmlFor="firstName">Nome</Label>
             <Input id="firstName" name="firstName" required placeholder="Mario" />
           </div>
           <div className="space-y-2">
-            <label htmlFor="lastName" className="text-sm font-medium">Cognome</label>
+            <Label htmlFor="lastName">Cognome</Label>
             <Input id="lastName" name="lastName" required placeholder="Rossi" />
           </div>
         </div>
 
         <div className="space-y-2">
-          <label htmlFor="companyName" className="text-sm font-medium">Azienda</label>
+          <Label htmlFor="companyName">Azienda</Label>
           <Input id="companyName" name="companyName" placeholder="La tua azienda" />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <label htmlFor="email" className="text-sm font-medium">Email lavorativa</label>
+            <Label htmlFor="email">Email lavorativa</Label>
             <Input id="email" name="email" type="email" required placeholder="mario@azienda.com" />
           </div>
           <div className="space-y-2">
-            <label htmlFor="phone" className="text-sm font-medium">Telefono (opzionale)</label>
+            <Label htmlFor="phone">Telefono (opzionale)</Label>
             <Input id="phone" name="phone" type="tel" placeholder="+39 333..." />
           </div>
         </div>
 
         <div className="space-y-2">
-          <label htmlFor="message" className="text-sm font-medium">Messaggio</label>
-          <textarea 
-            id="message" 
-            name="message" 
-            required 
+          <Label htmlFor="message">Messaggio</Label>
+          <Textarea
+            id="message"
+            name="message"
+            required
             rows={4}
-            className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            placeholder="Come possiamo aiutarti?" 
+            placeholder="Come possiamo aiutarti?"
           />
         </div>
 
         <div className="flex items-start gap-2 mt-4">
-          <input 
-            type="checkbox" 
-            id="consent_given" 
-            name="consent_given" 
-            required 
-            className="mt-1"
-          />
-          <label htmlFor="consent_given" className="text-xs text-muted-foreground">
+          <Checkbox id="consent_given" name="consent_given" required className="mt-0.5" />
+          <Label htmlFor="consent_given" className="text-xs text-muted-foreground font-normal leading-relaxed">
             Acconsento al trattamento dei miei dati personali per gestire la mia richiesta di contatto.
-          </label>
+          </Label>
         </div>
 
         {error && <div className="text-destructive text-sm mt-2">{error}</div>}

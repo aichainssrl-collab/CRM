@@ -7,6 +7,7 @@ import { AppSidebar } from "@/components/crm/AppSidebar";
 import { Navbar } from "@/components/crm/Navbar";
 import { CommandPalette } from "@/components/crm/CommandPalette";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function CRMLayout({ children }: { children: React.ReactNode }) {
   const { loading, isAuthenticated } = useAuth();
@@ -20,10 +21,28 @@ export default function CRMLayout({ children }: { children: React.ReactNode }) {
 
   if (loading || !isAuthenticated) {
     return (
-      <div className="flex h-screen items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-3">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-          <p className="text-sm text-muted-foreground">Caricamento...</p>
+      <div className="flex h-svh bg-background">
+        <div className="hidden md:flex w-[240px] flex-col gap-3 border-r border-border/60 p-4">
+          <Skeleton className="h-10 w-full rounded-lg" />
+          <div className="mt-4 space-y-2">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Skeleton key={i} className="h-9 w-full rounded-md" />
+            ))}
+          </div>
+        </div>
+        <div className="flex-1 flex flex-col">
+          <div className="h-14 border-b border-border/60 flex items-center px-4">
+            <Skeleton className="h-6 w-40" />
+          </div>
+          <div className="flex-1 p-6 space-y-4">
+            <Skeleton className="h-8 w-64" />
+            <div className="grid grid-cols-4 gap-4">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Skeleton key={i} className="h-24 w-full rounded-lg" />
+              ))}
+            </div>
+            <Skeleton className="h-[300px] w-full rounded-lg" />
+          </div>
         </div>
       </div>
     );

@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { KpiCard } from "@/components/crm/KpiCard";
 import {
   Table,
   TableBody,
@@ -50,17 +51,10 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQueryClient } from "@tanstack/react-query";
-
-// ── Formatters ────────────────────────────────────────────────────────────────
+import { formatNumber, formatPercent } from "@/lib/format";
 
 function fEUR(v: number) {
   return new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR", maximumFractionDigits: 2 }).format(v);
-}
-function fNum(v: number) {
-  return new Intl.NumberFormat("it-IT").format(v);
-}
-function fPct(v: number) {
-  return `${(v * 100).toFixed(2)}%`;
 }
 
 // ── Status badge campagna ─────────────────────────────────────────────────────
@@ -77,41 +71,6 @@ function StatusBadge({ status }: { status: string }) {
     <Badge variant={map[status] ?? "secondary"} className="text-[10px] uppercase">
       {status === "ACTIVE" ? t("active") : status === "PAUSED" ? t("paused") : status}
     </Badge>
-  );
-}
-
-// ── KPI card ──────────────────────────────────────────────────────────────────
-
-function KpiCard({
-  title,
-  value,
-  subtitle,
-  icon: Icon,
-  loading,
-}: {
-  title: string;
-  value: string;
-  subtitle?: string;
-  icon: React.ElementType;
-  loading: boolean;
-}) {
-  return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
-        <Icon className="h-4 w-4 text-muted-foreground" />
-      </CardHeader>
-      <CardContent>
-        {loading ? (
-          <Skeleton className="h-8 w-28 mb-1" />
-        ) : (
-          <div className="text-2xl font-bold">{value}</div>
-        )}
-        {subtitle && !loading && (
-          <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>
-        )}
-      </CardContent>
-    </Card>
   );
 }
 
@@ -248,43 +207,49 @@ export default function MarketingPage() {
         <KpiCard
           title={t("totalSpend")}
           value={summary ? fEUR(summary.spend) : "—"}
-          subtitle={`CPM: ${summary ? fEUR(summary.cpm) : "—"}`}
+          trendLabel={`CPM: ${summary ? fEUR(summary.cpm) : "—"}`}
           icon={Euro}
           loading={isLoading}
+          accent="bg-muted text-muted-foreground"
         />
         <KpiCard
           title={t("impressions")}
-          value={summary ? fNum(summary.impressions) : "—"}
+          value={summary ? formatNumber(summary.impressions) : "—"}
           icon={Eye}
           loading={isLoading}
+          accent="bg-info-muted text-info"
         />
         <KpiCard
           title={t("clicks")}
-          value={summary ? fNum(summary.clicks) : "—"}
-          subtitle={`CTR: ${summary ? fPct(summary.ctr) : "—"}`}
+          value={summary ? formatNumber(summary.clicks) : "—"}
+          trendLabel={`CTR: ${summary ? formatPercent(summary.ctr) : "—"}`}
           icon={MousePointerClick}
           loading={isLoading}
+          accent="bg-success-muted text-success"
         />
         <KpiCard
           title={t("avgCpc")}
           value={summary ? fEUR(summary.cpc) : "—"}
-          subtitle={t("costPerClick")}
+          trendLabel={t("costPerClick")}
           icon={TrendingUp}
           loading={isLoading}
+          accent="bg-warning-muted text-warning"
         />
         <KpiCard
           title={t("reach")}
-          value={summary ? fNum(summary.reach) : "—"}
-          subtitle={t("peopleReached")}
+          value={summary ? formatNumber(summary.reach) : "—"}
+          trendLabel={t("peopleReached")}
           icon={Users}
           loading={isLoading}
+          accent="bg-status-proposal-muted text-status-proposal"
         />
         <KpiCard
           title={t("conversions")}
-          value={summary ? fNum(summary.conversions) : "—"}
-          subtitle={t("leadAcquisitions")}
+          value={summary ? formatNumber(summary.conversions) : "—"}
+          trendLabel={t("leadAcquisitions")}
           icon={Target}
           loading={isLoading}
+          accent="bg-status-qualified-muted text-status-qualified"
         />
       </div>
 
@@ -424,22 +389,22 @@ export default function MarketingPage() {
                         {fEUR(c.spend)}
                       </TableCell>
                       <TableCell className="text-right tabular-nums text-muted-foreground">
-                        {fNum(c.impressions)}
+                        {formatNumber(c.impressions)}
                       </TableCell>
                       <TableCell className="text-right tabular-nums">
-                        {fNum(c.clicks)}
+                        {formatNumber(c.clicks)}
                       </TableCell>
                       <TableCell className="text-right tabular-nums text-muted-foreground">
-                        {fPct(c.ctr)}
+                        {formatPercent(c.ctr)}
                       </TableCell>
                       <TableCell className="text-right tabular-nums">
                         {fEUR(c.cpc)}
                       </TableCell>
                       <TableCell className="text-right tabular-nums text-muted-foreground">
-                        {fNum(c.reach)}
+                        {formatNumber(c.reach)}
                       </TableCell>
                       <TableCell className="text-right tabular-nums font-medium">
-                        {c.conversions > 0 ? fNum(c.conversions) : (
+                        {c.conversions > 0 ? formatNumber(c.conversions) : (
                           <span className="text-muted-foreground">—</span>
                         )}
                       </TableCell>

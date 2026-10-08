@@ -3,6 +3,9 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { CalendarCheck } from "lucide-react";
 
 export default function BookingForm() {
   const [loading, setLoading] = useState(false);
@@ -51,7 +54,7 @@ export default function BookingForm() {
   if (success) {
     return (
       <div className="text-center py-8">
-        <span className="material-symbols-outlined text-4xl text-primary mb-4 block">event_available</span>
+        <CalendarCheck className="h-10 w-10 text-primary mx-auto mb-4" />
         <h2 className="text-xl font-bold mb-2">Prenotazione Confermata!</h2>
         <p className="text-muted-foreground mb-6">
           Riceverai a breve un&apos;email con il link per accedere alla videocall e i dettagli dell&apos;incontro.
@@ -68,37 +71,37 @@ export default function BookingForm() {
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <label htmlFor="firstName" className="text-sm font-medium">Nome</label>
+            <Label htmlFor="firstName">Nome</Label>
             <Input id="firstName" name="firstName" required placeholder="Mario" />
           </div>
           <div className="space-y-2">
-            <label htmlFor="lastName" className="text-sm font-medium">Cognome</label>
+            <Label htmlFor="lastName">Cognome</Label>
             <Input id="lastName" name="lastName" required placeholder="Rossi" />
           </div>
         </div>
 
         <div className="space-y-2">
-          <label htmlFor="companyName" className="text-sm font-medium">Azienda</label>
+          <Label htmlFor="companyName">Azienda</Label>
           <Input id="companyName" name="companyName" required placeholder="La tua azienda" />
         </div>
 
         <div className="space-y-2">
-          <label htmlFor="email" className="text-sm font-medium">Email lavorativa</label>
+          <Label htmlFor="email">Email lavorativa</Label>
           <Input id="email" name="email" type="email" required placeholder="mario@azienda.com" />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <label htmlFor="preferredDate" className="text-sm font-medium">Data Preferita</label>
+            <Label htmlFor="preferredDate">Data Preferita</Label>
             <Input id="preferredDate" name="preferredDate" type="date" required />
           </div>
           <div className="space-y-2">
-            <label htmlFor="preferredTime" className="text-sm font-medium">Fascia Oraria</label>
-            <select 
-              id="preferredTime" 
-              name="preferredTime" 
+            <Label htmlFor="preferredTime">Fascia Oraria</Label>
+            <select
+              id="preferredTime"
+              name="preferredTime"
               required
               className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             >
@@ -110,16 +113,10 @@ export default function BookingForm() {
         </div>
 
         <div className="flex items-start gap-2 mt-4">
-          <input 
-            type="checkbox" 
-            id="consent_given" 
-            name="consent_given" 
-            required 
-            className="mt-1"
-          />
-          <label htmlFor="consent_given" className="text-xs text-muted-foreground">
+          <Checkbox id="consent_given" name="consent_given" required className="mt-0.5" />
+          <Label htmlFor="consent_given" className="text-xs text-muted-foreground font-normal leading-relaxed">
             Acconsento al trattamento dei miei dati personali per gestire la prenotazione.
-          </label>
+          </Label>
         </div>
 
         {error && <div className="text-destructive text-sm mt-2">{error}</div>}

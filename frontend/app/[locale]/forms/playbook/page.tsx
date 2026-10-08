@@ -4,6 +4,9 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { CheckCircle } from "lucide-react";
 
 export default function PlaybookForm() {
   const t = useTranslations("forms.common");
@@ -51,7 +54,7 @@ export default function PlaybookForm() {
   if (success) {
     return (
       <div className="text-center py-8">
-        <span className="material-symbols-outlined text-4xl text-primary mb-4 block">check_circle</span>
+        <CheckCircle className="h-10 w-10 text-primary mx-auto mb-4" />
         <h2 className="text-xl font-bold mb-2">{tp("successTitle")}</h2>
         <p className="text-muted-foreground mb-6">{tp("successDesc")}</p>
       </div>
@@ -64,38 +67,32 @@ export default function PlaybookForm() {
       <p className="text-sm text-muted-foreground mb-6">{tp("subtitle")}</p>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <label htmlFor="firstName" className="text-sm font-medium">{t("firstName")}</label>
+            <Label htmlFor="firstName">{t("firstName")}</Label>
             <Input id="firstName" name="firstName" required placeholder="Mario" />
           </div>
           <div className="space-y-2">
-            <label htmlFor="lastName" className="text-sm font-medium">{t("lastName")}</label>
+            <Label htmlFor="lastName">{t("lastName")}</Label>
             <Input id="lastName" name="lastName" required placeholder="Rossi" />
           </div>
         </div>
 
         <div className="space-y-2">
-          <label htmlFor="companyName" className="text-sm font-medium">{t("company")}</label>
+          <Label htmlFor="companyName">{t("company")}</Label>
           <Input id="companyName" name="companyName" placeholder="La tua azienda" />
         </div>
 
         <div className="space-y-2">
-          <label htmlFor="email" className="text-sm font-medium">{t("email")}</label>
+          <Label htmlFor="email">{t("email")}</Label>
           <Input id="email" name="email" type="email" required placeholder="mario.rossi@azienda.com" />
         </div>
 
         <div className="flex items-start gap-2 mt-4">
-          <input 
-            type="checkbox" 
-            id="consent_given" 
-            name="consent_given" 
-            required 
-            className="mt-1"
-          />
-          <label htmlFor="consent_given" className="text-xs text-muted-foreground">
+          <Checkbox id="consent_given" name="consent_given" required className="mt-0.5" />
+          <Label htmlFor="consent_given" className="text-xs text-muted-foreground font-normal leading-relaxed">
             {tp("consent")}
-          </label>
+          </Label>
         </div>
 
         {error && <div className="text-destructive text-sm mt-2">{error}</div>}

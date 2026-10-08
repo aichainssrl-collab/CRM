@@ -3,6 +3,10 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ClipboardCheck } from "lucide-react";
 
 export default function AssessmentForm() {
   const [loading, setLoading] = useState(false);
@@ -53,7 +57,7 @@ export default function AssessmentForm() {
   if (success) {
     return (
       <div className="text-center py-8">
-        <span className="material-symbols-outlined text-4xl text-primary mb-4 block">fact_check</span>
+        <ClipboardCheck className="h-10 w-10 text-primary mx-auto mb-4" />
         <h2 className="text-xl font-bold mb-2">Assessment Completato!</h2>
         <p className="text-muted-foreground mb-6">
           Stiamo elaborando le tue risposte. Riceverai un report dettagliato via email a breve.
@@ -70,72 +74,65 @@ export default function AssessmentForm() {
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <label htmlFor="firstName" className="text-sm font-medium">Nome</label>
+            <Label htmlFor="firstName">Nome</Label>
             <Input id="firstName" name="firstName" required placeholder="Mario" />
           </div>
           <div className="space-y-2">
-            <label htmlFor="lastName" className="text-sm font-medium">Cognome</label>
+            <Label htmlFor="lastName">Cognome</Label>
             <Input id="lastName" name="lastName" required placeholder="Rossi" />
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <label htmlFor="companyName" className="text-sm font-medium">Azienda</label>
+            <Label htmlFor="companyName">Azienda</Label>
             <Input id="companyName" name="companyName" required placeholder="La tua azienda" />
           </div>
           <div className="space-y-2">
-            <label htmlFor="industry" className="text-sm font-medium">Settore</label>
+            <Label htmlFor="industry">Settore</Label>
             <Input id="industry" name="industry" required placeholder="Es. Manifatturiero, Servizi..." />
           </div>
         </div>
 
         <div className="space-y-2">
-          <label htmlFor="email" className="text-sm font-medium">Email lavorativa</label>
+          <Label htmlFor="email">Email lavorativa</Label>
           <Input id="email" name="email" type="email" required placeholder="mario@azienda.com" />
         </div>
 
         <div className="space-y-2">
-          <label htmlFor="aiMaturity" className="text-sm font-medium">Livello attuale di adozione AI</label>
-          <select 
-            id="aiMaturity" 
-            name="aiMaturity" 
+          <Label htmlFor="aiMaturity">Livello attuale di adozione AI</Label>
+          <select
+            id="aiMaturity"
+            name="aiMaturity"
             required
             className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
           >
             <option value="">Seleziona...</option>
             <option value="none">Nessun utilizzo attuale</option>
-            <option value="exploring">Stiamo esplorando le possibilità</option>
+            <option value="exploring">Stiamo esplorando le possibilita</option>
             <option value="pilots">Abbiamo alcuni progetti pilota in corso</option>
             <option value="production">Abbiamo soluzioni AI in produzione</option>
           </select>
         </div>
 
         <div className="space-y-2">
-          <label htmlFor="painPoints" className="text-sm font-medium">Qual è la tua sfida principale oggi?</label>
-          <textarea 
-            id="painPoints" 
-            name="painPoints" 
-            required 
+          <Label htmlFor="painPoints">Qual e la tua sfida principale oggi?</Label>
+          <Textarea
+            id="painPoints"
+            name="painPoints"
+            required
             rows={3}
-            className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            placeholder="Descrivi brevemente i processi che vorresti ottimizzare..." 
+            placeholder="Descrivi brevemente i processi che vorresti ottimizzare..."
           />
         </div>
 
         <div className="flex items-start gap-2 mt-4">
-          <input 
-            type="checkbox" 
-            id="consent_given" 
-            name="consent_given" 
-            required 
-            className="mt-1"
-          />
-          <label htmlFor="consent_given" className="text-xs text-muted-foreground">
+          <Checkbox id="consent_given" name="consent_given" required className="mt-0.5" />
+          <Label htmlFor="consent_given" className="text-xs text-muted-foreground font-normal leading-relaxed">
             Acconsento al trattamento dei miei dati personali per ricevere il report di valutazione.
-          </label>
+          </Label>
         </div>
 
         {error && <div className="text-destructive text-sm mt-2">{error}</div>}

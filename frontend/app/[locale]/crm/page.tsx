@@ -18,6 +18,7 @@ import { useDashboardMetrics } from "@/hooks/useDashboard";
 import { useLeads } from "@/hooks/useLeads";
 import { useDeals } from "@/hooks/useDeals";
 import { KpiCard } from "@/components/crm/KpiCard";
+import { formatEUR } from "@/lib/format";
 import {
   Users,
   Briefcase,
@@ -32,14 +33,6 @@ const MONTHS_IT = ["Gen", "Feb", "Mar", "Apr", "Mag", "Giu", "Lug", "Ago", "Set"
 const chartConfig = {
   revenue: { label: "Pipeline (€)", color: "var(--primary)" },
 } satisfies ChartConfig;
-
-function formatEUR(value: number) {
-  return new Intl.NumberFormat("it-IT", {
-    style: "currency",
-    currency: "EUR",
-    maximumFractionDigits: 0,
-  }).format(value);
-}
 
 export default function DashboardPage() {
   const t = useTranslations("dashboard");
