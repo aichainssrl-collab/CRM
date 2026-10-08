@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   CommandDialog,
   CommandEmpty,
@@ -23,30 +24,32 @@ import {
   Plus,
 } from "lucide-react";
 
-const NAV_ITEMS = [
-  { group: "Navigazione", items: [
-    { label: "Dashboard", icon: LayoutDashboard, href: "/crm" },
-    { label: "Leads", icon: Users, href: "/crm/leads" },
-    { label: "Pipeline", icon: KanbanSquare, href: "/crm/pipeline" },
-    { label: "Tasks", icon: CheckSquare, href: "/crm/tasks" },
-    { label: "Reports", icon: BarChart3, href: "/crm/reports" },
-    { label: "Marketing", icon: Megaphone, href: "/crm/marketing" },
-  ]},
-  { group: "Configurazione", items: [
-    { label: "Impostazioni", icon: Settings, href: "/crm/settings" },
-    { label: "Gestione Utenti", icon: UserCog, href: "/crm/user-admin" },
-  ]},
-];
-
-const QUICK_ACTIONS = [
-  { label: "Nuovo Lead", icon: Plus, href: "/crm/leads?action=new" },
-  { label: "Nuovo Deal", icon: Plus, href: "/crm/pipeline?action=new" },
-  { label: "Nuovo Task", icon: Plus, href: "/crm/tasks?action=new" },
-];
-
 export function CommandPalette() {
+  const t = useTranslations("cmdk");
+  const tSidebar = useTranslations("sidebar");
   const [open, setOpen] = useState(false);
   const router = useRouter();
+
+  const NAV_ITEMS = [
+    { group: t("navigation"), items: [
+      { label: tSidebar("dashboard"), icon: LayoutDashboard, href: "/crm" },
+      { label: tSidebar("leads"), icon: Users, href: "/crm/leads" },
+      { label: tSidebar("pipeline"), icon: KanbanSquare, href: "/crm/pipeline" },
+      { label: tSidebar("tasks"), icon: CheckSquare, href: "/crm/tasks" },
+      { label: tSidebar("reports"), icon: BarChart3, href: "/crm/reports" },
+      { label: tSidebar("marketing"), icon: Megaphone, href: "/crm/marketing" },
+    ]},
+    { group: tSidebar("config"), items: [
+      { label: tSidebar("settings"), icon: Settings, href: "/crm/settings" },
+      { label: tSidebar("users"), icon: UserCog, href: "/crm/user-admin" },
+    ]},
+  ];
+
+  const QUICK_ACTIONS = [
+    { label: t("newLead"), icon: Plus, href: "/crm/leads?action=new" },
+    { label: t("newDeal"), icon: Plus, href: "/crm/pipeline?action=new" },
+    { label: t("newTask"), icon: Plus, href: "/crm/tasks?action=new" },
+  ];
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -68,10 +71,10 @@ export function CommandPalette() {
   );
 
   return (
-    <CommandDialog open={open} onOpenChange={setOpen} title="Ricerca rapida" description="Cerca pagine e azioni rapide">
-      <CommandInput placeholder="Cerca pagina o azione..." />
+    <CommandDialog open={open} onOpenChange={setOpen} title={t("title")} description={t("description")}>
+      <CommandInput placeholder={t("placeholder")} />
       <CommandList>
-        <CommandEmpty>Nessun risultato trovato.</CommandEmpty>
+        <CommandEmpty>{t("empty")}</CommandEmpty>
 
         {NAV_ITEMS.map((group) => (
           <CommandGroup key={group.group} heading={group.group}>
@@ -90,7 +93,7 @@ export function CommandPalette() {
 
         <CommandSeparator />
 
-        <CommandGroup heading="Azioni rapide">
+        <CommandGroup heading={t("quickActions")}>
           {QUICK_ACTIONS.map((action) => (
             <CommandItem
               key={action.label}

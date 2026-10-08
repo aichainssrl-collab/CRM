@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Task, useCreateTask, useUpdateTask } from "@/hooks/useTasks";
 import { useLeads } from "@/hooks/useLeads";
 import { useAuth } from "@/hooks/useAuth";
@@ -18,6 +19,8 @@ interface TaskFormProps {
 }
 
 export function TaskForm({ open, onOpenChange, task, leadId }: TaskFormProps) {
+  const t = useTranslations("leadForm");
+  const tCommon = useTranslations("common");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedLeadId, setSelectedLeadId] = useState(leadId || task?.leadId || "");
@@ -69,7 +72,7 @@ export function TaskForm({ open, onOpenChange, task, leadId }: TaskFormProps) {
       onOpenChange(false);
       setSelectedLeadId(leadId || "");
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Errore durante il salvataggio.");
+      setError(err instanceof Error ? err.message : t("saveError"));
     } finally {
       setLoading(false);
     }
@@ -87,14 +90,13 @@ export function TaskForm({ open, onOpenChange, task, leadId }: TaskFormProps) {
     <Sheet open={open} onOpenChange={handleOpenChange}>
       <SheetContent className="sm:max-w-md overflow-y-auto">
         <SheetHeader>
-          <SheetTitle>{task ? "Modifica Task" : "Nuovo Task"}</SheetTitle>
+          <SheetTitle>{task ? t("editLead") : t("addLead")}</SheetTitle>
           <SheetDescription>
-            {task ? "Aggiorna i dettagli del task." : "Crea un nuovo task da tracciare."}
+            {task ? t("editDesc") : t("addDesc")}
           </SheetDescription>
         </SheetHeader>
 
         <form onSubmit={handleSubmit} className="space-y-5 py-6">
-          {/* Lead selector — shown only when no leadId is pre-set */}
           {!leadId && !task && (
             <div className="space-y-2">
               <label htmlFor="leadSelect" className="text-sm font-medium">Lead *</label>
@@ -105,7 +107,7 @@ export function TaskForm({ open, onOpenChange, task, leadId }: TaskFormProps) {
                 onChange={(e) => setSelectedLeadId(e.target.value)}
                 className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <option value="">{leadsLoading ? "Caricamento…" : "Seleziona un lead"}</option>
+                <option value="">{leadsLoading ? tCommon("loading") : t("selectLead")}</option>
                 {leads.map((lead) => {
                   const name =
                     lead.firstName || lead.lastName
@@ -123,7 +125,7 @@ export function TaskForm({ open, onOpenChange, task, leadId }: TaskFormProps) {
           )}
 
           <div className="space-y-2">
-            <label htmlFor="title" className="text-sm font-medium">Titolo *</label>
+            <label htmlFor="title" className="text-sm font-medium">{t("emailRequired").replace("*", "").trim()} *</label>
             <Input
               id="title"
               name="title"
@@ -164,10 +166,10 @@ export function TaskForm({ open, onOpenChange, task, leadId }: TaskFormProps) {
 
           <SheetFooter className="mt-6 gap-2">
             <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
-              Annulla
+              {tCommon("cancel")}
             </Button>
             <Button type="submit" disabled={loading}>
-              {loading ? "Salvataggio…" : task ? "Aggiorna Task" : "Salva Task"}
+              {loading ? tCommon("saving") : task ? tCommon("save") : tCommon("create")}
             </Button>
           </SheetFooter>
         </form>

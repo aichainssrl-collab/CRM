@@ -1,6 +1,7 @@
 "use client";
 
 import { Lead } from "@/hooks/useLeads";
+import { useTranslations } from "next-intl";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { StatusBadge } from "./StatusBadge";
@@ -20,10 +21,13 @@ interface LeadTableProps {
 }
 
 export function LeadTable({ leads, isLoading, selectedIds, onToggleSelect, onToggleAll, onEdit, onDelete, onView }: LeadTableProps) {
+  const t = useTranslations("leads");
+  const tCommon = useTranslations("common");
+
   if (isLoading) {
     return (
       <div className="flex-1 flex items-center justify-center p-8 text-muted-foreground animate-pulse">
-        Loading leads...
+        {tCommon("loading")}
       </div>
     );
   }
@@ -31,8 +35,8 @@ export function LeadTable({ leads, isLoading, selectedIds, onToggleSelect, onTog
   if (!leads.length) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-12 text-center">
-        <h3 className="text-lg font-medium">No leads found</h3>
-        <p className="text-muted-foreground mt-1">Adjust your filters or add a new lead.</p>
+        <h3 className="text-lg font-medium">{t("noLeads")}</h3>
+        <p className="text-muted-foreground mt-1">{t("noLeadsDesc")}</p>
       </div>
     );
   }
@@ -50,17 +54,17 @@ export function LeadTable({ leads, isLoading, selectedIds, onToggleSelect, onTog
                 checked={allSelected}
                 data-state={someSelected && !allSelected ? "indeterminate" : undefined}
                 onCheckedChange={onToggleAll}
-                aria-label="Seleziona tutti"
+                aria-label={t("selectAll")}
               />
             </TableHead>
-            <TableHead className="w-[170px] max-w-[170px]">Name</TableHead>
-            <TableHead className="w-[200px] max-w-[200px]">Email</TableHead>
-            <TableHead className="w-[160px] max-w-[160px]">Company</TableHead>
-            <TableHead className="w-[120px]">Phone</TableHead>
-            <TableHead className="w-[120px]">Sector</TableHead>
-            <TableHead className="w-[130px]">Role</TableHead>
-            <TableHead className="w-[100px]">Status</TableHead>
-            <TableHead className="w-[70px] text-right">Score</TableHead>
+            <TableHead className="w-[170px] max-w-[170px]">{t("name")}</TableHead>
+            <TableHead className="w-[200px] max-w-[200px]">{t("email")}</TableHead>
+            <TableHead className="w-[160px] max-w-[160px]">{t("company")}</TableHead>
+            <TableHead className="w-[120px]">{t("phone")}</TableHead>
+            <TableHead className="w-[120px]">{t("sector")}</TableHead>
+            <TableHead className="w-[130px]">{t("role")}</TableHead>
+            <TableHead className="w-[100px]">{t("status")}</TableHead>
+            <TableHead className="w-[70px] text-right">{t("score")}</TableHead>
             <TableHead className="w-10"></TableHead>
           </TableRow>
         </TableHeader>
@@ -75,7 +79,7 @@ export function LeadTable({ leads, isLoading, selectedIds, onToggleSelect, onTog
                 <Checkbox
                   checked={selectedIds.has(lead.id)}
                   onCheckedChange={() => onToggleSelect(lead.id)}
-                  aria-label={`Seleziona ${lead.firstName ?? lead.email}`}
+                  aria-label={`${t("selectLead")} ${lead.firstName ?? lead.email}`}
                 />
               </TableCell>
               <TableCell className="max-w-[170px]">
@@ -115,18 +119,18 @@ export function LeadTable({ leads, isLoading, selectedIds, onToggleSelect, onTog
               <TableCell>
                 <DropdownMenu>
                   <DropdownMenuTrigger className="h-8 w-8 p-0 outline-none focus:ring-2 focus:ring-primary rounded-md flex items-center justify-center">
-                    <span className="sr-only">Open menu</span>
+                    <span className="sr-only">{tCommon("actions")}</span>
                     <MoreHorizontal className="h-4 w-4" />
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem onClick={() => onView(lead.id)}>
-                      <Eye className="mr-2 h-4 w-4" /> View Details
+                      <Eye className="mr-2 h-4 w-4" /> {tCommon("viewDetails")}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => onEdit(lead)}>
-                      <Edit className="mr-2 h-4 w-4" /> Edit
+                      <Edit className="mr-2 h-4 w-4" /> {tCommon("edit")}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => onDelete(lead.id)} className="text-destructive focus:text-destructive">
-                      <Trash className="mr-2 h-4 w-4" /> Delete
+                      <Trash className="mr-2 h-4 w-4" /> {tCommon("delete")}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>

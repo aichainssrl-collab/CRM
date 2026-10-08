@@ -2,6 +2,7 @@
 
 import { Lead } from "@/hooks/useLeads";
 import { useEnrichLead } from "@/hooks/useEnrichment";
+import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -16,8 +17,8 @@ import {
   Sparkles, RefreshCw, CheckCircle2, Code2, Shield, Tag,
 } from "lucide-react";
 
-// ── Badge "Arricchito" con tooltip data ────────────────────────────────────────
 function EnrichmentBadge({ enrichedAt, source }: { enrichedAt?: string; source?: string }) {
+  const t = useTranslations("leadDetail");
   if (!enrichedAt) return null;
   const date = new Date(enrichedAt).toLocaleDateString("it-IT", {
     day: "2-digit", month: "short", year: "numeric",
@@ -31,19 +32,18 @@ function EnrichmentBadge({ enrichedAt, source }: { enrichedAt?: string; source?:
             className="gap-1 text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-200"
           >
             <CheckCircle2 className="h-3 w-3" />
-            Arricchito
+            {t("enriched")}
           </Badge>
         </TooltipTrigger>
         <TooltipContent side="bottom">
-          <p className="text-xs">Dati arricchiti il {date}</p>
-          {source && <p className="text-xs text-muted-foreground">via {source}</p>}
+          <p className="text-xs">{t("enrichedOn", { date })}</p>
+          {source && <p className="text-xs text-muted-foreground">{t("via", { source })}</p>}
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
   );
 }
 
-// ── Riga informazione con icona ────────────────────────────────────────────────
 function InfoRow({
   icon: Icon,
   label,
@@ -78,19 +78,18 @@ function InfoRow({
   );
 }
 
-// ── Componente principale ──────────────────────────────────────────────────────
 export function LeadDetail({ lead }: { lead: Lead }) {
+  const t = useTranslations("leadDetail");
   const { mutate: enrich, isPending: isEnriching } = useEnrichLead(lead.id);
 
   const fullName =
     lead.firstName || lead.lastName
       ? `${lead.firstName ?? ""} ${lead.lastName ?? ""}`.trim()
-      : "Nome sconosciuto";
+      : t("leadNotFound");
   const initial = lead.firstName
     ? lead.firstName.charAt(0)
     : lead.email.charAt(0).toUpperCase();
 
-  // Campi enrichment da customFields (arrivano dal backend come oggetto nested)
   const cf = (lead.customFields ?? {}) as Record<string, unknown>;
   const techStack: string[] = Array.isArray(cf.techStack) ? cf.techStack as string[] : [];
   const tags: string[] = Array.isArray(lead.tags) ? lead.tags : [];
@@ -107,7 +106,6 @@ export function LeadDetail({ lead }: { lead: Lead }) {
 
   return (
     <Card>
-      {/* ── Header ─────────────────────────────────────────────────────────── */}
       <CardHeader className="flex flex-row items-start justify-between pb-4 gap-4">
         <div className="flex items-center gap-4 flex-1 min-w-0">
           <Avatar className="h-14 w-14 shrink-0">
@@ -130,7 +128,6 @@ export function LeadDetail({ lead }: { lead: Lead }) {
           </div>
         </div>
 
-        {/* Pulsante Arricchisci */}
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger>
@@ -146,44 +143,42 @@ export function LeadDetail({ lead }: { lead: Lead }) {
                 ) : (
                   <Sparkles className="h-4 w-4 mr-1.5" />
                 )}
-                {isEnriching ? "Avviato..." : "Arricchisci"}
+                {isEnriching ? t("enrichStarted") : t("enrich")}
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom">
-              <p className="text-xs">Arricchisce il profilo via web scraping</p>
-              <p className="text-xs text-muted-foreground">Dati disponibili entro ~10 secondi</p>
+              <p className="text-xs">{t("enrichTooltip")}</p>
+              <p className="text-xs text-muted-foreground">{t("enrichTooltipTime")}</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
       </CardHeader>
 
       <CardContent className="space-y-5">
-        {/* Descrizione aziendale (estratta da scraping) */}
         {companyDesc && (
           <p className="text-sm text-muted-foreground italic border-l-2 border-border pl-3 leading-relaxed">
             {companyDesc}
           </p>
         )}
 
-        {/* ── Contatti ─────────────────────────────────────────────────────── */}
         <div>
           <h4 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-            Contatti
+            {t("contacts")}
           </h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <InfoRow icon={Mail} label="Email" value={lead.email} href={`mailto:${lead.email}`} />
-            <InfoRow icon={Phone} label="Telefono" value={lead.phone} href={lead.phone ? `tel:${lead.phone}` : undefined} />
+            <InfoRow icon={Phone} label={t("phone")} value={lead.phone} href={lead.phone ? `tel:${lead.phone}` : undefined} />
             <InfoRow
               icon={Link2}
-              label="LinkedIn"
-              value={lead.linkedinUrl ? "Apri profilo" : undefined}
+              label={t("linkedin")}
+              value={lead.linkedinUrl ? t("openProfile") : undefined}
               href={lead.linkedinUrl ?? undefined}
             />
-            <InfoRow icon={Globe} label="Sito web" value={website} href={website} />
-            <InfoRow icon={MapPin} label="Posizione" value={location} />
+            <InfoRow icon={Globe} label={t("website")} value={website} href={website} />
+            <InfoRow icon={MapPin} label={t("location")} value={location} />
             <InfoRow
               icon={Calendar}
-              label="Aggiunto il"
+              label={t("addedOn")}
               value={new Date(lead.createdAt).toLocaleDateString("it-IT")}
             />
           </div>
@@ -191,41 +186,32 @@ export function LeadDetail({ lead }: { lead: Lead }) {
 
         <Separator />
 
-        {/* ── Dati aziendali ────────────────────────────────────────────────── */}
         <div>
           <h4 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-            Azienda
+            {t("companyInfo")}
           </h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <InfoRow icon={Building} label="Ragione sociale" value={lead.companyName} />
-            <InfoRow icon={Briefcase} label="Settore" value={lead.industry} />
-            <InfoRow
-              icon={Users}
-              label="Dipendenti"
-              value={lead.companySize ?? numEmployeesRange}
-            />
-            <InfoRow icon={User} label="Ruolo" value={lead.roleTitle} />
-            <InfoRow icon={User} label="Seniority" value={lead.roleSeniority} />
-            <InfoRow
-              icon={Calendar}
-              label="Anno fondazione"
-              value={foundedYear ? String(foundedYear) : undefined}
-            />
+            <InfoRow icon={Building} label={t("companyName")} value={lead.companyName} />
+            <InfoRow icon={Briefcase} label={t("industry")} value={lead.industry} />
+            <InfoRow icon={Users} label={t("employees")} value={lead.companySize ?? numEmployeesRange} />
+            <InfoRow icon={User} label={t("role")} value={lead.roleTitle} />
+            <InfoRow icon={User} label={t("seniority")} value={lead.roleSeniority} />
+            <InfoRow icon={Calendar} label={t("foundedYear")} value={foundedYear ? String(foundedYear) : undefined} />
             {linkedinFollowers && (
-              <InfoRow icon={Link2} label="Follower LinkedIn" value={linkedinFollowers} />
+              <InfoRow icon={Link2} label={t("linkedinFollowers")} value={linkedinFollowers} />
             )}
             {siteLanguage && (
-              <InfoRow icon={Globe} label="Lingua sito" value={siteLanguage.toUpperCase()} />
+              <InfoRow icon={Globe} label={t("siteLanguage")} value={siteLanguage.toUpperCase()} />
             )}
             {hasPrivacy !== undefined && (
               <div className="flex items-start gap-2 text-sm">
                 <Shield className="h-4 w-4 mt-0.5 shrink-0 text-muted-foreground" />
                 <div>
                   <span className="text-[11px] text-muted-foreground uppercase tracking-wide block">
-                    Privacy Policy
+                    {t("privacyPolicy")}
                   </span>
                   <span className={hasPrivacy ? "text-emerald-600 text-sm" : "text-orange-500 text-sm"}>
-                    {hasPrivacy ? "Presente ✓" : "Non rilevata"}
+                    {hasPrivacy ? t("present") : t("notDetected")}
                   </span>
                 </div>
               </div>
@@ -233,19 +219,18 @@ export function LeadDetail({ lead }: { lead: Lead }) {
           </div>
         </div>
 
-        {/* ── Tech stack ───────────────────────────────────────────────────── */}
         {techStack.length > 0 && (
           <>
             <Separator />
             <div>
               <h4 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-1.5">
                 <Code2 className="h-3.5 w-3.5" />
-                Tech Stack rilevato
+                {t("techStack")}
               </h4>
               <div className="flex flex-wrap gap-1.5">
-                {techStack.map((t) => (
-                  <Badge key={t} variant="outline" className="text-xs font-normal">
-                    {t}
+                {techStack.map((tech) => (
+                  <Badge key={tech} variant="outline" className="text-xs font-normal">
+                    {tech}
                   </Badge>
                 ))}
               </div>
@@ -253,19 +238,18 @@ export function LeadDetail({ lead }: { lead: Lead }) {
           </>
         )}
 
-        {/* ── Tag / Specialties ────────────────────────────────────────────── */}
         {tags.length > 0 && (
           <>
             <Separator />
             <div>
               <h4 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-1.5">
                 <Tag className="h-3.5 w-3.5" />
-                Tag &amp; Specializzazioni
+                {t("tags")}
               </h4>
               <div className="flex flex-wrap gap-1.5">
-                {tags.map((t) => (
-                  <Badge key={t} variant="secondary" className="text-xs font-normal">
-                    {t}
+                {tags.map((tag) => (
+                  <Badge key={tag} variant="secondary" className="text-xs font-normal">
+                    {tag}
                   </Badge>
                 ))}
               </div>
@@ -273,13 +257,12 @@ export function LeadDetail({ lead }: { lead: Lead }) {
           </>
         )}
 
-        {/* ── Footer: assegnatario ─────────────────────────────────────────── */}
         <Separator />
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <User className="h-4 w-4" />
-          <span>Assegnato a:</span>
+          <span>{t("assignedTo")}</span>
           <span className="text-foreground font-medium">
-            {lead.assignedTo ?? "Non assegnato"}
+            {lead.assignedTo ?? t("unassigned")}
           </span>
         </div>
       </CardContent>

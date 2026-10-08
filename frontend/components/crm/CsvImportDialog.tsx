@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -15,6 +16,7 @@ interface CsvImportDialogProps {
 }
 
 export function CsvImportDialog({ open, onOpenChange }: CsvImportDialogProps) {
+  const t = useTranslations("csvImport");
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const queryClient = useQueryClient();
@@ -27,14 +29,14 @@ export function CsvImportDialog({ open, onOpenChange }: CsvImportDialogProps) {
     try {
       const result = await importLeadsFromFile(file);
       const lines = [
-        `Importati: ${result.success}`,
-        result.duplicates > 0 ? `Gia presenti (saltati): ${result.duplicates}` : null,
-        result.failed > 0 ? `Errori: ${result.failed}` : null,
+        `${t("imported")} ${result.success}`,
+        result.duplicates > 0 ? `${t("alreadyPresent")} ${result.duplicates}` : null,
+        result.failed > 0 ? `${t("errors")} ${result.failed}` : null,
         result.errors.length > 0
-          ? '\nDettaglio errori:\n' + result.errors.slice(0, 5).join('\n') + (result.errors.length > 5 ? '\n...' : '')
+          ? `\n${t("errorDetail")}\n` + result.errors.slice(0, 5).join('\n') + (result.errors.length > 5 ? '\n...' : '')
           : null,
       ].filter(Boolean).join('\n');
-      toast.success("Importazione completata", { description: lines, duration: 8000 });
+      toast.success(t("success"), { description: lines, duration: 8000 });
       if (result.success > 0) {
         queryClient.invalidateQueries({ queryKey: ["leads"] });
       }
@@ -42,7 +44,7 @@ export function CsvImportDialog({ open, onOpenChange }: CsvImportDialogProps) {
     } catch (error: unknown) {
       console.error(error);
       const message = error instanceof Error ? error.message : String(error);
-      toast.error("Errore durante l'importazione", { description: message });
+      toast.error(t("importError"), { description: message });
     } finally {
       setLoading(false);
       setFile(null);
@@ -53,9 +55,9 @@ export function CsvImportDialog({ open, onOpenChange }: CsvImportDialogProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Importa Lead</DialogTitle>
+          <DialogTitle>{t("title")}</DialogTitle>
           <DialogDescription>
-            Carica un file CSV o Excel (.xlsx). Il sistema rileva automaticamente le colonne: email, nome, cognome, azienda, telefono, tag.
+            {t("description")}
           </DialogDescription>
         </DialogHeader>
 
@@ -75,7 +77,7 @@ export function CsvImportDialog({ open, onOpenChange }: CsvImportDialogProps) {
           ) : (
             <>
               <UploadCloud className="h-10 w-10 text-muted-foreground mb-3" />
-              <p className="text-sm text-muted-foreground mb-2">Trascina il file oppure clicca per selezionare</p>
+              <p className="text-sm text-muted-foreground mb-2">{t("dragDrop")}</p>
             </>
           )}
           <Input
@@ -90,7 +92,7 @@ export function CsvImportDialog({ open, onOpenChange }: CsvImportDialogProps) {
         <DialogFooter className="mt-6">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Annulla</Button>
           <Button onClick={handleUpload} disabled={!file || loading}>
-            {loading ? "Importazione..." : "Importa Lead"}
+            {loading ? t("importing") : t("importBtn")}
           </Button>
         </DialogFooter>
       </DialogContent>
