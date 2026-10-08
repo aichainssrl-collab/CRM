@@ -153,7 +153,7 @@ export function AppSidebar() {
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
                   <span className="truncate font-medium text-[13px]">
-                    {user?.displayName || user?.email?.split("@")[0] || "Utente"}
+                    {user?.displayName || user?.email?.split("@")[0] || "User"}
                   </span>
                   <span className="truncate text-[11px] text-muted-foreground/60">
                     {user?.email}

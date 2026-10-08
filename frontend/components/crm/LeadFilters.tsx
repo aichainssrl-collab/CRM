@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -9,11 +10,14 @@ interface LeadFiltersProps {
 }
 
 export function LeadFilters({ filters, onChange }: LeadFiltersProps) {
+  const t = useTranslations("leads");
+  const tPipeline = useTranslations("pipeline.stages");
+
   return (
     <div className="flex flex-col sm:flex-row gap-4 mb-6">
       <div className="sm:max-w-xs w-full">
         <Input 
-          placeholder="Search by name or email..." 
+          placeholder={t("search")}
           value={filters.search || ""}
           onChange={(e) => onChange("search", e.target.value)}
         />
@@ -23,13 +27,13 @@ export function LeadFilters({ filters, onChange }: LeadFiltersProps) {
         onValueChange={(val: string | null) => onChange("status", val === "all" || !val ? undefined : val)}
       >
         <SelectTrigger className="w-[180px]">
-          <SelectValue placeholder="Status" />
+          <SelectValue placeholder={t("status")} />
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">All Statuses</SelectItem>
-          <SelectItem value="new">New</SelectItem>
-          <SelectItem value="contacted">Contacted</SelectItem>
-          <SelectItem value="qualified">Qualified</SelectItem>
+          <SelectItem value="new">{tPipeline("new")}</SelectItem>
+          <SelectItem value="contacted">{tPipeline("contacted")}</SelectItem>
+          <SelectItem value="qualified">{tPipeline("qualified")}</SelectItem>
         </SelectContent>
       </Select>
       <Select 
@@ -37,7 +41,7 @@ export function LeadFilters({ filters, onChange }: LeadFiltersProps) {
         onValueChange={(val: string | null) => onChange("score", val === "all" || !val ? undefined : val)}
       >
         <SelectTrigger className="w-[180px]">
-          <SelectValue placeholder="Lead Score" />
+          <SelectValue placeholder={t("score")} />
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">Any Score</SelectItem>
