@@ -95,6 +95,14 @@ def test_send_proposal():
         "app.routers.proposals.proposal_service.mark_sent",
         new_callable=AsyncMock,
         return_value=sent,
+    ), patch(
+        "app.services.document_service.record_pdf",
+        new_callable=AsyncMock,
+        return_value={"id": "d1", "version": 1, "checksum": "x"},
+    ), patch(
+        "app.services.email_service.send_email",
+        new_callable=AsyncMock,
+        return_value="mock-id",
     ):
         resp = client.post("/api/v1/proposals/prop-1/send")
     assert resp.status_code == 200

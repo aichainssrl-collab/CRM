@@ -543,6 +543,9 @@
     "accept": "Accept",
     "reject": "Reject",
     "actions": "Actions",
+    "downloadPdf": "Download PDF",
+    "downloadPdfIt": "Download PDF (IT)",
+    "downloadPdfEn": "Download PDF (EN)",
     "confirmDelete": "Delete this proposal?",
     "status": {
       "draft": "Draft",
@@ -636,6 +639,9 @@
     "send": "Send",
     "markPaid": "Mark paid",
     "actions": "Actions",
+    "downloadPdf": "Download PDF",
+    "downloadPdfIt": "Download PDF (IT)",
+    "downloadPdfEn": "Download PDF (EN)",
     "confirmDelete": "Delete this invoice?",
     "status": {
       "draft": "Draft",

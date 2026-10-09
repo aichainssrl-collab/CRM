@@ -26,7 +26,7 @@ class InvoiceCreate(BaseModel):
     dealId: Optional[str] = None
     proposalId: Optional[str] = None
     items: list[InvoiceItem] = Field(default_factory=list)
-    taxRate: float = 0
+    taxRate: float = 22
     currency: str = "EUR"
     issueDate: Optional[str] = None
     dueDate: Optional[str] = None
@@ -69,6 +69,41 @@ async def invoice_from_proposal(
             detail="Proposta non trovata o non accettata",
         )
     return doc
+
+
+@router.get("/{invoice_id}/pdf")
+async def get_invoice_pdf(
+    invoice_id: str,
+    lang: str = "it",
+    user: UserRecord = Depends(require_sales),
+):
+    from fastapi.responses import Response
+    from app.services import pdf_service, document_service
+
+    locale = "en" if lang == "en" else "it"
+    doc = await invoice_service.get_invoice(invoice_id)
+    if not doc:
+        raise HTTPException(status_code=404, detail="Fattura non trovata")
+    data = pdf_service.invoice_pdf(doc, lang=locale)
+    number = doc.get("number") or "fattura"
+    filename = f"{number}_{locale}.pdf"
+    reg = await document_service.record_pdf(
+        parent_type="invoice",
+        parent_id=invoice_id,
+        data=data,
+        locale=locale,
+        generated_by=user.uid,
+        filename=filename,
+    )
+    return Response(
+        content=data,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "X-Document-Version": str(reg.get("version", 1)),
+            "X-Document-Checksum": reg.get("checksum", ""),
+        },
+    )
 
 
 @router.get("/{invoice_id}")
@@ -114,14 +149,56 @@ async def delete_invoice(
     return {"ok": True}
 
 
+class SendBody(BaseModel):
+    lang: str = "it"
+    sendEmail: bool = True
+
+
 @router.post("/{invoice_id}/send")
 async def send_invoice(
     invoice_id: str,
+    body: Optional[SendBody] = None,
     user: UserRecord = Depends(require_sales),
 ):
+    import base64
+    from app.services import pdf_service, document_service, email_service
+
+    locale = "en" if (body and body.lang == "en") else "it"
     doc = await invoice_service.mark_sent(invoice_id)
     if not doc:
         raise HTTPException(status_code=404, detail="Fattura non trovata o non in bozza")
+
+    pdf_bytes = pdf_service.invoice_pdf(doc, lang=locale)
+    number = doc.get("number") or "fattura"
+    filename = f"{number}_{locale}.pdf"
+    await document_service.record_pdf(
+        parent_type="invoice",
+        parent_id=invoice_id,
+        data=pdf_bytes,
+        locale=locale,
+        generated_by=user.uid,
+        filename=filename,
+    )
+
+    want_email = body.sendEmail if body else True
+    if want_email and doc.get("clientEmail"):
+        if locale == "en":
+            subject = f"{number} — Invoice from AiChain Solutions"
+            html = f"<p>Please find attached invoice <b>{number}</b>.</p><p>Kind regards,<br>AiChain Solutions</p>"
+        else:
+            subject = f"{number} — Fattura AiChain Solutions"
+            html = f"<p>In allegato la fattura <b>{number}</b>.</p><p>Cordiali saluti,<br>AiChain Solutions</p>"
+        await email_service.send_email(
+            to=doc["clientEmail"],
+            subject=subject,
+            html=html,
+            attachments=[
+                {
+                    "filename": filename,
+                    "content": base64.b64encode(pdf_bytes).decode("ascii"),
+                }
+            ],
+        )
     return doc
 
 

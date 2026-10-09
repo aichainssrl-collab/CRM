@@ -21,6 +21,16 @@ class Settings(BaseSettings):
     RESEND_API_KEY: str = "re_fake_key"
     EMAIL_FROM: str = "noreply@aichainsolutions.net"
 
+    # Company block for PDF proposals/invoices
+    COMPANY_NAME: str = "AiChain Solutions"
+    COMPANY_ADDRESS: str = "Catania, Italia"
+    COMPANY_EMAIL: str = "info@aichainsolutions.net"
+    COMPANY_VAT_ID: str = ""
+    COMPANY_IBAN: str = ""
+
+    # Documents (PDF snapshots)
+    DEFAULT_TAX_RATE: float = 22.0
+
     # Security
     ALLOWED_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:3001"]
     RATE_LIMIT_PER_MINUTE: int = 60

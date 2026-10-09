@@ -10,7 +10,10 @@ logger = logging.getLogger(__name__)
 STATUSES = ("draft", "sent", "accepted", "rejected", "expired")
 
 
-def compute_totals(items: list[dict], tax_rate: float = 0.0) -> dict:
+DEFAULT_TAX_RATE = 22.0
+
+
+def compute_totals(items: list[dict], tax_rate: float = DEFAULT_TAX_RATE) -> dict:
     """Normalize line items and compute subtotal/tax/total."""
     normalized = []
     subtotal = 0.0
@@ -30,7 +33,9 @@ def compute_totals(items: list[dict], tax_rate: float = 0.0) -> dict:
             }
         )
     subtotal = round(subtotal, 2)
-    tax_rate = float(tax_rate or 0)
+    if tax_rate is None or tax_rate == "":
+        tax_rate = DEFAULT_TAX_RATE
+    tax_rate = float(tax_rate)
     tax_amount = round(subtotal * tax_rate / 100.0, 2)
     total = round(subtotal + tax_amount, 2)
     return {
@@ -50,7 +55,7 @@ async def _next_number() -> str:
 
 async def create_proposal(data: dict, created_by: str) -> dict:
     now = utcnow()
-    totals = compute_totals(data.get("items", []), data.get("taxRate", 0))
+    totals = compute_totals(data.get("items", []), data.get("taxRate", DEFAULT_TAX_RATE))
     doc = {
         "_id": new_id(),
         "number": await _next_number(),
@@ -97,7 +102,7 @@ async def update_proposal(proposal_id: str, data: dict) -> Optional[dict]:
         if not current:
             return None
         items = data.get("items", current.get("items", []))
-        tax_rate = data.get("taxRate", current.get("taxRate", 0))
+        tax_rate = data.get("taxRate", current.get("taxRate", DEFAULT_TAX_RATE))
         data.update(compute_totals(items, tax_rate))
     data["updatedAt"] = utcnow()
     doc = await db["proposals"].find_one_and_update(

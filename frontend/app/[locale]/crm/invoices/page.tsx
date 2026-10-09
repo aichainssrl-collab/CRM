@@ -26,8 +26,10 @@ import {
 import { useProposals } from "@/hooks/useProposals";
 import {
   Receipt, Plus, Trash2, MoreHorizontal, Send, CheckCircle2,
-  XCircle, Loader2, FileText,
+  XCircle, Loader2, FileText, Download,
 } from "lucide-react";
+import { downloadDocumentPdf } from "@/lib/pdf";
+import { useLocale } from "next-intl";
 
 function formatEUR(n: number) {
   return new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(n);
@@ -48,6 +50,7 @@ function emptyItem(): InvoiceItem {
 export default function InvoicesPage() {
   const t = useTranslations("invoices");
   const tSidebar = useTranslations("sidebar");
+  const locale = useLocale();
   const { data: invoices, isLoading } = useInvoices();
   const { data: stats } = useInvoiceStats();
   const { data: acceptedProposals } = useProposals("accepted");
@@ -274,6 +277,32 @@ export default function InvoicesPage() {
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={() => openEdit(inv)}>
                           {t("edit")}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() =>
+                            downloadDocumentPdf(
+                              "invoices",
+                              inv.id,
+                              locale === "en" ? "en" : "it",
+                              `${inv.number || "invoice"}.pdf`
+                            )
+                          }
+                        >
+                          <Download className="mr-2 h-4 w-4" />
+                          {t("downloadPdf")}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() =>
+                            downloadDocumentPdf(
+                              "invoices",
+                              inv.id,
+                              locale === "en" ? "it" : "en",
+                              `${inv.number || "invoice"}_${locale === "en" ? "it" : "en"}.pdf`
+                            )
+                          }
+                        >
+                          <Download className="mr-2 h-4 w-4" />
+                          {locale === "en" ? t("downloadPdfIt") : t("downloadPdfEn")}
                         </DropdownMenuItem>
                         {inv.status === "draft" && (
                           <DropdownMenuItem onClick={() => sendInvoice.mutate(inv.id)}>

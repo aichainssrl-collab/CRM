@@ -3,7 +3,7 @@ Invoices service — billing documents, optionally generated from accepted propo
 """
 from typing import Optional
 from app.services.db_service import db, new_id, utcnow, _to_dict
-from app.services.proposal_service import compute_totals
+from app.services.proposal_service import compute_totals, DEFAULT_TAX_RATE
 import logging
 
 logger = logging.getLogger(__name__)
@@ -18,7 +18,7 @@ async def _next_number() -> str:
 
 
 def _doc_from_items(data: dict) -> dict:
-    totals = compute_totals(data.get("items", []), data.get("taxRate", 0))
+    totals = compute_totals(data.get("items", []), data.get("taxRate", DEFAULT_TAX_RATE))
     return {
         "title": data.get("title", ""),
         "clientName": data.get("clientName", ""),
@@ -94,7 +94,7 @@ async def update_invoice(invoice_id: str, data: dict) -> Optional[dict]:
         if not current:
             return None
         items = data.get("items", current.get("items", []))
-        tax_rate = data.get("taxRate", current.get("taxRate", 0))
+        tax_rate = data.get("taxRate", current.get("taxRate", DEFAULT_TAX_RATE))
         data.update(compute_totals(items, tax_rate))
     data["updatedAt"] = utcnow()
     doc = await db["invoices"].find_one_and_update(

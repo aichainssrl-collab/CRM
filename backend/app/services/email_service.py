@@ -12,10 +12,14 @@ async def send_email(
     subject: str,
     html: str,
     reply_to: str = None,
+    attachments: list[dict] | None = None,
 ) -> str | None:
-    """Invia email tramite Resend API EU. Ritorna l'ID email o None se fallisce."""
+    """Invia email tramite Resend API EU. Ritorna l'ID email o None se fallisce.
+
+    attachments: [{"filename": str, "content": base64_str}] (Resend format).
+    """
     if not settings.RESEND_API_KEY or settings.RESEND_API_KEY.startswith("re_fake"):
-        logger.info(f"[EMAIL MOCK] to={to} subject={subject}")
+        logger.info(f"[EMAIL MOCK] to={to} subject={subject} attachments={len(attachments or [])}")
         return "mock-email-id"
 
     payload = {
@@ -26,6 +30,8 @@ async def send_email(
     }
     if reply_to:
         payload["reply_to"] = reply_to
+    if attachments:
+        payload["attachments"] = attachments
 
     try:
         async with httpx.AsyncClient(timeout=10) as client:

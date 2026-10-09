@@ -543,6 +543,9 @@
     "accept": "Accetta",
     "reject": "Rifiuta",
     "actions": "Azioni",
+    "downloadPdf": "Scarica PDF",
+    "downloadPdfIt": "Scarica PDF (IT)",
+    "downloadPdfEn": "Scarica PDF (EN)",
     "confirmDelete": "Eliminare questo preventivo?",
     "status": {
       "draft": "Bozza",
@@ -636,6 +639,9 @@
     "send": "Invia",
     "markPaid": "Segna pagata",
     "actions": "Azioni",
+    "downloadPdf": "Scarica PDF",
+    "downloadPdfIt": "Scarica PDF (IT)",
+    "downloadPdfEn": "Scarica PDF (EN)",
     "confirmDelete": "Eliminare questa fattura?",
     "status": {
       "draft": "Bozza",
