@@ -11,6 +11,7 @@ import {
   BarChart3,
   LineChart,
   Mail,
+  FileStack,
   Megaphone,
   Library,
   Calendar,
@@ -68,6 +69,7 @@ export function AppSidebar() {
     { name: t("reports"), href: "/crm/reports", icon: BarChart3 },
     { name: t("analytics"), href: "/crm/analytics", icon: LineChart },
     { name: t("emails"), href: "/crm/emails", icon: Mail },
+    { name: t("templates"), href: "/crm/templates", icon: FileStack },
     { name: t("marketing"), href: "/crm/marketing", icon: Megaphone },
     { name: t("content"), href: "/crm/content", icon: Library },
   ];

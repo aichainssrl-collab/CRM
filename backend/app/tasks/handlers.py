@@ -140,3 +140,13 @@ async def handle_notify_sales(request: Request):
         await send_sales_notification(lead)
 
     return {"success": True}
+
+
+@router.post("/process-due-enrollments")
+async def handle_process_due_enrollments(request: Request):
+    """Cloud Scheduler / Cloud Tasks tick — invia gli step di sequenza scaduti."""
+    await verify_cloud_tasks_request(request)
+    from app.services.email_sequence_service import process_due_enrollments
+
+    processed = await process_due_enrollments()
+    return {"success": True, "processed": processed}

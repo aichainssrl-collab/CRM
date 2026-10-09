@@ -64,7 +64,8 @@
     "logout": "Esci",
     "workflows": "Workflow",
     "invoices": "Fatture",
-    "content": "Contenuti"
+    "content": "Contenuti",
+    "templates": "Template"
   },
   "navbar": {
     "search": "Cerca...",
@@ -679,5 +680,29 @@
       "blog": "Blog",
       "other": "Altro"
     }
+  },
+  "emailTemplates": {
+    "title": "Template email",
+    "subtitle": "Soggetti e body riutilizzabili per sequenze e campagne",
+    "listTitle": "Template",
+    "listDescription": "5 template GTM predefiniti (welcome, case study, costo inazione, demo, last call) più i tuoi.",
+    "empty": "Nessun template.",
+    "new": "Nuovo template",
+    "newTitle": "Nuovo template",
+    "editTitle": "Modifica template",
+    "dialogDescription": "Usa {{firstName}} e {{company}} come placeholder.",
+    "name": "Nome",
+    "subject": "Oggetto",
+    "category": "Categoria",
+    "body": "Body HTML",
+    "copy": "Copia",
+    "copied": "Copiato",
+    "edit": "Modifica",
+    "delete": "Elimina",
+    "cancel": "Annulla",
+    "save": "Salva",
+    "actions": "Azioni",
+    "processDue": "Processa scaduti",
+    "confirmDelete": "Eliminare questo template?"
   }
 }

@@ -64,7 +64,8 @@
     "logout": "Sign out",
     "workflows": "Workflows",
     "invoices": "Invoices",
-    "content": "Content"
+    "content": "Content",
+    "templates": "Templates"
   },
   "navbar": {
     "search": "Search...",
@@ -679,5 +680,29 @@
       "blog": "Blog",
       "other": "Other"
     }
+  },
+  "emailTemplates": {
+    "title": "Email templates",
+    "subtitle": "Reusable subjects and bodies for sequences and campaigns",
+    "listTitle": "Templates",
+    "listDescription": "5 built-in GTM templates (welcome, case study, cost of inaction, demo, last call) plus yours.",
+    "empty": "No templates.",
+    "new": "New template",
+    "newTitle": "New template",
+    "editTitle": "Edit template",
+    "dialogDescription": "Use {{firstName}} and {{company}} as placeholders.",
+    "name": "Name",
+    "subject": "Subject",
+    "category": "Category",
+    "body": "HTML body",
+    "copy": "Copy",
+    "copied": "Copied",
+    "edit": "Edit",
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "save": "Save",
+    "actions": "Actions",
+    "processDue": "Process due",
+    "confirmDelete": "Delete this template?"
   }
 }

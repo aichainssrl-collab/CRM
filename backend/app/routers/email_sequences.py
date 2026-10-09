@@ -55,6 +55,15 @@ async def list_sequences(
     return sequences
 
 
+@router.post("/process-due")
+async def process_due(
+    user: UserRecord = Depends(require_sales),
+):
+    """Manually process enrollments whose nextSendAt is due (also runs via Cloud Tasks)."""
+    processed = await svc.process_due_enrollments()
+    return {"processed": processed}
+
+
 @router.get("/{seq_id}")
 async def get_sequence(
     seq_id: str,
