@@ -63,7 +63,8 @@
     "users": "Users",
     "logout": "Sign out",
     "workflows": "Workflows",
-    "invoices": "Invoices"
+    "invoices": "Invoices",
+    "content": "Content"
   },
   "navbar": {
     "search": "Search...",
@@ -641,6 +642,42 @@
       "paid": "Paid",
       "overdue": "Overdue",
       "cancelled": "Cancelled"
+    }
+  },
+  "contentLibrary": {
+    "subtitle": "Reusable marketing content library",
+    "new": "New content",
+    "newTitle": "New content",
+    "editTitle": "Edit content",
+    "dialogDescription": "Save emails, copy, posts and landing pages for reuse.",
+    "listTitle": "Content",
+    "listDescription": "Filter by type, tag or text. Copy the body in one click.",
+    "empty": "No content yet. Save your first piece of copy.",
+    "total": "Total",
+    "search": "Search...",
+    "allTypes": "All types",
+    "allTags": "All tags",
+    "title": "Title",
+    "type": "Type",
+    "tags": "Tags",
+    "tagsPlaceholder": "welcome, zentratto, legal",
+    "description": "Description",
+    "body": "Body",
+    "copy": "Copy",
+    "copied": "Copied",
+    "edit": "Edit",
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "save": "Save",
+    "actions": "Actions",
+    "confirmDelete": "Delete this content?",
+    "types": {
+      "email": "Email",
+      "ad_copy": "Ad copy",
+      "social": "Social",
+      "landing": "Landing",
+      "blog": "Blog",
+      "other": "Other"
     }
   }
 }

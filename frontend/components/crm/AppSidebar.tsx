@@ -12,6 +12,7 @@ import {
   LineChart,
   Mail,
   Megaphone,
+  Library,
   Calendar,
   Package,
   FileText,
@@ -68,6 +69,7 @@ export function AppSidebar() {
     { name: t("analytics"), href: "/crm/analytics", icon: LineChart },
     { name: t("emails"), href: "/crm/emails", icon: Mail },
     { name: t("marketing"), href: "/crm/marketing", icon: Megaphone },
+    { name: t("content"), href: "/crm/content", icon: Library },
   ];
 
   const settingsNav = [

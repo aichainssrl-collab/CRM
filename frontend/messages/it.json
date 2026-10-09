@@ -63,7 +63,8 @@
     "users": "Utenti",
     "logout": "Esci",
     "workflows": "Workflow",
-    "invoices": "Fatture"
+    "invoices": "Fatture",
+    "content": "Contenuti"
   },
   "navbar": {
     "search": "Cerca...",
@@ -641,6 +642,42 @@
       "paid": "Pagata",
       "overdue": "Scaduta",
       "cancelled": "Annullata"
+    }
+  },
+  "contentLibrary": {
+    "subtitle": "Libreria di contenuti marketing riutilizzabili",
+    "new": "Nuovo contenuto",
+    "newTitle": "Nuovo contenuto",
+    "editTitle": "Modifica contenuto",
+    "dialogDescription": "Salva email, copy, post e landing da riutilizzare.",
+    "listTitle": "Contenuti",
+    "listDescription": "Filtra per tipo, tag o testo. Copia il body con un click.",
+    "empty": "Nessun contenuto. Salva il primo pezzo di copy.",
+    "total": "Totali",
+    "search": "Cerca...",
+    "allTypes": "Tutti i tipi",
+    "allTags": "Tutti i tag",
+    "title": "Titolo",
+    "type": "Tipo",
+    "tags": "Tag",
+    "tagsPlaceholder": "welcome, zentratto, legal",
+    "description": "Descrizione",
+    "body": "Testo",
+    "copy": "Copia",
+    "copied": "Copiato",
+    "edit": "Modifica",
+    "delete": "Elimina",
+    "cancel": "Annulla",
+    "save": "Salva",
+    "actions": "Azioni",
+    "confirmDelete": "Eliminare questo contenuto?",
+    "types": {
+      "email": "Email",
+      "ad_copy": "Ad copy",
+      "social": "Social",
+      "landing": "Landing",
+      "blog": "Blog",
+      "other": "Altro"
     }
   }
 }

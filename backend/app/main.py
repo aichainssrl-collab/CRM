@@ -18,7 +18,7 @@ from app.routers import (
     leads, forms, auth, activities, tasks, deals, bookings,
     gdpr, users, task_global, dashboard, meta_ads, marketing_agent,
     analytics, reports, email_sequences, notifications, export, admin, calendar,
-    products, proposals, workflows, invoices,
+    products, proposals, workflows, invoices, content,
 )
 from app.tasks import handlers
 from app.services.db_service import db as mongo_db
@@ -70,6 +70,7 @@ app.include_router(products.seg_router, prefix="/api/v1/segments",     tags=["se
 app.include_router(proposals.router,    prefix="/api/v1/proposals",    tags=["proposals"])
 app.include_router(workflows.router,   prefix="/api/v1/workflows",    tags=["workflows"])
 app.include_router(invoices.router,    prefix="/api/v1/invoices",     tags=["invoices"])
+app.include_router(content.router,     prefix="/api/v1/content",      tags=["content"])
 
 # Routers pubblici (no auth)
 app.include_router(forms.router,    prefix="/api/v1/forms",    tags=["forms"])
