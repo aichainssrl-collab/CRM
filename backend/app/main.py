@@ -19,7 +19,7 @@ from app.routers import (
     gdpr, users, task_global, dashboard, meta_ads, marketing_agent,
     analytics, reports, email_sequences, notifications, export, admin, calendar,
     products, proposals, workflows, invoices, content, email_templates,
-    whatsapp,
+    whatsapp, competitors,
 )
 from app.tasks import handlers
 from app.services.db_service import db as mongo_db
@@ -74,6 +74,7 @@ app.include_router(invoices.router,    prefix="/api/v1/invoices",     tags=["inv
 app.include_router(content.router,     prefix="/api/v1/content",      tags=["content"])
 app.include_router(email_templates.router, prefix="/api/v1/email-templates", tags=["email-templates"])
 app.include_router(whatsapp.router, prefix="/api/v1/whatsapp", tags=["whatsapp"])
+app.include_router(competitors.router, prefix="/api/v1/competitors", tags=["competitors"])
 
 # Routers pubblici (no auth)
 app.include_router(forms.router,    prefix="/api/v1/forms",    tags=["forms"])

@@ -66,7 +66,8 @@
     "invoices": "Invoices",
     "content": "Content",
     "templates": "Templates",
-    "inbox": "Inbox"
+    "inbox": "Inbox",
+    "competitors": "Competitors"
   },
   "navbar": {
     "search": "Search...",
@@ -737,5 +738,42 @@
     "actions": "Actions",
     "processDue": "Process due",
     "confirmDelete": "Delete this template?"
+  },
+  "competitors": {
+    "subtitle": "Monitor competitor sites and offers",
+    "new": "New competitor",
+    "newTitle": "New competitor",
+    "editTitle": "Edit competitor",
+    "dialogDescription": "Add name, website and tags to start monitoring.",
+    "listTitle": "Competitors",
+    "listDescription": "Tracked sites, last checks and detected changes.",
+    "empty": "No competitors. Add one to get started.",
+    "name": "Name",
+    "website": "Website",
+    "description": "Description",
+    "tags": "Tags",
+    "cancel": "Cancel",
+    "save": "Save",
+    "edit": "Edit",
+    "delete": "Delete",
+    "scan": "Scan",
+    "scanAll": "Scan all",
+    "toggleChanges": "Show changes",
+    "actions": "Actions",
+    "confirmDelete": "Delete this competitor?",
+    "total": "Total",
+    "active": "Active",
+    "changes": "Changes",
+    "snapshots": "Snapshots",
+    "changeBadge": "changes",
+    "lastChecked": "Last checked",
+    "never": "never",
+    "noChanges": "No changes.",
+    "recentChanges": "Recent changes",
+    "recentChangesHint": "Latest changes on monitored sites.",
+    "status": {
+      "active": "Active",
+      "archived": "Archived"
+    }
   }
 }

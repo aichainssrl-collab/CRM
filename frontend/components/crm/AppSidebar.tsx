@@ -15,6 +15,7 @@ import {
   FileStack,
   Megaphone,
   Library,
+  Radar,
   Calendar,
   Package,
   FileText,
@@ -74,6 +75,7 @@ export function AppSidebar() {
     { name: t("templates"), href: "/crm/templates", icon: FileStack },
     { name: t("marketing"), href: "/crm/marketing", icon: Megaphone },
     { name: t("content"), href: "/crm/content", icon: Library },
+    { name: t("competitors"), href: "/crm/competitors", icon: Radar },
   ];
 
   const settingsNav = [

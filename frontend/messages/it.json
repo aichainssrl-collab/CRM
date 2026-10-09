@@ -66,7 +66,8 @@
     "invoices": "Fatture",
     "content": "Contenuti",
     "templates": "Template",
-    "inbox": "Inbox"
+    "inbox": "Inbox",
+    "competitors": "Competitor"
   },
   "navbar": {
     "search": "Cerca...",
@@ -737,5 +738,42 @@
     "actions": "Azioni",
     "processDue": "Processa scaduti",
     "confirmDelete": "Eliminare questo template?"
+  },
+  "competitors": {
+    "subtitle": "Monitora siti e offerte dei competitor",
+    "new": "Nuovo competitor",
+    "newTitle": "Nuovo competitor",
+    "editTitle": "Modifica competitor",
+    "dialogDescription": "Aggiungi nome, sito e tag per iniziare il monitoraggio.",
+    "listTitle": "Competitor",
+    "listDescription": "Siti tracciati, ultimi controlli e variazioni rilevate.",
+    "empty": "Nessun competitor. Aggiungine uno per iniziare.",
+    "name": "Nome",
+    "website": "Sito web",
+    "description": "Descrizione",
+    "tags": "Tag",
+    "cancel": "Annulla",
+    "save": "Salva",
+    "edit": "Modifica",
+    "delete": "Elimina",
+    "scan": "Scansiona",
+    "scanAll": "Scansiona tutti",
+    "toggleChanges": "Mostra variazioni",
+    "actions": "Azioni",
+    "confirmDelete": "Eliminare questo competitor?",
+    "total": "Totali",
+    "active": "Attivi",
+    "changes": "Variazioni",
+    "snapshots": "Snapshot",
+    "changeBadge": "variazioni",
+    "lastChecked": "Ultimo controllo",
+    "never": "mai",
+    "noChanges": "Nessuna variazione.",
+    "recentChanges": "Ultime variazioni",
+    "recentChangesHint": "Cambiamenti più recenti sui siti monitorati.",
+    "status": {
+      "active": "Attivo",
+      "archived": "Archiviato"
+    }
   }
 }
