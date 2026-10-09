@@ -62,7 +62,8 @@
     "settings": "Settings",
     "users": "Users",
     "logout": "Sign out",
-    "workflows": "Workflows"
+    "workflows": "Workflows",
+    "invoices": "Invoices"
   },
   "navbar": {
     "search": "Search...",
@@ -597,6 +598,49 @@
       "update_lead_status": "Update lead status",
       "send_notification": "Send notification",
       "send_email": "Send email"
+    }
+  },
+  "invoices": {
+    "subtitle": "Invoices from accepted proposals or created manually",
+    "new": "New invoice",
+    "newTitle": "New invoice",
+    "editTitle": "Edit invoice",
+    "dialogDescription": "Enter client and lines. Totals and tax are calculated automatically.",
+    "listTitle": "Invoices",
+    "listDescription": "Payment status and amounts.",
+    "empty": "No invoices yet. Create one or generate from an accepted proposal.",
+    "fromProposals": "From accepted proposals",
+    "fromProposalsHint": "Generate an invoice with the same lines as an accepted proposal.",
+    "title": "Title",
+    "clientName": "Client",
+    "clientEmail": "Client email",
+    "items": "Line items",
+    "addItem": "Add line",
+    "removeItem": "Remove line",
+    "itemName": "Item name",
+    "taxRate": "Tax %",
+    "dueDate": "Due date",
+    "due": "due",
+    "subtotal": "Subtotal",
+    "total": "Total",
+    "totalValue": "Total value",
+    "paidValue": "Paid",
+    "outstanding": "Outstanding",
+    "notes": "Notes",
+    "cancel": "Cancel",
+    "save": "Save",
+    "edit": "Edit",
+    "delete": "Delete",
+    "send": "Send",
+    "markPaid": "Mark paid",
+    "actions": "Actions",
+    "confirmDelete": "Delete this invoice?",
+    "status": {
+      "draft": "Draft",
+      "sent": "Sent",
+      "paid": "Paid",
+      "overdue": "Overdue",
+      "cancelled": "Cancelled"
     }
   }
 }

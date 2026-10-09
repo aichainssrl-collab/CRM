@@ -62,7 +62,8 @@
     "settings": "Impostazioni",
     "users": "Utenti",
     "logout": "Esci",
-    "workflows": "Workflow"
+    "workflows": "Workflow",
+    "invoices": "Fatture"
   },
   "navbar": {
     "search": "Cerca...",
@@ -597,6 +598,49 @@
       "update_lead_status": "Aggiorna stato lead",
       "send_notification": "Invia notifica",
       "send_email": "Invia email"
+    }
+  },
+  "invoices": {
+    "subtitle": "Fatture generate dai preventivi accettati o create a mano",
+    "new": "Nuova fattura",
+    "newTitle": "Nuova fattura",
+    "editTitle": "Modifica fattura",
+    "dialogDescription": "Inserisci cliente e righe. Totali e IVA calcolati automaticamente.",
+    "listTitle": "Fatture",
+    "listDescription": "Stato di pagamento e importi.",
+    "empty": "Nessuna fattura. Creane una o generale da un preventivo accettato.",
+    "fromProposals": "Da preventivi accettati",
+    "fromProposalsHint": "Genera una fattura con le stesse righe di un preventivo accettato.",
+    "title": "Titolo",
+    "clientName": "Cliente",
+    "clientEmail": "Email cliente",
+    "items": "Righe",
+    "addItem": "Aggiungi riga",
+    "removeItem": "Rimuovi riga",
+    "itemName": "Nome voce",
+    "taxRate": "IVA %",
+    "dueDate": "Scadenza",
+    "due": "scad.",
+    "subtotal": "Imponibile",
+    "total": "Totale",
+    "totalValue": "Valore totale",
+    "paidValue": "Incassato",
+    "outstanding": "Da incassare",
+    "notes": "Note",
+    "cancel": "Annulla",
+    "save": "Salva",
+    "edit": "Modifica",
+    "delete": "Elimina",
+    "send": "Invia",
+    "markPaid": "Segna pagata",
+    "actions": "Azioni",
+    "confirmDelete": "Eliminare questa fattura?",
+    "status": {
+      "draft": "Bozza",
+      "sent": "Inviata",
+      "paid": "Pagata",
+      "overdue": "Scaduta",
+      "cancelled": "Annullata"
     }
   }
 }
