@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import { cn } from "@/lib/utils";
+import { CookieConsent } from "@/components/crm/CookieConsent";
 
 export const metadata: Metadata = {
   title: "AiChain CRM",
@@ -20,6 +21,7 @@ export default function RootLayout({
         className={`${GeistSans.variable} ${GeistMono.variable} antialiased bg-background selection:bg-primary/10 selection:text-primary`}
       >
         {children}
+        <CookieConsent />
       </body>
     </html>
   );

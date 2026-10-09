@@ -18,6 +18,7 @@ import { useDashboardMetrics } from "@/hooks/useDashboard";
 import { useLeads } from "@/hooks/useLeads";
 import { useDeals } from "@/hooks/useDeals";
 import { KpiCard } from "@/components/crm/KpiCard";
+import { ActivityFeed } from "@/components/crm/ActivityFeed";
 import { formatEUR } from "@/lib/format";
 import {
   Users,
@@ -232,24 +233,8 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      {/* Activity — real data or empty state */}
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("recentActivity")}</CardTitle>
-          <CardDescription>{t("activityDescription")}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col items-center justify-center py-10 text-center gap-3">
-            <Activity className="h-10 w-10 text-muted-foreground/30" />
-            <p className="text-sm text-muted-foreground">
-              {t("activityEmpty")}
-            </p>
-            <Button variant="outline" size="sm" nativeButton={false} render={<Link href="/crm/leads" />}>
-              {t("goToLeads")}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Activity Feed — live data */}
+      <ActivityFeed limit={20} />
     </div>
   );
 }

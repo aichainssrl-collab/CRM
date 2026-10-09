@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 from app.routers import (
     leads, forms, auth, activities, tasks, deals, bookings,
     gdpr, users, task_global, dashboard, meta_ads, marketing_agent,
-    analytics, reports, email_sequences, notifications,
+    analytics, reports, email_sequences, notifications, export,
 )
 from app.tasks import handlers
 from app.services.db_service import db as mongo_db
@@ -61,6 +61,7 @@ app.include_router(analytics.router,    prefix="/api/v1/analytics",  tags=["anal
 app.include_router(reports.router,      prefix="/api/v1/reports",    tags=["reports"])
 app.include_router(email_sequences.router, prefix="/api/v1/email-sequences", tags=["email-sequences"])
 app.include_router(notifications.router,  prefix="/api/v1/notifications",  tags=["notifications"])
+app.include_router(export.router,        prefix="/api/v1/export",       tags=["export"])
 
 # Routers pubblici (no auth)
 app.include_router(forms.router,    prefix="/api/v1/forms",    tags=["forms"])

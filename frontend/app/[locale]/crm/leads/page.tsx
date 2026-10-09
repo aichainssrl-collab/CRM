@@ -17,8 +17,9 @@ import {
   PaginationEllipsis,
   PaginationItem,
 } from "@/components/ui/pagination";
-import { Plus, Upload, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Upload, Trash2, ChevronLeft, ChevronRight, Download } from "lucide-react";
 import { toast } from "sonner";
+import { downloadCSV } from "@/lib/export";
 
 const PAGE_SIZE = 20;
 
@@ -135,6 +136,10 @@ export default function LeadsPage() {
               {t("deleteSelected")} ({selectedIds.size})
             </Button>
           )}
+          <Button variant="outline" size="sm" onClick={() => downloadCSV("leads").catch(() => toast.error("Export fallito"))} className="gap-2">
+            <Download className="h-4 w-4" />
+            CSV
+          </Button>
           <Button variant="outline" size="sm" onClick={() => setIsImportOpen(true)} className="gap-2">
             <Upload className="h-4 w-4" />
             {t("importCsv")}
