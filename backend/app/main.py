@@ -12,7 +12,7 @@ import app.firebase_admin  # noqa: F401 — inizializza Firebase Auth all'avvio
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-from app.routers import leads, forms, auth, activities, tasks, deals, bookings, gdpr, users, task_global, dashboard, meta_ads
+from app.routers import leads, forms, auth, activities, tasks, deals, bookings, gdpr, users, task_global, dashboard, meta_ads, marketing_agent, analytics, reports
 from app.tasks import handlers
 
 app = FastAPI(
@@ -46,6 +46,9 @@ app.include_router(gdpr.router,       prefix="/api/v1/gdpr",       tags=["gdpr"]
 app.include_router(task_global.router, prefix="/api/v1/tasks",     tags=["tasks-global"])
 app.include_router(dashboard.router,  prefix="/api/v1/dashboard",  tags=["dashboard"])
 app.include_router(meta_ads.router,   prefix="/api/v1/meta",        tags=["meta-ads"])
+app.include_router(marketing_agent.router, prefix="/api/v1/marketing", tags=["marketing-agent"])
+app.include_router(analytics.router,    prefix="/api/v1/analytics",  tags=["analytics"])
+app.include_router(reports.router,      prefix="/api/v1/reports",    tags=["reports"])
 
 # Routers pubblici (no auth)
 app.include_router(forms.router,    prefix="/api/v1/forms",    tags=["forms"])

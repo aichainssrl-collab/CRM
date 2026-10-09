@@ -9,6 +9,7 @@ import {
   KanbanSquare,
   CheckSquare,
   BarChart3,
+  LineChart,
   Megaphone,
   Settings,
   UserCog,
@@ -52,6 +53,7 @@ export function AppSidebar() {
     { name: t("pipeline"), href: "/crm/pipeline", icon: KanbanSquare },
     { name: t("tasks"), href: "/crm/tasks", icon: CheckSquare },
     { name: t("reports"), href: "/crm/reports", icon: BarChart3 },
+    { name: t("analytics"), href: "/crm/analytics", icon: LineChart },
     { name: t("marketing"), href: "/crm/marketing", icon: Megaphone },
   ];
 

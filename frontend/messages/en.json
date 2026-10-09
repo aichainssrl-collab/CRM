@@ -52,6 +52,7 @@
     "pipeline": "Pipeline",
     "tasks": "Tasks",
     "reports": "Reports",
+    "analytics": "Analytics",
     "marketing": "Marketing",
     "settings": "Settings",
     "users": "Users",
@@ -259,8 +260,14 @@
     "noSector": "No sector assigned"
   },
   "marketing": {
-    "title": "Marketing — Meta Ads",
-    "subtitle": "Facebook & Instagram advertising campaign analysis",
+    "title": "Marketing",
+    "subtitle": "AI Agent, content, campaigns & analytics",
+    "tabs": {
+      "metaAds": "Meta Ads",
+      "agent": "AI Agent",
+      "content": "Content Generator",
+      "insights": "CRM Insights"
+    },
     "notConfigured": "Meta Ads not configured",
     "notConfiguredDesc": "To view analytics, configure Meta credentials in the backend environment variables:",
     "getToken": "Get the token from",
@@ -285,7 +292,53 @@
     "campaign": "Campaign",
     "active": "Active",
     "paused": "Paused",
-    "account": "Account"
+    "account": "Account",
+    "agent": {
+      "quickActions": "Quick actions",
+      "quickEmailSequence": "Email Sequence",
+      "quickSocialPost": "Social Post",
+      "quickAdCopy": "Ad Copy",
+      "quickBlogIdeas": "Blog Ideas",
+      "welcomeTitle": "Hi! I'm your Marketing Agent",
+      "welcomeDesc": "Ask me to create content, email strategies, ad copy, or analyze your CRM leads.",
+      "placeholder": "Type a message or choose a quick action...",
+      "footer": "Powered by LLM · CRM context integrated · Press Enter to send",
+      "history": "History",
+      "save": "Save",
+      "clear": "New chat",
+      "noHistory": "No saved conversations. Start a chat and save it to find it here."
+    },
+    "insights": {
+      "totalLeads": "Total Leads",
+      "totalDeals": "Total Deals",
+      "dealValue": "Deal Value",
+      "leadsBySource": "Leads by Source",
+      "leadsByStatus": "Leads by Status",
+      "dealsByStage": "Deals by Stage",
+      "topTags": "Top Tags",
+      "suggestions": "AI Suggestions",
+      "suggestionsDesc": "Recommended actions based on your CRM",
+      "noData": "No data available",
+      "retry": "Retry"
+    },
+    "content": {
+      "title": "Generate Content",
+      "type": "Content type",
+      "topic": "Topic",
+      "topicPlaceholder": "E.g. Digital signature eIDAS for law firms...",
+      "tone": "Tone",
+      "language": "Language",
+      "extraContext": "Extra context",
+      "optional": "optional",
+      "extraPlaceholder": "E.g. Target: notaries in Sicily, limited budget...",
+      "generate": "Generate",
+      "generating": "Generating...",
+      "result": "Generated Content",
+      "emptyState": "Select the type, enter the topic, and click Generate to create your marketing content.",
+      "chars": "characters",
+      "copy": "Copy",
+      "copied": "Copied!"
+    }
   },
   "settings": {
     "title": "Settings",
