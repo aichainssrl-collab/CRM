@@ -14,6 +14,7 @@ import {
   Megaphone,
   Settings,
   UserCog,
+  Shield,
   Zap,
   ChevronsUpDown,
   LogOut,
@@ -62,6 +63,7 @@ export function AppSidebar() {
   const settingsNav = [
     { name: t("settings"), href: "/crm/settings", icon: Settings },
     { name: t("users"), href: "/crm/user-admin", icon: UserCog },
+    { name: t("system"), href: "/crm/admin", icon: Shield },
   ];
 
   const isActive = (href: string) =>
