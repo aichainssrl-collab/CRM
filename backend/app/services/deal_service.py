@@ -5,6 +5,7 @@ from app.services.db_service import (
     list_collection, soft_delete,
 )
 from app.services.activity_service import append_activity
+from app.services import workflow_service
 
 
 async def create_deal(data: DealCreate, lead_id: str, created_by: str) -> dict:
@@ -58,6 +59,10 @@ async def update_deal(deal_id: str, data: DealUpdate, updated_by: str) -> Option
             "userId": updated_by,
             "metadata": {"dealId": deal_id, "to": update_data["stage"]},
         })
+        try:
+            await workflow_service.run_workflows("deal_stage_changed", deal, updated_by)
+        except Exception:
+            pass  # workflow failure must not break deal update
     return deal
 
 

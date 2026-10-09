@@ -61,7 +61,8 @@
     "system": "Sistema",
     "settings": "Impostazioni",
     "users": "Utenti",
-    "logout": "Esci"
+    "logout": "Esci",
+    "workflows": "Workflow"
   },
   "navbar": {
     "search": "Cerca...",
@@ -546,6 +547,56 @@
       "accepted": "Accettato",
       "rejected": "Rifiutato",
       "expired": "Scaduto"
+    }
+  },
+  "workflows": {
+    "subtitle": "Automazioni trigger → condizioni → azioni",
+    "new": "Nuovo workflow",
+    "newTitle": "Nuovo workflow",
+    "editTitle": "Modifica workflow",
+    "dialogDescription": "Quando si verifica un trigger e le condizioni sono soddisfatte, esegui le azioni.",
+    "listTitle": "Workflow",
+    "listDescription": "Regole automatiche per lead, deal e proposte.",
+    "empty": "Nessun workflow. Creane uno per automatizzare il lavoro ripetitivo.",
+    "name": "Nome",
+    "description": "Descrizione",
+    "trigger": "Trigger",
+    "conditions": "Condizioni",
+    "actions": "Azioni",
+    "addCondition": "Aggiungi condizione",
+    "addAction": "Aggiungi azione",
+    "remove": "Rimuovi",
+    "field": "Campo",
+    "value": "Valore",
+    "tag": "Tag",
+    "status": "Stato",
+    "actionTitle": "Titolo",
+    "total": "Totali",
+    "active": "Attivi",
+    "topRun": "Più eseguito",
+    "runs": "esecuzioni",
+    "on": "Attivo",
+    "off": "Disattivo",
+    "enable": "Attiva",
+    "disable": "Disattiva",
+    "edit": "Modifica",
+    "delete": "Elimina",
+    "cancel": "Annulla",
+    "save": "Salva",
+    "confirmDelete": "Eliminare questo workflow?",
+    "triggers": {
+      "lead_created": "Lead creato",
+      "deal_stage_changed": "Stadio deal cambiato",
+      "proposal_accepted": "Preventivo accettato",
+      "task_completed": "Task completato",
+      "manual": "Manuale"
+    },
+    "actionTypes": {
+      "create_task": "Crea task",
+      "add_tag": "Aggiungi tag",
+      "update_lead_status": "Aggiorna stato lead",
+      "send_notification": "Invia notifica",
+      "send_email": "Invia email"
     }
   }
 }

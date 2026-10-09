@@ -61,7 +61,8 @@
     "system": "System",
     "settings": "Settings",
     "users": "Users",
-    "logout": "Sign out"
+    "logout": "Sign out",
+    "workflows": "Workflows"
   },
   "navbar": {
     "search": "Search...",
@@ -546,6 +547,56 @@
       "accepted": "Accepted",
       "rejected": "Rejected",
       "expired": "Expired"
+    }
+  },
+  "workflows": {
+    "subtitle": "Automations: trigger → conditions → actions",
+    "new": "New workflow",
+    "newTitle": "New workflow",
+    "editTitle": "Edit workflow",
+    "dialogDescription": "When a trigger fires and conditions match, run the actions.",
+    "listTitle": "Workflows",
+    "listDescription": "Automatic rules for leads, deals and proposals.",
+    "empty": "No workflows yet. Create one to automate repetitive work.",
+    "name": "Name",
+    "description": "Description",
+    "trigger": "Trigger",
+    "conditions": "Conditions",
+    "actions": "Actions",
+    "addCondition": "Add condition",
+    "addAction": "Add action",
+    "remove": "Remove",
+    "field": "Field",
+    "value": "Value",
+    "tag": "Tag",
+    "status": "Status",
+    "actionTitle": "Title",
+    "total": "Total",
+    "active": "Active",
+    "topRun": "Most run",
+    "runs": "runs",
+    "on": "On",
+    "off": "Off",
+    "enable": "Enable",
+    "disable": "Disable",
+    "edit": "Edit",
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "save": "Save",
+    "confirmDelete": "Delete this workflow?",
+    "triggers": {
+      "lead_created": "Lead created",
+      "deal_stage_changed": "Deal stage changed",
+      "proposal_accepted": "Proposal accepted",
+      "task_completed": "Task completed",
+      "manual": "Manual"
+    },
+    "actionTypes": {
+      "create_task": "Create task",
+      "add_tag": "Add tag",
+      "update_lead_status": "Update lead status",
+      "send_notification": "Send notification",
+      "send_email": "Send email"
     }
   }
 }

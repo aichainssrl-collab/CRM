@@ -31,6 +31,11 @@ class LeadService:
             "title": "Lead creato",
             "userId": created_by,
         })
+        try:
+            from app.services import workflow_service
+            await workflow_service.run_workflows("lead_created", lead, created_by)
+        except Exception:
+            pass  # workflow failure must not break lead creation
         return lead
 
     async def get_lead(self, lead_id: str) -> Optional[dict]:
