@@ -53,6 +53,7 @@
     "tasks": "Tasks",
     "reports": "Reports",
     "analytics": "Analytics",
+    "emails": "Email",
     "marketing": "Marketing",
     "settings": "Impostazioni",
     "users": "Utenti",
@@ -258,6 +259,24 @@
     "scoreQuality": "Qualita del parco lead per fascia di punteggio",
     "noData": "Nessun dato disponibile",
     "noSector": "Nessun settore assegnato"
+  },
+  "emailSequences": {
+    "title": "Email Sequences",
+    "subtitle": "Drip campaign automatiche",
+    "newSequence": "Nuova Sequenza",
+    "noSequences": "Nessuna sequenza email",
+    "noSequencesDesc": "Crea la tua prima drip campaign per automatizzare il nurturing dei lead",
+    "createFirst": "Crea Prima Sequenza",
+    "name": "Nome",
+    "description": "Descrizione",
+    "steps": "Step",
+    "enrolled": "iscritti",
+    "active": "Attiva",
+    "inactive": "Inattiva",
+    "attiva": "Attiva",
+    "pausa": "In pausa",
+    "completata": "Completata",
+    "disiscritto": "Disiscritto"
   },
   "marketing": {
     "title": "Marketing",

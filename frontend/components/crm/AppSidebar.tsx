@@ -10,6 +10,7 @@ import {
   CheckSquare,
   BarChart3,
   LineChart,
+  Mail,
   Megaphone,
   Settings,
   UserCog,
@@ -54,6 +55,7 @@ export function AppSidebar() {
     { name: t("tasks"), href: "/crm/tasks", icon: CheckSquare },
     { name: t("reports"), href: "/crm/reports", icon: BarChart3 },
     { name: t("analytics"), href: "/crm/analytics", icon: LineChart },
+    { name: t("emails"), href: "/crm/emails", icon: Mail },
     { name: t("marketing"), href: "/crm/marketing", icon: Megaphone },
   ];
 
