@@ -19,6 +19,7 @@ import { useLeads } from "@/hooks/useLeads";
 import { useDeals } from "@/hooks/useDeals";
 import { KpiCard } from "@/components/crm/KpiCard";
 import { ActivityFeed } from "@/components/crm/ActivityFeed";
+import { TeamLeaderboard } from "@/components/crm/TeamLeaderboard";
 import { formatEUR } from "@/lib/format";
 import {
   Users,
@@ -233,8 +234,11 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      {/* Activity Feed — live data */}
-      <ActivityFeed limit={20} />
+      {/* Activity Feed + Team Leaderboard */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <ActivityFeed limit={15} />
+        <TeamLeaderboard days={30} />
+      </div>
     </div>
   );
 }
