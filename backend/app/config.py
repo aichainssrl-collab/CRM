@@ -30,6 +30,19 @@ class Settings(BaseSettings):
     META_AD_ACCOUNT_ID: Optional[str] = None  # formato: act_XXXXXXXXX
     META_API_VERSION: str = "v19.0"
 
+    # LLM Marketing Agent (multi-provider)
+    OPENAI_API_KEY: Optional[str] = None
+    ANTHROPIC_API_KEY: Optional[str] = None
+    GEMINI_API_KEY: Optional[str] = None
+    LLM_PROVIDER: str = "openai"  # openai | anthropic | gemini | ollama | custom
+    LLM_MODEL: str = "gpt-4o"  # gpt-4o | claude-sonnet-4-20250514 | gemini/gemini-2.0-flash | qwen3:4b | ecc.
+    LLM_BASE_URL: Optional[str] = None  # per endpoint custom/OpenAI-compatible
+    # Modello locale (Ollama) per task leggeri — risparmia token API
+    LLM_LOCAL_PROVIDER: str = "ollama"
+    LLM_LOCAL_MODEL: str = "qwen3:4b"  # modello per suggerimenti, task semplici
+    LLM_LOCAL_BASE_URL: str = "http://localhost:11434"
+    MARKETING_SKILLS_DIR: str = "/Users/fred/.claude/plugins/marketplaces/marketingskills/skills"
+
     # Feature
     DEBUG: bool = True
 
