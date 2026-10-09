@@ -65,7 +65,8 @@
     "workflows": "Workflows",
     "invoices": "Invoices",
     "content": "Content",
-    "templates": "Templates"
+    "templates": "Templates",
+    "inbox": "Inbox"
   },
   "navbar": {
     "search": "Search...",
@@ -649,6 +650,32 @@
       "paid": "Paid",
       "overdue": "Overdue",
       "cancelled": "Cancelled"
+    }
+  },
+  "inbox": {
+    "subtitle": "WhatsApp conversations with your contacts",
+    "new": "New conversation",
+    "newTitle": "New conversation",
+    "dialogDescription": "Enter the WhatsApp number to open a conversation.",
+    "conversations": "Conversations",
+    "empty": "No conversations.",
+    "selectHint": "Select a conversation",
+    "noMessages": "No messages yet. Write the first one.",
+    "messagePlaceholder": "Write a message...",
+    "send": "Send",
+    "close": "Close",
+    "reopen": "Reopen",
+    "phone": "Phone",
+    "leadName": "Contact name",
+    "leadNamePlaceholder": "e.g. Mario Rossi",
+    "cancel": "Cancel",
+    "create": "Create",
+    "totalConversations": "Conversations",
+    "openConversations": "Open",
+    "unreadMessages": "Unread",
+    "status": {
+      "open": "Open",
+      "closed": "Closed"
     }
   },
   "contentLibrary": {

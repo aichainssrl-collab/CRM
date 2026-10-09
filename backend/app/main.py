@@ -19,6 +19,7 @@ from app.routers import (
     gdpr, users, task_global, dashboard, meta_ads, marketing_agent,
     analytics, reports, email_sequences, notifications, export, admin, calendar,
     products, proposals, workflows, invoices, content, email_templates,
+    whatsapp,
 )
 from app.tasks import handlers
 from app.services.db_service import db as mongo_db
@@ -72,10 +73,12 @@ app.include_router(workflows.router,   prefix="/api/v1/workflows",    tags=["wor
 app.include_router(invoices.router,    prefix="/api/v1/invoices",     tags=["invoices"])
 app.include_router(content.router,     prefix="/api/v1/content",      tags=["content"])
 app.include_router(email_templates.router, prefix="/api/v1/email-templates", tags=["email-templates"])
+app.include_router(whatsapp.router, prefix="/api/v1/whatsapp", tags=["whatsapp"])
 
 # Routers pubblici (no auth)
 app.include_router(forms.router,    prefix="/api/v1/forms",    tags=["forms"])
 app.include_router(bookings.router, prefix="/api/v1/bookings", tags=["bookings"])
+app.include_router(whatsapp.public_router, prefix="/api/v1/whatsapp", tags=["whatsapp-webhook"])
 
 # Cloud Tasks handlers (OIDC protected)
 app.include_router(handlers.router, prefix="/tasks/handlers", tags=["tasks-internal"])

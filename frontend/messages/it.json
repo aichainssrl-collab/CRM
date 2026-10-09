@@ -65,7 +65,8 @@
     "workflows": "Workflow",
     "invoices": "Fatture",
     "content": "Contenuti",
-    "templates": "Template"
+    "templates": "Template",
+    "inbox": "Inbox"
   },
   "navbar": {
     "search": "Cerca...",
@@ -649,6 +650,32 @@
       "paid": "Pagata",
       "overdue": "Scaduta",
       "cancelled": "Annullata"
+    }
+  },
+  "inbox": {
+    "subtitle": "Conversazioni WhatsApp con i tuoi contatti",
+    "new": "Nuova conversazione",
+    "newTitle": "Nuova conversazione",
+    "dialogDescription": "Inserisci il numero WhatsApp per aprire una conversazione.",
+    "conversations": "Conversazioni",
+    "empty": "Nessuna conversazione.",
+    "selectHint": "Seleziona una conversazione",
+    "noMessages": "Nessun messaggio. Scrivi il primo.",
+    "messagePlaceholder": "Scrivi un messaggio...",
+    "send": "Invia",
+    "close": "Chiudi",
+    "reopen": "Riapri",
+    "phone": "Telefono",
+    "leadName": "Nome contatto",
+    "leadNamePlaceholder": "Es. Mario Rossi",
+    "cancel": "Annulla",
+    "create": "Crea",
+    "totalConversations": "Conversazioni",
+    "openConversations": "Aperte",
+    "unreadMessages": "Non letti",
+    "status": {
+      "open": "Aperta",
+      "closed": "Chiusa"
     }
   },
   "contentLibrary": {

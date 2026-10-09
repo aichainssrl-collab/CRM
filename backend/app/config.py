@@ -31,6 +31,12 @@ class Settings(BaseSettings):
     # Documents (PDF snapshots)
     DEFAULT_TAX_RATE: float = 22.0
 
+    # WhatsApp Cloud API (empty = mock mode)
+    WHATSAPP_ACCESS_TOKEN: str = ""
+    WHATSAPP_PHONE_NUMBER_ID: str = ""
+    WHATSAPP_VERIFY_TOKEN: str = "aichain-wa-verify"
+    WHATSAPP_API_VERSION: str = "v20.0"
+
     # Security
     ALLOWED_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:3001"]
     RATE_LIMIT_PER_MINUTE: int = 60
