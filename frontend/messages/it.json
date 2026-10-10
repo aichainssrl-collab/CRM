@@ -102,7 +102,10 @@
     "recentActivity": "Attività Recenti",
     "activityDescription": "Ultime interazioni del team commerciale",
     "activityEmpty": "Le attività del team verranno visualizzate qui quando disponibili.",
-    "goToLeads": "Vai ai Lead"
+    "goToLeads": "Vai ai Lead",
+    "competitorAlerts": "Alert competitor",
+    "competitorAlertsHint": "Ultime variazioni rilevate dal monitoraggio automatico",
+    "noCompetitorAlerts": "Nessuna variazione competitor di recente."
   },
   "leads": {
     "title": "Leads",

@@ -41,7 +41,15 @@ async def list_competitors(
 
 @router.get("/stats")
 async def competitor_stats(user: UserRecord = Depends(require_sales)):
-    return await competitor_service.competitor_stats()
+    stats = await competitor_service.competitor_stats()
+    last = await competitor_service.last_monitor_run()
+    stats["lastMonitorRun"] = last
+    return stats
+
+
+@router.get("/monitor/last")
+async def last_monitor(user: UserRecord = Depends(require_sales)):
+    return await competitor_service.last_monitor_run() or {}
 
 
 @router.get("/changes")

@@ -150,3 +150,19 @@ async def handle_process_due_enrollments(request: Request):
 
     processed = await process_due_enrollments()
     return {"success": True, "processed": processed}
+
+
+@router.post("/monitor-competitors")
+async def handle_monitor_competitors(request: Request):
+    """Cloud Scheduler tick — scan competitor attivi e notifica le variazioni."""
+    await verify_cloud_tasks_request(request)
+    from app.services.competitor_service import scan_all
+
+    results = await scan_all()
+    change_total = sum(int(r.get("changes") or 0) for r in results if r.get("ok"))
+    return {
+        "success": True,
+        "scanned": len(results),
+        "changes": change_total,
+        "results": results,
+    }

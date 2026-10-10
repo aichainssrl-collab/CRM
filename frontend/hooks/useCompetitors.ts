@@ -42,6 +42,13 @@ export interface CompetitorStats {
   activeCount: number;
   changeCount: number;
   snapshotCount: number;
+  lastMonitorRun?: {
+    ranAt: string;
+    competitorCount: number;
+    okCount: number;
+    failedCount: number;
+    changeCount: number;
+  } | null;
 }
 
 export function useCompetitors(status?: string) {

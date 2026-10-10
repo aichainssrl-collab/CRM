@@ -176,6 +176,43 @@ def test_scan_all():
     assert resp.json()[0]["ok"] is True
 
 
+def test_last_monitor_endpoint():
+    with patch(
+        "app.routers.competitors.competitor_service.last_monitor_run",
+        new_callable=AsyncMock,
+        return_value={"ranAt": "2026-01-20T10:00:00Z", "changeCount": 2},
+    ):
+        resp = client.get("/api/v1/competitors/monitor/last")
+    assert resp.status_code == 200
+    assert resp.json()["changeCount"] == 2
+
+
+def test_monitor_competitors_handler():
+    with patch(
+        "app.tasks.handlers.scan_all",
+        create=True,
+    ):
+        pass
+    with patch(
+        "app.services.competitor_service.scan_all",
+        new_callable=AsyncMock,
+        return_value=[
+            {"competitorId": "c1", "ok": True, "changes": 2},
+            {"competitorId": "c2", "ok": True, "changes": 0},
+        ],
+    ):
+        resp = client.post(
+            "/tasks/handlers/monitor-competitors",
+            json={},
+            headers={"Authorization": "Bearer test"},
+        )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["success"] is True
+    assert body["scanned"] == 2
+    assert body["changes"] == 2
+
+
 def test_list_snapshots_and_changes():
     with patch(
         "app.routers.competitors.competitor_service.list_snapshots",
@@ -248,7 +285,11 @@ async def test_scan_competitor_stores_snapshot_and_changes():
     mock_db = MagicMock()
     mock_db.__getitem__ = MagicMock(side_effect=get_col)
 
-    with patch("app.services.competitor_service.db", mock_db):
+    with patch("app.services.competitor_service.db", mock_db), patch(
+        "app.services.competitor_service.notify_competitor_changes",
+        new_callable=AsyncMock,
+        return_value=2,
+    ) as notify:
         result = await competitor_service.scan_competitor("comp-1", html=_HTML_V2)
 
     assert result["snapshot"]["bodyHash"]
@@ -256,3 +297,36 @@ async def test_scan_competitor_stores_snapshot_and_changes():
     mock_snap.insert_one.assert_awaited_once()
     assert mock_chg.insert_one.await_count >= 2
     mock_comp.update_one.assert_awaited_once()
+    notify.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_notify_competitor_changes_pricing_is_warning():
+    from app.services import competitor_service
+
+    mock_col = MagicMock()
+    mock_col.find = MagicMock()
+    mock_col.find.return_value.to_list = AsyncMock(
+        return_value=[{"_id": "u1", "role": "admin", "isActive": True}]
+    )
+    mock_col.insert_one = AsyncMock()
+    mock_db = MagicMock()
+    mock_db.__getitem__ = MagicMock(return_value=mock_col)
+
+    changes = [{"field": "pricingMentions", "from": "99 EUR", "to": "149 EUR"}]
+    with patch("app.services.competitor_service.db", mock_db), patch(
+        "app.services.notification_service.create_notification",
+        new_callable=AsyncMock,
+        return_value={},
+    ) as notify:
+        # re-import path used inside function is local; patch module-level too
+        sent = await competitor_service.notify_competitor_changes(
+            {"id": "comp-1", "name": "Acme"}, changes
+        )
+
+    assert sent == 1
+    notify.assert_awaited_once()
+    kwargs = notify.call_args.kwargs
+    assert kwargs["kind"] == "warning"
+    assert "Acme" in kwargs["title"]
+    assert kwargs["link"] == "/crm/competitors"

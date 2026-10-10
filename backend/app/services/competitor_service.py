@@ -300,7 +300,48 @@ async def scan_competitor(competitor_id: str, html: Optional[str] = None) -> dic
         {"$set": update, "$inc": {"changeCount": len(changes)}},
     )
 
-    return {"snapshot": _to_dict(snapshot), "changes": change_docs}
+    result = {"snapshot": _to_dict(snapshot), "changes": change_docs}
+    if change_docs:
+        try:
+            await notify_competitor_changes(comp, change_docs)
+        except Exception as exc:
+            logger.warning("notify_competitor_changes failed: %s", exc)
+    return result
+
+
+async def notify_competitor_changes(comp: dict, change_docs: list[dict]) -> int:
+    """Broadcast in-app alerts to admin/sales when a competitor page changes."""
+    if not change_docs:
+        return 0
+    from app.services.notification_service import create_notification
+
+    pricing = [c for c in change_docs if c.get("field") == "pricingMentions"]
+    kind = "warning" if pricing else "info"
+    fields = ", ".join(sorted({c.get("field", "") for c in change_docs}))
+    name = comp.get("name") or comp.get("id")
+    if pricing:
+        title = f"Prezzi competitor aggiornati: {name}"
+        body = f"Rilevata variazione listino ({fields}). Controlla i nuovi prezzi."
+    else:
+        title = f"Sito competitor aggiornato: {name}"
+        body = f"Cambiamenti rilevati su {fields}."
+
+    cursor = db["users"].find({"isActive": True, "role": {"$in": ["admin", "sales"]}})
+    users = await cursor.to_list(length=100)
+    sent = 0
+    for u in users:
+        uid = u.get("_id") or u.get("uid")
+        if not uid:
+            continue
+        await create_notification(
+            user_id=str(uid),
+            title=title,
+            body=body,
+            kind=kind,
+            link="/crm/competitors",
+        )
+        sent += 1
+    return sent
 
 
 async def scan_all() -> list[dict]:
@@ -312,6 +353,7 @@ async def scan_all() -> list[dict]:
             results.append(
                 {
                     "competitorId": comp["id"],
+                    "name": comp.get("name"),
                     "ok": True,
                     "changes": len(result.get("changes") or []),
                 }
@@ -319,9 +361,46 @@ async def scan_all() -> list[dict]:
         except Exception as exc:
             logger.warning("scan_all %s failed: %s", comp.get("name"), exc)
             results.append(
-                {"competitorId": comp["id"], "ok": False, "error": str(exc)}
+                {
+                    "competitorId": comp["id"],
+                    "name": comp.get("name"),
+                    "ok": False,
+                    "error": str(exc),
+                }
             )
+    await record_monitor_run(results)
     return results
+
+
+async def record_monitor_run(results: list[dict]) -> dict:
+    """Persist last auto-monitor run summary (for UI badge / ops)."""
+    now = utcnow()
+    ok = sum(1 for r in results if r.get("ok"))
+    failed = len(results) - ok
+    changes = sum(int(r.get("changes") or 0) for r in results if r.get("ok"))
+    doc = {
+        "_id": new_id(),
+        "kind": "competitor_monitor",
+        "ranAt": now,
+        "competitorCount": len(results),
+        "okCount": ok,
+        "failedCount": failed,
+        "changeCount": changes,
+        "results": results[:50],
+        "createdAt": now,
+        "updatedAt": now,
+        "deletedAt": None,
+    }
+    await db["monitor_runs"].insert_one(doc)
+    return _to_dict(doc)
+
+
+async def last_monitor_run() -> Optional[dict]:
+    doc = await db["monitor_runs"].find_one(
+        {"kind": "competitor_monitor", "deletedAt": None},
+        sort=[("ranAt", -1)],
+    )
+    return _to_dict(doc) if doc else None
 
 
 async def competitor_stats() -> dict:

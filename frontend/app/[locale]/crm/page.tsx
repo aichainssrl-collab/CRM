@@ -20,6 +20,7 @@ import { useDeals } from "@/hooks/useDeals";
 import { KpiCard } from "@/components/crm/KpiCard";
 import { ActivityFeed } from "@/components/crm/ActivityFeed";
 import { TeamLeaderboard } from "@/components/crm/TeamLeaderboard";
+import { CompetitorAlerts } from "@/components/crm/CompetitorAlerts";
 import { formatEUR } from "@/lib/format";
 import {
   Users,
@@ -239,6 +240,9 @@ export default function DashboardPage() {
         <ActivityFeed limit={15} />
         <TeamLeaderboard days={30} />
       </div>
+
+      {/* Competitor auto-monitor alerts */}
+      <CompetitorAlerts limit={6} />
     </div>
   );
 }
