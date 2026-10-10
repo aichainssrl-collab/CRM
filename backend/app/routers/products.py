@@ -42,6 +42,7 @@ class SegmentCreate(BaseModel):
 
 
 # ── Product Endpoints ──────────────────────────────────────────
+@router.get("")
 @router.get("/")
 async def list_products(
     active_only: bool = Query(True),
@@ -58,6 +59,7 @@ async def get_product(
     return await product_service.get_product(product_id)
 
 
+@router.post("")
 @router.post("/")
 async def create_product(
     body: ProductCreate,
@@ -86,11 +88,13 @@ async def delete_product(
 
 
 # ── Segment Endpoints ─────────────────────────────────────────
+@seg_router.get("")
 @seg_router.get("/")
 async def list_segments(user: UserRecord = Depends(require_sales)):
     return await segmentation_service.list_segments(user.uid)
 
 
+@seg_router.post("")
 @seg_router.post("/")
 async def create_segment(
     body: SegmentCreate,

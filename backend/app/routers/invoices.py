@@ -44,6 +44,7 @@ class InvoiceUpdate(BaseModel):
     notes: Optional[str] = None
 
 
+@router.get("")
 @router.get("/")
 async def list_invoices(
     status: Optional[str] = None,
@@ -117,6 +118,7 @@ async def get_invoice(
     return doc
 
 
+@router.post("")
 @router.post("/")
 async def create_invoice(
     body: InvoiceCreate,

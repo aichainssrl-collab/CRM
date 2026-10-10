@@ -15,6 +15,7 @@ class MarkReadBody(BaseModel):
 
 
 # ── Notifications ──────────────────────────────────────────────
+@router.get("")
 @router.get("/")
 async def list_notifications(
     unread_only: bool = Query(False),

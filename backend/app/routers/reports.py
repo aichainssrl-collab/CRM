@@ -79,6 +79,7 @@ async def generate_report(
 
 
 # ── List ───────────────────────────────────────────────────────
+@router.get("")
 @router.get("/")
 async def list_reports(
     limit: int = Query(20, ge=1, le=100),

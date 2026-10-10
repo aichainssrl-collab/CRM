@@ -26,6 +26,7 @@ class TemplateUpdate(BaseModel):
     category: Optional[str] = None
 
 
+@router.get("")
 @router.get("/")
 async def list_templates(
     category: Optional[str] = None,
@@ -45,6 +46,7 @@ async def get_template(
     return doc
 
 
+@router.post("")
 @router.post("/")
 async def create_template(
     body: TemplateCreate,

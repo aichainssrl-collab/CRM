@@ -29,6 +29,7 @@ class ContentUpdate(BaseModel):
     language: Optional[str] = None
 
 
+@router.get("")
 @router.get("/")
 async def list_content(
     type: Optional[str] = None,
@@ -60,6 +61,7 @@ async def get_content(
     return doc
 
 
+@router.post("")
 @router.post("/")
 async def create_content(
     body: ContentCreate,

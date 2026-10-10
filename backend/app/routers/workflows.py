@@ -54,6 +54,7 @@ class TriggerRequest(BaseModel):
     entity: dict = Field(default_factory=dict)
 
 
+@router.get("")
 @router.get("/")
 async def list_workflows(
     only_active: bool = False,
@@ -78,6 +79,7 @@ async def get_workflow(
     return doc
 
 
+@router.post("")
 @router.post("/")
 async def create_workflow(
     body: WorkflowCreate,

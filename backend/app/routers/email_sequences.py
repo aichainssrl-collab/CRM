@@ -34,6 +34,7 @@ class EnrollRequest(BaseModel):
 
 
 # ── CRUD ───────────────────────────────────────────────────────
+@router.post("")
 @router.post("/")
 async def create_sequence(
     body: SequenceCreate,
@@ -44,6 +45,7 @@ async def create_sequence(
     return result
 
 
+@router.get("")
 @router.get("/")
 async def list_sequences(
     user: UserRecord = Depends(require_sales),

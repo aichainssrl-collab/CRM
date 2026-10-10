@@ -30,6 +30,7 @@ class ScanBody(BaseModel):
     html: Optional[str] = None  # test / offline injection
 
 
+@router.get("")
 @router.get("/")
 async def list_competitors(
     status: Optional[str] = None,
@@ -71,6 +72,7 @@ async def get_competitor(
     return doc
 
 
+@router.post("")
 @router.post("/")
 async def create_competitor(
     body: CompetitorCreate,

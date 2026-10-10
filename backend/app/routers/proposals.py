@@ -45,6 +45,7 @@ class ProposalUpdate(BaseModel):
     notes: Optional[str] = None
 
 
+@router.get("")
 @router.get("/")
 async def list_proposals(
     status: Optional[str] = None,
@@ -104,6 +105,7 @@ async def get_proposal(
     return doc
 
 
+@router.post("")
 @router.post("/")
 async def create_proposal(
     body: ProposalCreate,

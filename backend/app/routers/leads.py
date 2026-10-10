@@ -8,6 +8,7 @@ from app.utils.cloud_tasks import enqueue_task
 router = APIRouter()
 
 
+@router.get("/")
 @router.get("")
 async def list_leads(
     status: Optional[str] = Query(None),
