@@ -1,39 +1,21 @@
 """
 Test CORS headers su tutti gli endpoint principali.
 
-Esegui con:
-    cd backend
-    source venv/bin/activate
-    pytest tests/test_cors.py -v
-
-Requisiti: backend uvicorn in esecuzione su localhost:8088
+Usa FastAPI TestClient (in-process): non richiede uvicorn in esecuzione.
 """
 
 import pytest
-import httpx
+from fastapi.testclient import TestClient
 
-BASE_URL = "http://localhost:8088"
+from app.main import app
+
 ALLOWED_ORIGIN = "http://localhost:3000"
 BAD_ORIGIN = "http://evil.example.com"
-
-# Endpoint da testare: (method, path)
-ENDPOINTS = [
-    ("GET",    "/api/health"),
-    ("GET",    "/api/v1/users/me"),
-    ("GET",    "/api/v1/users/me/avatar"),
-    ("GET",    "/api/v1/leads"),
-    ("GET",    "/api/v1/deals"),
-    ("GET",    "/api/v1/tasks"),
-    ("GET",    "/api/v1/dashboard/metrics"),
-    ("POST",   "/api/v1/users/me/avatar"),
-    ("OPTIONS","/api/v1/users/me"),
-    ("OPTIONS","/api/v1/leads"),
-]
 
 
 @pytest.fixture(scope="module")
 def client():
-    with httpx.Client(base_url=BASE_URL, timeout=5.0) as c:
+    with TestClient(app) as c:
         yield c
 
 
@@ -159,12 +141,16 @@ class TestActualResponseCors:
 
     def test_health_no_auth_required(self, client):
         """Health endpoint deve rispondere 200 senza token."""
-        r = client.get(
-            "/api/health",
-            headers={"Origin": ALLOWED_ORIGIN},
-        )
+        from unittest.mock import AsyncMock, patch
+
+        with patch("app.main.mongo_db.command", new_callable=AsyncMock, return_value={"ok": 1}):
+            r = client.get(
+                "/api/health",
+                headers={"Origin": ALLOWED_ORIGIN},
+            )
         assert r.status_code == 200
         assert r.json()["status"] == "ok"
+        assert r.json()["checks"]["api"] == "ok"
 
     def test_health_has_cors_header(self, client):
         r = client.get(

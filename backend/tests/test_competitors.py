@@ -241,14 +241,22 @@ def test_list_snapshots_and_changes():
 
 def test_stats():
     stats = {"totalCount": 2, "activeCount": 1, "changeCount": 4, "snapshotCount": 6}
-    with patch(
-        "app.routers.competitors.competitor_service.competitor_stats",
-        new_callable=AsyncMock,
-        return_value=stats,
+    with (
+        patch(
+            "app.routers.competitors.competitor_service.competitor_stats",
+            new_callable=AsyncMock,
+            return_value=stats,
+        ),
+        patch(
+            "app.routers.competitors.competitor_service.last_monitor_run",
+            new_callable=AsyncMock,
+            return_value=None,
+        ),
     ):
         resp = client.get("/api/v1/competitors/stats")
     assert resp.status_code == 200
     assert resp.json()["changeCount"] == 4
+    assert "lastMonitorRun" in resp.json()
 
 
 # ── scan_competitor storage integration (mocked db) ─────────────
