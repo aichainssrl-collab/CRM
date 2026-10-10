@@ -32,7 +32,7 @@ describe('useLeads hooks', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data).toEqual(mockLeads);
-    expect(apiFetch).toHaveBeenCalledWith('/api/v1/leads');
+    expect(apiFetch).toHaveBeenCalledWith('/api/v1/leads?limit=100');
   });
 
   it('useLead fetches single lead', async () => {

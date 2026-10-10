@@ -1,73 +1,95 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { importLeadsFromCSV } from '../lib/csvImporter';
-import * as api from '../lib/api';
+import { importLeadsFromFile, importLeadsFromCSV } from '../lib/csvImporter';
 
-vi.mock('../lib/api', () => ({
-  apiFetch: vi.fn(),
+vi.mock('../lib/auth', () => ({
+  getAuthToken: vi.fn(),
 }));
+
+import { getAuthToken } from '../lib/auth';
+
+const mockGetAuthToken = vi.mocked(getAuthToken);
+
+function mockFetchOnce(response: Partial<Response> & { json?: () => Promise<unknown> }) {
+  return vi.mocked(global.fetch).mockResolvedValueOnce({
+    ok: true,
+    status: 200,
+    json: async () => ({}),
+    ...response,
+  } as Response);
+}
 
 describe('csvImporter', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    global.fetch = vi.fn();
+    mockGetAuthToken.mockResolvedValue('test-token');
   });
 
-  it('should parse CSV and send valid rows to API', async () => {
-    const csvContent = `firstName,lastName,email,companyName
-John,Doe,john@example.com,Acme
-Jane,Smith,jane@example.com,Global
-NoEmail,User,,BadCorp`;
+  it('exports importLeadsFromCSV as alias of importLeadsFromFile', () => {
+    expect(importLeadsFromCSV).toBe(importLeadsFromFile);
+  });
 
-    const file = new File([csvContent], 'leads.csv', { type: 'text/csv' });
-    
-    // Mock successful API response for John and Jane
-    (api.apiFetch as any).mockResolvedValueOnce({ id: '1' });
-    (api.apiFetch as any).mockResolvedValueOnce({ id: '2' });
+  it('uploads file as FormData to backend import endpoint', async () => {
+    const file = new File(['email\njohn@example.com'], 'leads.csv', { type: 'text/csv' });
 
-    const result = await importLeadsFromCSV(file);
+    mockFetchOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({ imported: 2, skipped: 1, errors: ['Email is required'] }),
+    });
+
+    const result = await importLeadsFromFile(file);
 
     expect(result.success).toBe(2);
+    expect(result.duplicates).toBe(0);
     expect(result.failed).toBe(1);
-    expect(result.errors.length).toBe(1);
-    expect(result.errors[0]).toContain('Email is required');
+    expect(result.errors).toEqual(['Email is required']);
 
-    expect(api.apiFetch).toHaveBeenCalledTimes(2);
-    expect(api.apiFetch).toHaveBeenNthCalledWith(1, '/api/v1/leads', expect.objectContaining({
-      method: 'POST',
-      body: JSON.stringify({
-        firstName: 'John',
-        lastName: 'Doe',
-        email: 'john@example.com',
-        companyName: 'Acme',
-        source: 'csv_import',
-        pipelineStage: 'new',
-        status: 'new'
-      })
-    }));
-
-    expect(api.apiFetch).toHaveBeenNthCalledWith(2, '/api/v1/leads', expect.objectContaining({
-      method: 'POST',
-      body: JSON.stringify({
-        firstName: 'Jane',
-        lastName: 'Smith',
-        email: 'jane@example.com',
-        companyName: 'Global',
-        source: 'csv_import',
-        pipelineStage: 'new',
-        status: 'new'
-      })
-    }));
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+    const [url, init] = vi.mocked(global.fetch).mock.calls[0];
+    expect(String(url)).toContain('/api/v1/leads/import');
+    expect(init?.method).toBe('POST');
+    expect(init?.headers).toEqual({ Authorization: 'Bearer test-token' });
+    expect(init?.body).toBeInstanceOf(FormData);
+    expect((init?.body as FormData).get('file')).toBe(file);
   });
 
-  it('should handle API errors during import', async () => {
-    const csvContent = `email\nbad@example.com`;
-    const file = new File([csvContent], 'leads.csv', { type: 'text/csv' });
-    
-    (api.apiFetch as any).mockRejectedValueOnce(new Error('Email already exists'));
+  it('maps skipped rows without errors as duplicates', async () => {
+    const file = new File(['email\na@b.com'], 'leads.csv', { type: 'text/csv' });
 
-    const result = await importLeadsFromCSV(file);
+    mockFetchOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({ imported: 0, skipped: 3, errors: [] }),
+    });
 
-    expect(result.success).toBe(0);
-    expect(result.failed).toBe(1);
-    expect(result.errors[0]).toContain('Email already exists');
+    const result = await importLeadsFromFile(file);
+    expect(result).toEqual({ success: 0, duplicates: 3, failed: 0, errors: [] });
+  });
+
+  it('throws when user is not authenticated', async () => {
+    mockGetAuthToken.mockResolvedValue(null);
+    const file = new File(['x'], 'leads.csv', { type: 'text/csv' });
+
+    await expect(importLeadsFromFile(file)).rejects.toThrow(/autenticato/i);
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  it('throws auth error on 401/403', async () => {
+    const file = new File(['x'], 'leads.csv', { type: 'text/csv' });
+    mockFetchOnce({ ok: false, status: 401, json: async () => ({}) });
+
+    await expect(importLeadsFromFile(file)).rejects.toThrow(/autenticazione/i);
+  });
+
+  it('throws server error message from response detail', async () => {
+    const file = new File(['x'], 'leads.csv', { type: 'text/csv' });
+    mockFetchOnce({
+      ok: false,
+      status: 400,
+      json: async () => ({ detail: 'Email already exists' }),
+    });
+
+    await expect(importLeadsFromFile(file)).rejects.toThrow('Email already exists');
   });
 });

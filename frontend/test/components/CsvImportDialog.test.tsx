@@ -7,7 +7,26 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 vi.mock('@/lib/firebase', () => ({
   auth: {},
   firestoreDb: {},
-  storage: {}
+  storage: {},
+}));
+
+vi.mock('next-intl', () => ({
+  useTranslations: () => (key: string) => {
+    const dict: Record<string, string> = {
+      title: 'Importa Lead',
+      description: 'Carica un file CSV o Excel',
+      dragDrop: 'Trascina il file oppure clicca per selezionare',
+      importBtn: 'Importa Lead',
+      importing: 'Importazione...',
+      success: 'Importazione completata',
+      imported: 'Importati:',
+      alreadyPresent: 'Gia presenti (saltati):',
+      errors: 'Errori:',
+      errorDetail: 'Dettaglio errori:',
+      importError: 'Errore durante l\'importazione',
+    };
+    return dict[key] ?? key;
+  },
 }));
 
 // Mock del ResizeObserver che manca in jsdom
@@ -39,30 +58,28 @@ describe('CsvImportDialog UI', () => {
     </QueryClientProvider>
   );
 
-  it('renders with the correct surface background classes instead of missing popover class', async () => {
+  it('renders dialog content with shadcn bg-card surface', async () => {
     render(
       <CsvImportDialog open={true} onOpenChange={vi.fn()} />,
       { wrapper }
     );
 
-    // Aspettiamo che il dialog sia renderizzato
     const dialogContent = await screen.findByRole('dialog');
-    
-    // Verifichiamo che il dialog abbia la classe di background corretta
-    // prima della fix usava "bg-popover" che non esiste nel tema material design
-    expect(dialogContent.className).toContain('bg-surface-container-lowest');
+
+    // Token shadcn (no MD3 surface-*)
+    expect(dialogContent.className).toContain('bg-card');
+    expect(dialogContent.className).not.toContain('bg-surface');
     expect(dialogContent.className).not.toContain('bg-popover');
   });
 
-  it('renders DialogOverlay with correct opacity class', async () => {
-    // In @base-ui/react/dialog, il backdrop viene renderizzato separatamente
-    // Potremmo non essere in grado di testarlo direttamente via role, ma cerchiamo un div fisso
+  it('renders title and dropzone copy', async () => {
     render(
       <CsvImportDialog open={true} onOpenChange={vi.fn()} />,
       { wrapper }
     );
-    
-    // Verifichiamo che la modale abbia gli elementi base
-    expect(screen.getByText('Import Leads from CSV')).toBeInTheDocument();
+
+    expect(await screen.findByRole('heading', { name: 'Importa Lead' })).toBeInTheDocument();
+    expect(screen.getByText('Trascina il file oppure clicca per selezionare')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Importa Lead' })).toBeInTheDocument();
   });
 });

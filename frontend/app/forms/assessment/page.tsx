@@ -118,7 +118,7 @@ export default function AssessmentForm() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="painPoints">Qual e la tua sfida principale oggi?</Label>
+          <Label htmlFor="painPoints">Qual è la tua sfida principale oggi?</Label>
           <Textarea
             id="painPoints"
             name="painPoints"

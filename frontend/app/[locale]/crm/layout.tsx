@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth } from "@/hooks/useAuth";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
 import { useEffect } from "react";
 import { AppSidebar } from "@/components/crm/AppSidebar";
 import { Navbar } from "@/components/crm/Navbar";

@@ -10,9 +10,8 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { usePathname } from "next/navigation";
+import { Link, usePathname } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
-import Link from "next/link";
 import { GlobalSearch } from "@/components/crm/GlobalSearch";
 import { NotificationBell } from "@/components/crm/NotificationBell";
 
@@ -33,8 +32,8 @@ export function Navbar() {
     "/crm/user-admin": t("users"),
   };
 
-  // Strip locale prefix for matching (e.g. /it/crm/leads → /crm/leads)
-  const pathWithoutLocale = pathname.replace(/^\/(it|en)/, "") || "/crm";
+  // usePathname from @/i18n/navigation is already locale-free (/crm/leads, not /it/crm/leads)
+  const pathWithoutLocale = pathname || "/crm";
   const label = PAGE_LABELS[pathWithoutLocale] ?? "CRM";
   const isSubpage = pathWithoutLocale.split("/").filter(Boolean).length > 2;
 
