@@ -46,6 +46,10 @@ class Settings(BaseSettings):
     META_AD_ACCOUNT_ID: Optional[str] = None  # formato: act_XXXXXXXXX
     META_API_VERSION: str = "v19.0"
 
+    # Apollo.io (empty = mock mode)
+    APOLLO_API_KEY: str = ""
+    APOLLO_API_BASE: str = "https://api.apollo.io/api/v1"
+
     # LLM Marketing Agent (multi-provider)
     OPENAI_API_KEY: Optional[str] = None
     ANTHROPIC_API_KEY: Optional[str] = None

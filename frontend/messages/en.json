@@ -67,7 +67,8 @@
     "content": "Content",
     "templates": "Templates",
     "inbox": "Inbox",
-    "competitors": "Competitors"
+    "competitors": "Competitors",
+    "prospects": "Prospects"
   },
   "navbar": {
     "search": "Search...",
@@ -778,5 +779,41 @@
       "active": "Active",
       "archived": "Archived"
     }
+  },
+  "apollo": {
+    "title": "Apollo Prospects",
+    "subtitle": "Search B2B contacts and import them as CRM leads",
+    "modeLive": "Live API",
+    "modeMock": "Demo mode",
+    "searchTitle": "Prospect search",
+    "searchDescription": "Filter by role, industry or location. Invalid results cannot be selected.",
+    "filterQ": "Keywords",
+    "filterQPlaceholder": "e.g. legal AI, digital transformation",
+    "filterTitle": "Role / Title",
+    "filterTitlePlaceholder": "e.g. Managing Partner",
+    "filterIndustry": "Industry",
+    "filterIndustryPlaceholder": "e.g. Legal Services",
+    "filterLocation": "Location",
+    "filterLocationPlaceholder": "e.g. Italy",
+    "searchCta": "Search",
+    "resultsTitle": "Results",
+    "resultsCount": "{count} prospects found",
+    "resultsEmpty": "Run a search to see prospects",
+    "noResults": "No prospects match these filters",
+    "promptSearch": "Fill the filters and press Search",
+    "selectAll": "Select all",
+    "colName": "Name",
+    "colTitle": "Role",
+    "colCompany": "Company",
+    "colEmail": "Email",
+    "colLocation": "Location",
+    "colScore": "Score",
+    "importSelected": "Import",
+    "imported": "Imported",
+    "skipped": "Skipped",
+    "errors": "Errors",
+    "importSuccess": "Import completed",
+    "importError": "Import failed",
+    "gdprNote": "Apollo data is processed under legitimate interest (B2B contacts from public sources)."
   }
 }

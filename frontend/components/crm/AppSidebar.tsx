@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import {
   LayoutDashboard,
   Users,
+  UserSearch,
   KanbanSquare,
   CheckSquare,
   BarChart3,
@@ -60,6 +61,7 @@ export function AppSidebar() {
   const mainNav = [
     { name: t("dashboard"), href: "/crm", icon: LayoutDashboard },
     { name: t("leads"), href: "/crm/leads", icon: Users },
+    { name: t("prospects"), href: "/crm/apollo", icon: UserSearch },
     { name: t("pipeline"), href: "/crm/pipeline", icon: KanbanSquare },
     { name: t("tasks"), href: "/crm/tasks", icon: CheckSquare },
     { name: t("calendar"), href: "/crm/calendar", icon: Calendar },

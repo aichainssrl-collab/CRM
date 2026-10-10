@@ -67,7 +67,8 @@
     "content": "Contenuti",
     "templates": "Template",
     "inbox": "Inbox",
-    "competitors": "Competitor"
+    "competitors": "Competitor",
+    "prospects": "Prospect"
   },
   "navbar": {
     "search": "Cerca...",
@@ -778,5 +779,41 @@
       "active": "Attivo",
       "archived": "Archiviato"
     }
+  },
+  "apollo": {
+    "title": "Prospect Apollo",
+    "subtitle": "Cerca contatti B2B e importali come lead nel CRM",
+    "modeLive": "API live",
+    "modeMock": "Modalità demo",
+    "searchTitle": "Ricerca prospect",
+    "searchDescription": "Filtra per ruolo, settore o località. I risultati invalidi non sono selezionabili.",
+    "filterQ": "Parole chiave",
+    "filterQPlaceholder": "es. legal AI, digital transformation",
+    "filterTitle": "Ruolo / Titolo",
+    "filterTitlePlaceholder": "es. Managing Partner",
+    "filterIndustry": "Settore",
+    "filterIndustryPlaceholder": "es. Legal Services",
+    "filterLocation": "Località",
+    "filterLocationPlaceholder": "es. Italy",
+    "searchCta": "Cerca",
+    "resultsTitle": "Risultati",
+    "resultsCount": "{count} prospect trovati",
+    "resultsEmpty": "Avvia una ricerca per vedere i prospect",
+    "noResults": "Nessun prospect con questi filtri",
+    "promptSearch": "Compila i filtri e premi Cerca",
+    "selectAll": "Seleziona tutti",
+    "colName": "Nome",
+    "colTitle": "Ruolo",
+    "colCompany": "Azienda",
+    "colEmail": "Email",
+    "colLocation": "Località",
+    "colScore": "Score",
+    "importSelected": "Importa",
+    "imported": "Importati",
+    "skipped": "Saltati",
+    "errors": "Errori",
+    "importSuccess": "Import completata",
+    "importError": "Errore durante l'import",
+    "gdprNote": "I dati Apollo sono trattati con base giuridica legitimate interest (contatti B2B da fonti pubbliche)."
   }
 }
