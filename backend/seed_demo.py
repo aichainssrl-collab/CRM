@@ -141,7 +141,7 @@ async def seed() -> None:
         "leadId": LEAD,
         "dealId": DEAL,
         "assignedTo": ADMIN,
-        "status": "todo",
+        "status": "open",
         "priority": "high",
         "dueDate": days(3),
     })
@@ -202,16 +202,18 @@ async def seed() -> None:
         "createdBy": ADMIN,
     })
 
-    # ── 6. Segment ──────────────────────────────────────────────────────────
+    # ── 6. Segment (userId + isGlobal — see segmentation_service.list_segments) ──
     await upsert(db, "segments", {
         "_id": SEGMENT,
+        "userId": ADMIN,
         "name": "Studi legali qualificati",
-        "description": "Lead Legal con score > 70 e status qualified+",
-        "rules": [
-            {"field": "industry", "op": "eq", "value": "Legal"},
-            {"field": "leadScore", "op": "gte", "value": 70},
-        ],
-        "createdBy": ADMIN,
+        "description": "Lead Legal con score > 70 e status qualified",
+        "rules": {
+            "industry": "Legal",
+            "status": "qualified",
+        },
+        "entityType": "leads",
+        "isGlobal": True,
     })
 
     # ── 7. Proposal ─────────────────────────────────────────────────────────
@@ -286,14 +288,16 @@ async def seed() -> None:
         "createdBy": ADMIN,
     })
 
-    # ── 10. Content ─────────────────────────────────────────────────────────
-    await upsert(db, "content", {
+    # ── 10. Content (collection is content_library) ─────────────────────────
+    await upsert(db, "content_library", {
         "_id": CONTENT,
         "title": "Playbook AI per studi legali",
-        "type": "playbook",
+        "type": "blog",
         "body": "Guida pratica per introdurre l'AI nello studio legale…",
+        "description": "Come ZenTratto riduce il tempo di ricerca documentale",
         "tags": ["playbook", "legal", "ai"],
-        "status": "published",
+        "language": "it",
+        "source": "manual",
         "createdBy": ADMIN,
     })
 
@@ -402,13 +406,17 @@ async def seed() -> None:
         "readAt": None,
     })
 
-    # ── 16. Booking ─────────────────────────────────────────────────────────
+    # ── 16. Booking (calendar reads preferredDate + firstName/lastName) ─────
     await upsert(db, "bookings", {
         "_id": BOOKING,
         "leadId": LEAD,
         "slotId": "demo-slot-1",
         "status": "confirmed",
-        "scheduledAt": days(2),
+        "preferredDate": days(2),
+        "firstName": "Demo",
+        "lastName": "Cliente",
+        "email": "demo.cliente@example.com",
+        "timeSlot": "10:00",
         "notes": "Demo prodotto 30 min",
         "createdBy": ADMIN,
     })
