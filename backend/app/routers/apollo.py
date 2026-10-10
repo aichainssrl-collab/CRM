@@ -34,6 +34,11 @@ class EnrichBody(BaseModel):
     email: Optional[str] = None
 
 
+class BulkEnrichBody(BaseModel):
+    leadIds: list[str]
+    onlyStale: bool = True
+
+
 @router.get("/usage")
 async def get_usage(user: UserRecord = Depends(require_sales)):
     return await apollo_service.usage()
@@ -83,3 +88,18 @@ async def enrich_lead(
     if lead is None:
         raise HTTPException(status_code=404, detail="Lead non trovato")
     return lead
+
+
+@router.post("/bulk-enrich")
+async def bulk_enrich(
+    body: BulkEnrichBody,
+    user: UserRecord = Depends(require_sales),
+):
+    if not body.leadIds:
+        raise HTTPException(status_code=400, detail="Nessun lead selezionato")
+    if len(body.leadIds) > 100:
+        raise HTTPException(status_code=400, detail="Max 100 lead per bulk-enrich")
+    try:
+        return await apollo_service.bulk_enrich(body.leadIds, only_stale=body.onlyStale)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))

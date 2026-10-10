@@ -116,6 +116,7 @@
     "newLead": "Nuovo Lead",
     "importCsv": "Importa",
     "deleteSelected": "Elimina",
+    "bulkEnrich": "Arricchisci",
     "noLeads": "Nessun lead trovato",
     "noLeadsDesc": "Modifica i filtri o aggiungi un nuovo lead.",
     "name": "Nome",
@@ -815,5 +816,25 @@
     "importSuccess": "Import completata",
     "importError": "Errore durante l'import",
     "gdprNote": "I dati Apollo sono trattati con base giuridica legitimate interest (contatti B2B da fonti pubbliche)."
+  },
+  "bulkEnrich": {
+    "title": "Arricchimento massivo",
+    "description": "Arricchisci i lead selezionati via Apollo (match email). I campi già compilati non vengono sovrascritti.",
+    "onlyStale": "Solo lead non aggiornati",
+    "onlyStaleHint": "Salta i lead arricchiti negli ultimi 30 giorni",
+    "selected": "Selezionati",
+    "willEnrich": "Da arricchire",
+    "willSkipFresh": "Saltati (già aggiornati)",
+    "progress": "Avanzamento {percent}%",
+    "summaryTitle": "Completato",
+    "enriched": "Arricchiti",
+    "missed": "Nessun match",
+    "skipped": "Saltati",
+    "errors": "Errori",
+    "close": "Chiudi",
+    "run": "Avvia",
+    "doneTitle": "Arricchimento completato",
+    "doneDescription": "Arricchiti {enriched}, senza match {missed}, errori {errors}",
+    "errorTitle": "Errore durante l'arricchimento"
   }
 }

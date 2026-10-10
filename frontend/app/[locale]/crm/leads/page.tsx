@@ -10,6 +10,7 @@ import { LeadTable } from "@/components/crm/LeadTable";
 import { LeadFilters } from "@/components/crm/LeadFilters";
 import { LeadForm } from "@/components/crm/LeadForm";
 import { CsvImportDialog } from "@/components/crm/CsvImportDialog";
+import { BulkEnrichDialog } from "@/components/crm/BulkEnrichDialog";
 import { ConfirmDialog } from "@/components/crm/ConfirmDialog";
 import {
   Pagination,
@@ -17,7 +18,7 @@ import {
   PaginationEllipsis,
   PaginationItem,
 } from "@/components/ui/pagination";
-import { Plus, Upload, Trash2, ChevronLeft, ChevronRight, Download } from "lucide-react";
+import { Plus, Upload, Trash2, ChevronLeft, ChevronRight, Download, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { downloadCSV } from "@/lib/export";
 
@@ -41,6 +42,7 @@ export default function LeadsPage() {
   const [page, setPage] = useState(1);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
+  const [isBulkEnrichOpen, setIsBulkEnrichOpen] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [deleteConfirm, setDeleteConfirm] = useState<{ type: "single" | "bulk"; id?: string } | null>(null);
@@ -131,10 +133,21 @@ export default function LeadsPage() {
         </div>
         <div className="flex items-center gap-2 shrink-0">
           {selectedIds.size > 0 && (
-            <Button variant="destructive" size="sm" onClick={() => setDeleteConfirm({ type: "bulk" })} disabled={deleteLead.isPending} className="gap-2">
-              <Trash2 className="h-4 w-4" />
-              {t("deleteSelected")} ({selectedIds.size})
-            </Button>
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsBulkEnrichOpen(true)}
+                className="gap-2"
+              >
+                <Sparkles className="h-4 w-4" />
+                {t("bulkEnrich")} ({selectedIds.size})
+              </Button>
+              <Button variant="destructive" size="sm" onClick={() => setDeleteConfirm({ type: "bulk" })} disabled={deleteLead.isPending} className="gap-2">
+                <Trash2 className="h-4 w-4" />
+                {t("deleteSelected")} ({selectedIds.size})
+              </Button>
+            </>
           )}
           <Button variant="outline" size="sm" onClick={() => downloadCSV("leads").catch(() => toast.error("Export fallito"))} className="gap-2">
             <Download className="h-4 w-4" />
@@ -235,6 +248,12 @@ export default function LeadsPage() {
         onSubmit={handleFormSubmit}
       />
       <CsvImportDialog open={isImportOpen} onOpenChange={setIsImportOpen} />
+
+      <BulkEnrichDialog
+        open={isBulkEnrichOpen}
+        onOpenChange={setIsBulkEnrichOpen}
+        leads={leads.filter((l) => selectedIds.has(l.id))}
+      />
 
       <ConfirmDialog
         open={!!deleteConfirm}

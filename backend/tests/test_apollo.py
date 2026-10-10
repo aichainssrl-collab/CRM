@@ -200,6 +200,61 @@ def test_import_dedupes_and_skips_invalid():
     assert mock_gdpr.insert_one.await_count == 1
 
 
+# ── bulk enrich ──────────────────────────────────────────────────────────────
+
+def test_bulk_enrich_requires_ids():
+    resp = client.post("/api/v1/apollo/bulk-enrich", json={"leadIds": []})
+    assert resp.status_code == 400
+
+
+def test_bulk_enrich_max_100():
+    resp = client.post(
+        "/api/v1/apollo/bulk-enrich",
+        json={"leadIds": [f"id-{i}" for i in range(101)]},
+    )
+    assert resp.status_code == 400
+
+
+def test_bulk_enrich_only_stale_skips_fresh():
+    from datetime import datetime, timezone
+
+    fresh = {
+        "_id": "fresh-1",
+        "email": "fresh@x.com",
+        "deletedAt": None,
+        "enrichedAt": datetime.now(timezone.utc),
+        "enrichmentSource": "apollo",
+    }
+    stale = {
+        "_id": "stale-1",
+        "email": "marco.bianchi@lexfirm.it",
+        "deletedAt": None,
+        "enrichedAt": None,
+    }
+
+    async def find_one(query, *args, **kwargs):
+        return {"fresh-1": fresh, "stale-1": stale}.get(query.get("_id"))
+
+    mock_col = MagicMock()
+    mock_col.find_one = AsyncMock(side_effect=find_one)
+    mock_col.update_one = AsyncMock()
+
+    with patch("app.services.apollo_service.db") as mock_db:
+        mock_db.__getitem__ = MagicMock(return_value=mock_col)
+        resp = client.post(
+            "/api/v1/apollo/bulk-enrich",
+            json={"leadIds": ["fresh-1", "stale-1"], "onlyStale": True},
+        )
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["skippedCount"] == 1
+    assert data["enrichedCount"] == 1
+    statuses = {r["leadId"]: r["status"] for r in data["results"]}
+    assert statuses["fresh-1"] == "skipped_fresh"
+    assert statuses["stale-1"] == "enriched"
+
+
 # ── usage ────────────────────────────────────────────────────────────────────
 
 def test_usage_mock_mode():

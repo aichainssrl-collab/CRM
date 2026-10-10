@@ -88,6 +88,37 @@ export function useApolloEnrich() {
   });
 }
 
+export interface ApolloBulkEnrichResult {
+  results: Array<{
+    leadId: string;
+    status: "enriched" | "missed" | "skipped_fresh" | "not_found" | "error";
+    error?: string;
+  }>;
+  enrichedCount: number;
+  missedCount: number;
+  skippedCount: number;
+  errorCount: number;
+  processedCount: number;
+}
+
+export function useApolloBulkEnrich() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: { leadIds: string[]; onlyStale?: boolean }) =>
+      apiFetch("/api/v1/apollo/bulk-enrich", {
+        method: "POST",
+        body: JSON.stringify({
+          leadIds: payload.leadIds,
+          onlyStale: payload.onlyStale ?? true,
+        }),
+      }) as Promise<ApolloBulkEnrichResult>,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["leads"] });
+      queryClient.invalidateQueries({ queryKey: ["lead"] });
+    },
+  });
+}
+
 export function useApolloUsage() {
   return useQuery({
     queryKey: ["apollo", "usage"],

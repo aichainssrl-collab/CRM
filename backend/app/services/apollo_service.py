@@ -281,17 +281,20 @@ async def enrich_lead(lead_id: str) -> Optional[dict]:
             if lead.get(target) in (None, "", 0):
                 updates[target] = val
         await db["leads"].update_one({"_id": lead_id}, {"$set": updates})
-        updated = await db["leads"].find_one({"_id": lead_id})
-        return _to_dict(updated)
+        merged = dict(lead)
+        merged.update(updates)
+        return _to_dict(merged)
 
     # No match: still stamp enrichment attempt
     now = utcnow()
+    miss_updates = {"enrichedAt": now, "enrichmentSource": "apollo_miss", "updatedAt": now}
     await db["leads"].update_one(
         {"_id": lead_id},
-        {"$set": {"enrichedAt": now, "enrichmentSource": "apollo_miss", "updatedAt": now}},
+        {"$set": miss_updates},
     )
-    updated = await db["leads"].find_one({"_id": lead_id})
-    return _to_dict(updated)
+    merged = dict(lead)
+    merged.update(miss_updates)
+    return _to_dict(merged)
 
 
 async def import_prospects(prospects: list[dict], created_by: str) -> dict:
@@ -389,4 +392,82 @@ async def usage() -> dict:
         "mode": "mock" if is_mock() else "live",
         "provider": "apollo",
         "hasApiKey": not is_mock(),
+    }
+
+
+STALE_ENRICHMENT_DAYS = 30
+
+
+def is_enrichment_stale(enriched_at: Any) -> bool:
+    """True if never enriched or older than STALE_ENRICHMENT_DAYS."""
+    if not enriched_at:
+        return True
+    from datetime import datetime, timezone, timedelta
+
+    if isinstance(enriched_at, str):
+        try:
+            enriched_at = datetime.fromisoformat(enriched_at.replace("Z", "+00:00"))
+        except ValueError:
+            return True
+    if not isinstance(enriched_at, datetime):
+        return True
+    if enriched_at.tzinfo is None:
+        enriched_at = enriched_at.replace(tzinfo=timezone.utc)
+    return enriched_at < datetime.now(timezone.utc) - timedelta(days=STALE_ENRICHMENT_DAYS)
+
+
+async def bulk_enrich(
+    lead_ids: list[str],
+    only_stale: bool = False,
+) -> dict:
+    """
+    Enrich many leads via Apollo (max 100 per call).
+    Returns per-lead results + counters for progress UI.
+    """
+    if len(lead_ids) > 100:
+        raise ValueError("Max 100 lead per bulk-enrich")
+
+    results: list[dict] = []
+    enriched = 0
+    missed = 0
+    skipped = 0
+    errors = 0
+
+    for lead_id in lead_ids:
+        lead = await db["leads"].find_one({"_id": lead_id, "deletedAt": None})
+        if not lead:
+            results.append({"leadId": lead_id, "status": "not_found"})
+            errors += 1
+            continue
+
+        if only_stale and not is_enrichment_stale(lead.get("enrichedAt")):
+            results.append({"leadId": lead_id, "status": "skipped_fresh"})
+            skipped += 1
+            continue
+
+        try:
+            updated = await enrich_lead(lead_id)
+        except Exception as exc:  # keep batch going
+            logger.warning("bulk enrich %s failed: %s", lead_id, exc)
+            results.append({"leadId": lead_id, "status": "error", "error": str(exc)})
+            errors += 1
+            continue
+
+        if not updated:
+            results.append({"leadId": lead_id, "status": "not_found"})
+            errors += 1
+        elif updated.get("enrichmentSource") == "apollo":
+            results.append({"leadId": lead_id, "status": "enriched"})
+            enriched += 1
+        else:
+            results.append({"leadId": lead_id, "status": "missed"})
+            missed += 1
+
+    return {
+        "results": results,
+        "enrichedCount": enriched,
+        "missedCount": missed,
+        "skippedCount": skipped,
+        "errorCount": errors,
+        "processedCount": len(results),
     }

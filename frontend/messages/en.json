@@ -116,6 +116,7 @@
     "newLead": "New Lead",
     "importCsv": "Import",
     "deleteSelected": "Delete",
+    "bulkEnrich": "Enrich",
     "noLeads": "No leads found",
     "noLeadsDesc": "Adjust your filters or add a new lead.",
     "name": "Name",
@@ -815,5 +816,25 @@
     "importSuccess": "Import completed",
     "importError": "Import failed",
     "gdprNote": "Apollo data is processed under legitimate interest (B2B contacts from public sources)."
+  },
+  "bulkEnrich": {
+    "title": "Bulk enrichment",
+    "description": "Enrich selected leads via Apollo (email match). Existing field values are never overwritten.",
+    "onlyStale": "Only stale leads",
+    "onlyStaleHint": "Skip leads enriched in the last 30 days",
+    "selected": "Selected",
+    "willEnrich": "Will enrich",
+    "willSkipFresh": "Skipped (already fresh)",
+    "progress": "Progress {percent}%",
+    "summaryTitle": "Completed",
+    "enriched": "Enriched",
+    "missed": "No match",
+    "skipped": "Skipped",
+    "errors": "Errors",
+    "close": "Close",
+    "run": "Run",
+    "doneTitle": "Enrichment completed",
+    "doneDescription": "Enriched {enriched}, no match {missed}, errors {errors}",
+    "errorTitle": "Enrichment failed"
   }
 }
