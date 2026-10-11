@@ -403,7 +403,30 @@
     "avatarTooLarge": "Il file supera 1MB.",
     "comingSoon": "Questa sezione sarà disponibile prossimamente.",
     "comingSoonDetail": "In arrivo nelle prossime versioni.",
-    "saving": "Salvataggio..."
+    "saving": "Salvataggio...",
+    "llm": {
+      "title": "Modello LLM",
+      "subtitle": "Collega un provider LLM al CRM (agente e marketing agent)",
+      "description": "Queste impostazioni sovrascrivono le variabili d'ambiente. La chiave API non viene mai mostrata per intero.",
+      "provider": "Provider",
+      "model": "Modello",
+      "baseUrl": "URL base (endpoint)",
+      "baseUrlHint": "Endpoint OpenAI-compatible, oppure Ollama locale",
+      "apiKey": "Chiave API",
+      "apiKeyHint": "Lascia vuoto per mantenere quella salvata",
+      "apiKeyPlaceholderSet": "Salvata ({masked}) — lascia vuoto per non cambiare",
+      "clearKey": "Rimuovi chiave",
+      "clearKeyPending": "Verrà rimossa al salvataggio",
+      "localModel": "Modello locale",
+      "localBaseUrl": "URL Ollama / custom",
+      "save": "Salva",
+      "saved": "Impostazioni LLM salvate",
+      "saveError": "Errore nel salvataggio",
+      "test": "Testa connessione",
+      "testOk": "Connessione LLM ok",
+      "testFail": "Connessione LLM fallita",
+      "loading": "Caricamento impostazioni…"
+    }
   },
   "userAdmin": {
     "title": "Gestione Utenti",

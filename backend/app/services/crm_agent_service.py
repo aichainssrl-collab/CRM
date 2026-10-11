@@ -144,6 +144,55 @@ TOOLS: list[dict] = [
     {
         "type": "function",
         "function": {
+            "name": "set_reminder",
+            "description": "Crea un promemoria con notifica in-app (task + notification)",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "title": {"type": "string"},
+                    "dueDate": {"type": "string", "description": "ISO date/datetime"},
+                    "note": {"type": "string"},
+                    "leadEmail": {"type": "string"},
+                    "priority": {"type": "string", "enum": ["low", "medium", "high"]},
+                },
+                "required": ["title", "dueDate"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "notify",
+            "description": "Crea una notifica in-app per l'utente corrente",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "title": {"type": "string"},
+                    "body": {"type": "string"},
+                    "kind": {"type": "string", "enum": ["info", "warning", "success", "error"]},
+                    "link": {"type": "string"},
+                },
+                "required": ["title"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "list_notifications",
+            "description": "Elenca notifiche in-app (opzionale solo non lette)",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "unreadOnly": {"type": "boolean"},
+                    "limit": {"type": "integer"},
+                },
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "draft_email",
             "description": "Bozza email a un lead (non invia, salva attività)",
             "parameters": {
@@ -454,12 +503,29 @@ async def _list_deadlines(args: dict, user_id: str) -> dict:
             "value": d.get("value"),
         })
     items.sort(key=lambda x: x.get("date") or "")
+
+    notified = 0
+    if args.get("notify"):
+        from app.services.notification_service import create_notification
+
+        for it in items[:5]:
+            await create_notification(
+                user_id,
+                title=f"Scadenza {it.get('kind')}: {it.get('title')}",
+                body=f"In scadenza il {str(it.get('date') or '')[:10]}",
+                kind="warning",
+                link="/crm/calendar" if it.get("kind") == "booking" else "/crm/tasks",
+            )
+            notified += 1
+
     return {
         "ok": True,
         "days": days,
         "count": len(items),
+        "notified": notified,
         "items": items,
-        "message": f"{len(items)} scadenze nei prossimi {days} giorni",
+        "message": f"{len(items)} scadenze nei prossimi {days} giorni"
+        + (f" · {notified} notifiche create" if notified else ""),
     }
 
 
@@ -488,6 +554,101 @@ async def _reschedule_task(args: dict, user_id: str) -> dict:
         "ok": True,
         "taskId": task["_id"],
         "message": f"Task «{task.get('title')}» spostato al {due.date()}",
+    }
+
+
+async def _set_reminder(args: dict, user_id: str) -> dict:
+    """Task + notification in-app per una scadenza."""
+    from app.services.notification_service import create_notification
+
+    title = args.get("title")
+    due = _parse_iso(args.get("dueDate"))
+    if not title or not due:
+        return {"ok": False, "error": "title e dueDate obbligatori"}
+
+    lead_id = None
+    if args.get("leadEmail"):
+        lead = await db["leads"].find_one({"email": args["leadEmail"].lower(), "deletedAt": None})
+        lead_id = lead["_id"] if lead else None
+
+    now = utcnow()
+    task = {
+        "_id": new_id(),
+        "title": title,
+        "description": args.get("note") or "",
+        "leadId": lead_id,
+        "assignedTo": user_id,
+        "status": "open",
+        "priority": args.get("priority") or "medium",
+        "dueDate": due,
+        "createdAt": now,
+        "updatedAt": now,
+        "deletedAt": None,
+    }
+    await db["tasks"].insert_one(task)
+
+    notif = await create_notification(
+        user_id,
+        title=f"Promemoria: {title}",
+        body=(
+            f"Scadenza il {due.date()}."
+            + (f" {args.get('note')}" if args.get("note") else "")
+        ),
+        kind="warning" if args.get("priority") == "high" else "info",
+        link=f"/crm/tasks",
+    )
+    return {
+        "ok": True,
+        "taskId": task["_id"],
+        "notificationId": notif.get("id"),
+        "dueDate": due.isoformat(),
+        "message": f"Promemoria «{title}» creato per il {due.date()} (notifica in-app)",
+    }
+
+
+async def _notify(args: dict, user_id: str) -> dict:
+    from app.services.notification_service import create_notification
+
+    title = args.get("title")
+    if not title:
+        return {"ok": False, "error": "title obbligatorio"}
+    notif = await create_notification(
+        user_id,
+        title=title,
+        body=args.get("body") or "",
+        kind=args.get("kind") or "info",
+        link=args.get("link"),
+    )
+    return {
+        "ok": True,
+        "notificationId": notif.get("id"),
+        "message": f"Notifica «{title}» creata",
+    }
+
+
+async def _list_notifications(args: dict, user_id: str) -> dict:
+    from app.services.notification_service import list_notifications, get_unread_count
+
+    limit = min(int(args.get("limit") or 10), 50)
+    unread_only = bool(args.get("unreadOnly"))
+    items = await list_notifications(user_id, unread_only=unread_only, limit=limit)
+    unread = await get_unread_count(user_id)
+    return {
+        "ok": True,
+        "unreadCount": unread,
+        "count": len(items),
+        "notifications": [
+            {
+                "id": n.get("id"),
+                "title": n.get("title"),
+                "body": n.get("body"),
+                "kind": n.get("kind"),
+                "readAt": n.get("readAt"),
+                "createdAt": n.get("createdAt").isoformat() if n.get("createdAt") else None,
+            }
+            for n in items
+        ],
+        "message": f"{len(items)} notifiche ({unread} non lette)",
     }
 
 
@@ -644,6 +805,9 @@ TOOL_HANDLERS: dict[str, Callable[[dict, str], Awaitable[dict]]] = {
     "update_deal": _update_deal,
     "list_deadlines": _list_deadlines,
     "reschedule_task": _reschedule_task,
+    "set_reminder": _set_reminder,
+    "notify": _notify,
+    "list_notifications": _list_notifications,
     "draft_email": _draft_email,
     "send_email": _send_email,
     "list_leads": _list_leads,
@@ -702,7 +866,7 @@ def parse_command(text: str) -> tuple[str, dict] | None:
         return ("create_lead", args)
 
     # CREATE TASK
-    if any(k in low for k in ("crea task", "creare task", "nuovo task", "aggiungi task", "promemoria")):
+    if any(k in low for k in ("crea task", "creare task", "nuovo task", "aggiungi task")):
         args = {}
         title_m = re.search(
             r"(?:task|promemoria)\s*[«\"']?(.+?)[»\"']?(?:\s+per il|\s+entro|\s+email|$)",
@@ -717,6 +881,43 @@ def parse_command(text: str) -> tuple[str, dict] | None:
         if "urgente" in low or "priorità alta" in low:
             args["priority"] = "high"
         return ("create_task", args)
+
+    # REMINDER / NOTIFICATION
+    if any(k in low for k in ("ricordami", "crea promemoria", "segna promemoria", "imposta promemoria", "promemoria per")):
+        args = {}
+        title_m = re.search(
+            r"(?:ricordami|promemoria)\s+(?:di\s+|per\s+)?[«\"']?(.+?)[»\"']?(?:\s+entro|\s+il |\s+al |\s+per il|\s+email|$)",
+            t,
+            re.IGNORECASE,
+        )
+        args["title"] = (title_m.group(1).strip() if title_m else "Promemoria").strip("«»\"'")
+        if due:
+            args["dueDate"] = due
+        else:
+            args["dueDate"] = utcnow().isoformat()
+        if email:
+            args["leadEmail"] = email
+        if "urgente" in low or "importante" in low:
+            args["priority"] = "high"
+        return ("set_reminder", args)
+
+    if any(k in low for k in ("mostra notifiche", "notifiche non lette", "elenca notifiche", "cosa non ho letto")):
+        return ("list_notifications", {"unreadOnly": "non lette" in low or "non letto" in low, "limit": 10})
+
+    if any(k in low for k in ("notifica ", "invia notifica", "crea notifica")):
+        args = {}
+        title_m = re.search(
+            r"notifica\s*[«\"']?(.+?)[»\"']?(?:\s+testo|\s+body|\s+descrizione|$)",
+            t,
+            re.IGNORECASE,
+        )
+        args["title"] = (title_m.group(1).strip() if title_m else "Notifica").strip("«»\"'")
+        body_m = re.search(r"(?:testo|body|descrizione)\s*[«\"']?(.+)$", t, re.IGNORECASE)
+        if body_m:
+            args["body"] = body_m.group(1).strip()
+        if "allarme" in low or "attenzione" in low or "warning" in low:
+            args["kind"] = "warning"
+        return ("notify", args)
 
     # CREATE DEAL
     if any(k in low for k in ("crea deal", "creare deal", "nuovo deal", "opportunità")):
@@ -864,10 +1065,10 @@ def _llm_available() -> bool:
 async def _run_llm(message: str, user_id: str) -> list[dict]:
     """Single-turn tool-calling loop (max 4 iterations)."""
     import litellm
-    from app.services.marketing_agent_service import _get_llm_config
+    from app.services.llm_settings_service import get_llm_runtime_config
 
     litellm.drop_params = True
-    cfg = _get_llm_config()
+    cfg = await get_llm_runtime_config()
     system = (
         "Sei il CRM Agent di AiChain Solutions. Esegui azioni sul CRM usando gli tool. "
         "Rispondi in italiano, in modo breve. Se mancano campi obbligatori chiedi chiarimenti."

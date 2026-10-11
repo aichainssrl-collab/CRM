@@ -403,7 +403,30 @@
     "avatarTooLarge": "File exceeds 1MB.",
     "comingSoon": "This section will be available soon.",
     "comingSoonDetail": "Coming in future versions.",
-    "saving": "Saving..."
+    "saving": "Saving...",
+    "llm": {
+      "title": "LLM model",
+      "subtitle": "Connect an LLM provider to the CRM (agent and marketing agent)",
+      "description": "These settings override environment variables. The API key is never shown in full.",
+      "provider": "Provider",
+      "model": "Model",
+      "baseUrl": "Base URL (endpoint)",
+      "baseUrlHint": "OpenAI-compatible endpoint, or local Ollama",
+      "apiKey": "API key",
+      "apiKeyHint": "Leave empty to keep the saved key",
+      "apiKeyPlaceholderSet": "Saved ({masked}) — leave empty to keep",
+      "clearKey": "Remove key",
+      "clearKeyPending": "Will be removed on save",
+      "localModel": "Local model",
+      "localBaseUrl": "Ollama / custom URL",
+      "save": "Save",
+      "saved": "LLM settings saved",
+      "saveError": "Save failed",
+      "test": "Test connection",
+      "testOk": "LLM connection OK",
+      "testFail": "LLM connection failed",
+      "loading": "Loading settings…"
+    }
   },
   "userAdmin": {
     "title": "User Management",

@@ -98,6 +98,23 @@ def test_parse_reschedule_task():
     assert "Call" in args.get("title", "")
 
 
+def test_parse_set_reminder():
+    parsed = crm_agent_service.parse_command("Ricordami chiamare Mario entro 2026-03-05")
+    assert parsed is not None
+    name, args = parsed
+    assert name == "set_reminder"
+    assert args.get("dueDate") == "2026-03-05"
+    assert "chiamare" in args.get("title", "").lower() or "Mario" in args.get("title", "")
+
+
+def test_parse_list_notifications():
+    parsed = crm_agent_service.parse_command("Mostra notifiche non lette")
+    assert parsed is not None
+    name, args = parsed
+    assert name == "list_notifications"
+    assert args.get("unreadOnly") is True
+
+
 def test_parse_unknown():
     assert crm_agent_service.parse_command("ciao come va?") is None
 

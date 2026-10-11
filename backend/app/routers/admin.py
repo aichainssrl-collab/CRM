@@ -1,13 +1,23 @@
 """
-Audit Log, System Stats & Saved Filters API — /api/v1/admin/
+Audit Log, System Stats, Saved Filters & LLM Settings API — /api/v1/admin/
 """
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
 from typing import Optional
 from app.deps import require_sales, require_admin, UserRecord
-from app.services import audit_service, system_service, saved_filter_service
+from app.services import audit_service, system_service, saved_filter_service, llm_settings_service
 
 router = APIRouter()
+
+
+class LlmSettingsBody(BaseModel):
+    provider: Optional[str] = None
+    model: Optional[str] = None
+    baseUrl: Optional[str] = None
+    apiKey: Optional[str] = None
+    clearApiKey: bool = False
+    localModel: Optional[str] = None
+    localBaseUrl: Optional[str] = None
 
 
 class SavedFilterCreate(BaseModel):
@@ -87,3 +97,36 @@ async def delete_saved_filter(
 ):
     ok = await saved_filter_service.delete_saved_filter(filter_id)
     return {"ok": ok}
+
+
+# ── LLM Settings (admin) ───────────────────────────────────────
+@router.get("/llm-settings")
+async def get_llm_settings(user: UserRecord = Depends(require_admin)):
+    return await llm_settings_service.get_llm_settings()
+
+
+@router.put("/llm-settings")
+async def update_llm_settings(
+    body: LlmSettingsBody,
+    user: UserRecord = Depends(require_admin),
+):
+    return await llm_settings_service.update_llm_settings(body.model_dump())
+
+
+@router.get("/llm-settings/test")
+async def test_llm_settings(user: UserRecord = Depends(require_admin)):
+    """Lightweight connectivity probe — no tokens billed beyond a tiny ping."""
+    try:
+        import litellm
+        cfg = await llm_settings_service.get_llm_runtime_config()
+        litellm.drop_params = True
+        resp = await litellm.acompletion(
+            messages=[{"role": "user", "content": "ping"}],
+            max_tokens=1,
+            temperature=0,
+            **cfg,
+        )
+        model = (resp.get("model") if isinstance(resp, dict) else None) or cfg.get("model")
+        return {"ok": True, "model": model, "provider": cfg.get("model", "")}
+    except Exception as exc:
+        return {"ok": False, "error": str(exc)}

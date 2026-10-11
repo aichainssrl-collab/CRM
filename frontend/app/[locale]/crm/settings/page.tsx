@@ -23,6 +23,7 @@ import { User, Bell, Shield, Plug, Loader2 } from "lucide-react";
 import { updateProfile } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { getAuthToken } from "@/lib/auth";
+import { LlmSettingsForm } from "@/components/crm/LlmSettingsForm";
 
 export default function SettingsPage() {
   const t = useTranslations("settings");
@@ -271,7 +272,7 @@ export default function SettingsPage() {
             </Card>
           </TabsContent>
 
-          {NAV_ITEMS.filter((n) => n.id !== "profile").map((item) => (
+          {NAV_ITEMS.filter((n) => n.id !== "profile" && n.id !== "integrations").map((item) => (
             <TabsContent key={item.id} value={item.id}>
               <Card>
                 <CardHeader>
@@ -287,6 +288,18 @@ export default function SettingsPage() {
               </Card>
             </TabsContent>
           ))}
+
+          <TabsContent value="integrations">
+            <Card>
+              <CardHeader>
+                <CardTitle>{t("llm.title")}</CardTitle>
+                <CardDescription>{t("llm.subtitle")}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <LlmSettingsForm />
+              </CardContent>
+            </Card>
+          </TabsContent>
         </div>
       </Tabs>
     </div>
