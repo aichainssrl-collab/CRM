@@ -526,13 +526,18 @@ async def _send_email(args: dict, user_id: str) -> dict:
     if not (to and subject and body):
         return {"ok": False, "error": "toEmail, subject e body obbligatori"}
     html = body if "<" in body else f"<p>{body.replace(chr(10), '<br>')}</p>"
+
+    from app.services.email_service import send_email_ex
+
     try:
-        from app.services.email_service import send_email
-        sent = await send_email(to=to, subject=subject, html=html)
+        sent = await send_email_ex(to=to, subject=subject, html=html)
     except Exception as exc:
-        logger.warning("send_email failed: %s", exc)
-        # Mock success path when Resend key is placeholder
-        sent = {"ok": True, "mock": True, "id": f"mock-{new_id()}"}
+        logger.warning("Resend send_email_ex failed: %s", exc)
+        sent = {"ok": False, "id": None, "mock": False, "error": str(exc)}
+
+    email_id = sent.get("id")
+    mock = bool(sent.get("mock"))
+    send_error = sent.get("error")
 
     lead = await db["leads"].find_one({"email": to.lower(), "deletedAt": None})
     if lead:
@@ -540,17 +545,42 @@ async def _send_email(args: dict, user_id: str) -> dict:
             "_id": new_id(),
             "leadId": lead["_id"],
             "type": "email",
-            "title": f"Email inviata: {subject}",
+            "title": f"Email {'inviata' if sent.get('ok') else 'fallita'}: {subject}",
             "description": body[:500],
             "userId": user_id,
-            "metadata": {"to": to, "sent": True},
+            "metadata": {
+                "to": to,
+                "sent": bool(sent.get("ok")),
+                "mock": mock,
+                "emailId": email_id,
+                "provider": "resend" if not mock else "mock",
+                "error": send_error,
+            },
             "createdAt": utcnow(),
         })
+
+    if not sent.get("ok"):
+        return {
+            "ok": False,
+            "sent": False,
+            "error": send_error or "Invio fallito",
+            "message": f"Invio a {to} non riuscito" + (f": {send_error}" if send_error else ""),
+        }
+
     return {
         "ok": True,
         "sent": True,
-        "message": f"Email «{subject}» inviata a {to}",
-        "provider": sent if isinstance(sent, dict) else {"ok": True},
+        "mock": mock,
+        "emailId": email_id,
+        "to": to,
+        "subject": subject,
+        "from": sent.get("from") or settings.EMAIL_FROM,
+        "provider": "resend" if not mock else "mock",
+        "message": (
+            f"Email «{subject}» inviata a {to}"
+            + (f" (id {email_id})" if email_id and not mock else "")
+            + (" [mock Resend]" if mock else "")
+        ),
     }
 
 

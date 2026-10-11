@@ -318,3 +318,124 @@ def test_create_lead_exact_user_message():
     assert data["ok"] is True
     assert data["steps"][0]["name"] == "create_lead"
     assert data["steps"][0]["args"]["email"] == "mario@studio.it"
+
+
+# ── Resend email send ────────────────────────────────────────────────────────
+
+def test_send_email_mock_resend_when_fake_key():
+    from app.config import settings
+
+    mock_leads = MagicMock()
+    mock_leads.find_one = AsyncMock(
+        return_value={"_id": "L1", "email": "a@b.com", "deletedAt": None}
+    )
+    mock_acts = MagicMock()
+    mock_acts.insert_one = AsyncMock()
+
+    def get_col(name):
+        return {"leads": mock_leads, "activities": mock_acts}[name]
+
+    with (
+        patch("app.services.crm_agent_service.db") as mock_db,
+        patch("app.services.email_service.settings") as es,
+        patch("app.services.crm_agent_service.settings") as cs,
+    ):
+        mock_db.__getitem__ = MagicMock(side_effect=get_col)
+        es.RESEND_API_KEY = "re_fake_key"
+        es.EMAIL_FROM = "noreply@test.com"
+        cs.RESEND_API_KEY = "re_fake_key"
+        cs.EMAIL_FROM = "noreply@test.com"
+        resp = client.post(
+            "/api/v1/agent/run",
+            json={
+                "message": "invia email a a@b.com oggetto Ciao testo Come stai?",
+            },
+        )
+
+    data = resp.json()
+    assert resp.status_code == 200
+    assert data["ok"] is True
+    step = data["steps"][0]
+    assert step["name"] == "send_email"
+    assert step["result"]["sent"] is True
+    assert step["result"]["mock"] is True
+    assert step["result"]["provider"] == "mock"
+    assert mock_acts.insert_one.await_count == 1
+
+
+def test_send_email_real_resend_id_logged():
+    """When Resend returns an id, agent reports sent + emailId and logs activity."""
+    mock_leads = MagicMock()
+    mock_leads.find_one = AsyncMock(
+        return_value={"_id": "L1", "email": "c@d.com", "deletedAt": None}
+    )
+    mock_acts = MagicMock()
+    mock_acts.insert_one = AsyncMock()
+
+    def get_col(name):
+        return {"leads": mock_leads, "activities": mock_acts}[name]
+
+    with (
+        patch("app.services.crm_agent_service.db") as mock_db,
+        patch("app.services.email_service.send_email_ex") as mock_ex,
+        patch("app.services.crm_agent_service.settings") as cs,
+    ):
+        mock_db.__getitem__ = MagicMock(side_effect=get_col)
+        cs.RESEND_API_KEY = "re_real_key"
+        cs.EMAIL_FROM = "noreply@test.com"
+        mock_ex.return_value = {
+            "ok": True,
+            "id": "re_abc123xyz",
+            "mock": False,
+            "error": None,
+            "from": "noreply@test.com",
+        }
+        resp = client.post(
+            "/api/v1/agent/tools/send_email",
+            json={
+                "args": {
+                    "toEmail": "c@d.com",
+                    "subject": "Proposta",
+                    "body": "Ciao,<br>eccola.",
+                }
+            },
+        )
+
+    data = resp.json()
+    assert data["ok"] is True
+    assert data["sent"] is True
+    assert data["mock"] is False
+    assert data["emailId"] == "re_abc123xyz"
+    assert data["provider"] == "resend"
+    assert mock_acts.insert_one.await_count == 1
+    meta = mock_acts.insert_one.await_args.args[0]["metadata"]
+    assert meta["emailId"] == "re_abc123xyz"
+    assert meta["provider"] == "resend"
+
+
+def test_send_email_failure_reports_error():
+    with (
+        patch("app.services.crm_agent_service.db") as mock_db,
+        patch("app.services.email_service.send_email_ex") as mock_ex,
+        patch("app.services.crm_agent_service.settings") as cs,
+    ):
+        mock_db.__getitem__ = MagicMock(return_value=MagicMock())
+        mock_db["leads"].find_one = AsyncMock(return_value=None)
+        cs.RESEND_API_KEY = "re_real_key"
+        cs.EMAIL_FROM = "noreply@test.com"
+        mock_ex.return_value = {
+            "ok": False,
+            "id": None,
+            "mock": False,
+            "error": "getaddrinfo failed",
+            "from": "noreply@test.com",
+        }
+        resp = client.post(
+            "/api/v1/agent/tools/send_email",
+            json={"args": {"toEmail": "x@y.com", "subject": "S", "body": "B"}},
+        )
+
+    data = resp.json()
+    assert data["ok"] is False
+    assert data["sent"] is False
+    assert "getaddrinfo" in (data.get("error") or "")

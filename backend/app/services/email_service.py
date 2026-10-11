@@ -18,9 +18,25 @@ async def send_email(
 
     attachments: [{"filename": str, "content": base64_str}] (Resend format).
     """
+    result = await send_email_ex(to, subject, html, reply_to=reply_to, attachments=attachments)
+    return result.get("id") if result.get("ok") else None
+
+
+async def send_email_ex(
+    to: str,
+    subject: str,
+    html: str,
+    reply_to: str = None,
+    attachments: list[dict] | None = None,
+) -> dict:
+    """
+    Invio email con esito strutturato per l'agent.
+
+    Returns: {ok, id, mock, error, from}
+    """
     if not settings.RESEND_API_KEY or settings.RESEND_API_KEY.startswith("re_fake"):
         logger.info(f"[EMAIL MOCK] to={to} subject={subject} attachments={len(attachments or [])}")
-        return "mock-email-id"
+        return {"ok": True, "id": "mock-email-id", "mock": True, "error": None, "from": settings.EMAIL_FROM}
 
     payload = {
         "from": settings.EMAIL_FROM,
@@ -41,10 +57,16 @@ async def send_email(
                 json=payload,
             )
             resp.raise_for_status()
-            return resp.json().get("id")
+            return {
+                "ok": True,
+                "id": resp.json().get("id"),
+                "mock": False,
+                "error": None,
+                "from": settings.EMAIL_FROM,
+            }
     except Exception as exc:
         logger.error(f"Errore invio email a {to}: {exc}")
-        return None
+        return {"ok": False, "id": None, "mock": False, "error": str(exc), "from": settings.EMAIL_FROM}
 
 
 async def send_welcome_email(lead: dict) -> str | None:
