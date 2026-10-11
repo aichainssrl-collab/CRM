@@ -68,7 +68,8 @@
     "templates": "Template",
     "inbox": "Inbox",
     "competitors": "Competitor",
-    "prospects": "Prospect"
+    "prospects": "Prospect",
+    "agent": "Agente CRM"
   },
   "navbar": {
     "search": "Cerca...",
@@ -836,5 +837,22 @@
     "doneTitle": "Arricchimento completato",
     "doneDescription": "Arricchiti {enriched}, senza match {missed}, errori {errors}",
     "errorTitle": "Errore durante l'arricchimento"
+  },
+  "agent": {
+    "title": "Agente CRM",
+    "subtitle": "Esegui azioni in linguaggio naturale: crea lead, task, deal, email",
+    "chatTitle": "Console agente",
+    "chatHint": "Scrivi un comando o scegli un esempio. L'agente esegue le azioni sul CRM.",
+    "examples": "Prova un esempio:",
+    "placeholder": "Es. crea lead Mario Rossi email mario@studio.it",
+    "send": "Invia",
+    "thinking": "Elaborazione in corso…",
+    "mode": {
+      "parser": "comando diretto",
+      "llm": "LLM tool-calling",
+      "llm_error": "errore LLM",
+      "fallback": "aiuto",
+      "none": "—"
+    }
   }
 }

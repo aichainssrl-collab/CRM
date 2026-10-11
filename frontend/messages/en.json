@@ -68,7 +68,8 @@
     "templates": "Templates",
     "inbox": "Inbox",
     "competitors": "Competitors",
-    "prospects": "Prospects"
+    "prospects": "Prospects",
+    "agent": "CRM Agent"
   },
   "navbar": {
     "search": "Search...",
@@ -836,5 +837,22 @@
     "doneTitle": "Enrichment completed",
     "doneDescription": "Enriched {enriched}, no match {missed}, errors {errors}",
     "errorTitle": "Enrichment failed"
+  },
+  "agent": {
+    "title": "CRM Agent",
+    "subtitle": "Run natural-language actions: create leads, tasks, deals, emails",
+    "chatTitle": "Agent console",
+    "chatHint": "Type a command or pick an example. The agent executes CRM actions.",
+    "examples": "Try an example:",
+    "placeholder": "e.g. create lead Mario Rossi email mario@studio.it",
+    "send": "Send",
+    "thinking": "Working…",
+    "mode": {
+      "parser": "direct command",
+      "llm": "LLM tool-calling",
+      "llm_error": "LLM error",
+      "fallback": "help",
+      "none": "—"
+    }
   }
 }
