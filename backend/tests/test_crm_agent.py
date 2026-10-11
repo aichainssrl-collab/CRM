@@ -278,3 +278,43 @@ def test_reschedule_task_tool():
     assert mock_col.update_one.await_count == 1
     set_payload = mock_col.update_one.await_args.args[1]["$set"]
     assert set_payload["dueDate"].isoformat().startswith("2026-03-01")
+
+
+# ── resilience / regression ──────────────────────────────────────────────────
+
+def test_run_endpoint_never_500_on_internal_error():
+    """Chat UI must get 200 + error payload even if the service explodes."""
+    with patch(
+        "app.routers.crm_agent.crm_agent_service.run_agent",
+        side_effect=RuntimeError("boom"),
+    ):
+        resp = client.post(
+            "/api/v1/agent/run",
+            json={"message": "Crea lead Mario Rossi email mario@studio.it"},
+        )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["ok"] is False
+    assert data["mode"] == "error"
+    assert "boom" in data["reply"]
+
+
+def test_create_lead_exact_user_message():
+    """Regression: 'Crea lead Mario Rossi email mario@studio.it' must use parser."""
+    mock_col = MagicMock()
+    mock_col.find_one = AsyncMock(return_value=None)
+    mock_col.insert_one = AsyncMock()
+
+    with patch("app.services.crm_agent_service.db") as mock_db:
+        mock_db.__getitem__ = MagicMock(return_value=mock_col)
+        resp = client.post(
+            "/api/v1/agent/run",
+            json={"message": "Crea lead Mario Rossi email mario@studio.it"},
+        )
+
+    data = resp.json()
+    assert resp.status_code == 200
+    assert data["mode"] == "parser"
+    assert data["ok"] is True
+    assert data["steps"][0]["name"] == "create_lead"
+    assert data["steps"][0]["args"]["email"] == "mario@studio.it"

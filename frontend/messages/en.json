@@ -852,6 +852,7 @@
       "llm": "LLM tool-calling",
       "llm_error": "LLM error",
       "fallback": "help",
+      "error": "error",
       "none": "—"
     }
   }

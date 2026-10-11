@@ -893,7 +893,15 @@ async def run_agent(message: str, user_id: str) -> dict:
         return {"ok": False, "error": "Messaggio vuoto", "steps": [], "reply": "", "mode": "none"}
 
     # 1) Deterministic parser first (fast, testable, works offline)
-    parsed = parse_command(message)
+    try:
+        parsed = parse_command(message)
+    except Exception as exc:
+        logger.exception("parse_command failed")
+        parsed = None
+        parse_error = str(exc)
+    else:
+        parse_error = None
+
     if parsed:
         name, args = parsed
         result = await run_tool(name, args, user_id)

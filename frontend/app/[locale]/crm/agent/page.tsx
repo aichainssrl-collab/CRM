@@ -57,12 +57,14 @@ export default function AgentPage() {
         },
       ]);
     } catch (e) {
+      const raw = e instanceof Error ? e.message : String(e);
+      const isLlm = /llm|openai|anthropic|gemini|ollama/i.test(raw);
       setTurns((prev) => [
         ...prev,
         {
           role: "agent",
-          text: e instanceof Error ? e.message : String(e),
-          mode: "llm_error",
+          text: raw,
+          mode: isLlm ? "llm_error" : "none",
         },
       ]);
     }
