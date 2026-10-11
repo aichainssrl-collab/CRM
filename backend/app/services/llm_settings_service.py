@@ -52,17 +52,22 @@ async def update_llm_settings(payload: dict[str, Any]) -> dict[str, Any]:
     update: dict[str, Any] = {"updatedAt": utcnow()}
     for key in ("provider", "model", "baseUrl", "localModel", "localBaseUrl"):
         if key in payload:
-            update[key] = payload[key] or None
-    if payload.get("apiKey"):
-        update["apiKey"] = payload["apiKey"]
+            update[key] = (payload.get(key) or None)
     if payload.get("clearApiKey"):
         update["apiKey"] = None
+    elif payload.get("apiKey"):
+        update["apiKey"] = payload["apiKey"]
 
-    await db["app_settings"].update_one(
-        {"_id": LLM_DOC_ID},
-        {"$set": update, "$setOnInsert": {"_id": LLM_DOC_ID, "createdAt": utcnow()}},
-        upsert=True,
-    )
+    col = db["app_settings"]
+    existing = await col.find_one({"_id": LLM_DOC_ID})
+    if existing is None:
+        doc = {"_id": LLM_DOC_ID, "createdAt": utcnow(), **update}
+        # drop Nones except explicit clear
+        insert = {"_id": LLM_DOC_ID, "createdAt": utcnow()}
+        insert.update({k: v for k, v in update.items() if v is not None or k == "apiKey"})
+        await col.insert_one(insert)
+    else:
+        await col.update_one({"_id": LLM_DOC_ID}, {"$set": update})
     return await get_llm_settings()
 
 

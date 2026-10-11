@@ -102,20 +102,32 @@ async def delete_saved_filter(
 # ── LLM Settings (admin) ───────────────────────────────────────
 @router.get("/llm-settings")
 async def get_llm_settings(user: UserRecord = Depends(require_admin)):
-    return await llm_settings_service.get_llm_settings()
+    try:
+        return await llm_settings_service.get_llm_settings()
+    except Exception as exc:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=500, detail=f"Errore lettura impostazioni LLM: {exc}")
 
 
 @router.put("/llm-settings")
+@router.post("/llm-settings")
 async def update_llm_settings(
     body: LlmSettingsBody,
     user: UserRecord = Depends(require_admin),
 ):
-    return await llm_settings_service.update_llm_settings(body.model_dump())
+    from fastapi import HTTPException
+
+    try:
+        return await llm_settings_service.update_llm_settings(body.model_dump())
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Errore salvataggio impostazioni LLM: {exc}")
 
 
 @router.get("/llm-settings/test")
 async def test_llm_settings(user: UserRecord = Depends(require_admin)):
     """Lightweight connectivity probe — no tokens billed beyond a tiny ping."""
+    from fastapi import HTTPException
+
     try:
         import litellm
         cfg = await llm_settings_service.get_llm_runtime_config()
@@ -127,6 +139,6 @@ async def test_llm_settings(user: UserRecord = Depends(require_admin)):
             **cfg,
         )
         model = (resp.get("model") if isinstance(resp, dict) else None) or cfg.get("model")
-        return {"ok": True, "model": model, "provider": cfg.get("model", "")}
+        return {"ok": True, "model": model}
     except Exception as exc:
         return {"ok": False, "error": str(exc)}

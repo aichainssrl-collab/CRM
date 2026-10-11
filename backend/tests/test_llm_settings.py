@@ -50,6 +50,7 @@ def test_get_llm_settings_never_returns_raw_key():
 
 def test_update_llm_settings_persists_model_and_url():
     col = _mock_settings_col(None)
+    col.insert_one = AsyncMock()
     with patch("app.services.llm_settings_service.db") as mock_db:
         mock_db.__getitem__ = MagicMock(return_value=col)
         resp = client.put(
@@ -62,10 +63,23 @@ def test_update_llm_settings_persists_model_and_url():
             },
         )
     assert resp.status_code == 200
+    doc = col.insert_one.await_args.args[0]
+    assert doc["model"] == "qwen3:4b"
+    assert doc["baseUrl"] == "http://localhost:11434/v1"
+    assert doc["apiKey"] == "sk-new-key"
+
+
+def test_update_llm_settings_existing_doc_uses_update_one():
+    col = _mock_settings_col({"_id": "llm", "model": "old"})
+    with patch("app.services.llm_settings_service.db") as mock_db:
+        mock_db.__getitem__ = MagicMock(return_value=col)
+        resp = client.put(
+            "/api/v1/admin/llm-settings",
+            json={"model": "gpt-4o-mini", "baseUrl": "https://api.openai.com/v1"},
+        )
+    assert resp.status_code == 200
     set_payload = col.update_one.await_args.args[1]["$set"]
-    assert set_payload["model"] == "qwen3:4b"
-    assert set_payload["baseUrl"] == "http://localhost:11434/v1"
-    assert set_payload["apiKey"] == "sk-new-key"
+    assert set_payload["model"] == "gpt-4o-mini"
 
 
 def test_clear_api_key():
