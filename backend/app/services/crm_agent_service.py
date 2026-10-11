@@ -82,6 +82,68 @@ TOOLS: list[dict] = [
     {
         "type": "function",
         "function": {
+            "name": "list_deals",
+            "description": "Elenca deal / pipeline commerciale",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "stage": {"type": "string"},
+                    "search": {"type": "string"},
+                    "limit": {"type": "integer"},
+                },
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "update_deal",
+            "description": "Aggiorna un deal (stage, valore, chiusura prevista, note)",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "dealId": {"type": "string"},
+                    "title": {"type": "string", "description": "Cerca deal per titolo se manca dealId"},
+                    "stage": {"type": "string", "enum": ["new", "qualified", "proposal", "negotiation", "won", "lost"]},
+                    "value": {"type": "number"},
+                    "expectedClose": {"type": "string", "description": "ISO date"},
+                    "notes": {"type": "string"},
+                },
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "list_deadlines",
+            "description": "Elenca scadenze imminenti (task con dueDate e deal con expectedClose)",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "days": {"type": "integer", "description": "Finestra in giorni (default 7)"},
+                },
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "reschedule_task",
+            "description": "Sposta la scadenza di un task",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "taskId": {"type": "string"},
+                    "title": {"type": "string", "description": "Cerca task per titolo se manca taskId"},
+                    "dueDate": {"type": "string", "description": "Nuova data ISO"},
+                },
+                "required": ["dueDate"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "draft_email",
             "description": "Bozza email a un lead (non invia, salva attività)",
             "parameters": {
@@ -224,6 +286,13 @@ async def _create_deal(args: dict, user_id: str) -> dict:
         lead = await db["leads"].find_one({"email": args["leadEmail"].lower(), "deletedAt": None})
         lead_id = lead["_id"] if lead else None
     now = utcnow()
+    expected = None
+    if args.get("expectedClose"):
+        try:
+            from datetime import datetime
+            expected = datetime.fromisoformat(str(args["expectedClose"]).replace("Z", "+00:00"))
+        except ValueError:
+            expected = None
     doc = {
         "_id": new_id(),
         "leadId": lead_id,
@@ -231,6 +300,7 @@ async def _create_deal(args: dict, user_id: str) -> dict:
         "value": float(args.get("value") or 0),
         "probability": 30,
         "stage": args.get("stage") or "new",
+        "expectedClose": expected,
         "notes": args.get("notes") or "",
         "assignedTo": user_id,
         "closedAt": None,
@@ -239,7 +309,186 @@ async def _create_deal(args: dict, user_id: str) -> dict:
         "deletedAt": None,
     }
     await db["deals"].insert_one(doc)
-    return {"ok": True, "dealId": doc["_id"], "message": f"Deal «{title}» creato"}
+    detail = []
+    if args.get("stage"):
+        detail.append(str(args["stage"]))
+    if args.get("value"):
+        detail.append(f"€{float(args['value']):,.0f}")
+    suffix = f" ({', '.join(detail)})" if detail else ""
+    return {
+        "ok": True,
+        "dealId": doc["_id"],
+        "message": f"Deal «{title}» creato{suffix}",
+    }
+
+
+def _parse_iso(value: str | None):
+    if not value:
+        return None
+    try:
+        from datetime import datetime
+        return datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+
+
+async def _list_deals(args: dict, user_id: str) -> dict:
+    limit = min(int(args.get("limit") or 10), 50)
+    query: dict[str, Any] = {"deletedAt": None}
+    if args.get("stage"):
+        query["stage"] = args["stage"]
+    search = args.get("search")
+    if search:
+        query["title"] = {"$regex": re.escape(search), "$options": "i"}
+    cursor = db["deals"].find(query).sort("updatedAt", -1).limit(limit)
+    docs = await cursor.to_list(length=limit)
+    rows = [
+        {
+            "id": d["_id"],
+            "title": d.get("title"),
+            "stage": d.get("stage"),
+            "value": d.get("value"),
+            "expectedClose": d["expectedClose"].isoformat() if d.get("expectedClose") else None,
+            "leadId": d.get("leadId"),
+        }
+        for d in docs
+    ]
+    total_value = sum(float(r.get("value") or 0) for r in rows)
+    return {
+        "ok": True,
+        "count": len(rows),
+        "totalValue": total_value,
+        "deals": rows,
+        "message": f"{len(rows)} deal trovati (valore totale €{total_value:,.0f})",
+    }
+
+
+async def _update_deal(args: dict, user_id: str) -> dict:
+    deal = None
+    if args.get("dealId"):
+        deal = await db["deals"].find_one({"_id": args["dealId"], "deletedAt": None})
+    if not deal and args.get("title"):
+        deal = await db["deals"].find_one({
+            "deletedAt": None,
+            "title": {"$regex": re.escape(args["title"]), "$options": "i"},
+        })
+    if not deal:
+        return {"ok": False, "error": "Deal non trovato (specifica dealId o title)"}
+
+    updates: dict[str, Any] = {"updatedAt": utcnow()}
+    if args.get("stage"):
+        updates["stage"] = args["stage"]
+        if args["stage"] in ("won", "lost"):
+            updates["closedAt"] = utcnow()
+            updates["probability"] = 100 if args["stage"] == "won" else 0
+    if args.get("value") is not None:
+        updates["value"] = float(args["value"])
+    expected = _parse_iso(args.get("expectedClose"))
+    if expected:
+        updates["expectedClose"] = expected
+    if args.get("notes"):
+        updates["notes"] = args["notes"]
+
+    await db["deals"].update_one({"_id": deal["_id"]}, {"$set": updates})
+    merged = {**deal, **updates}
+    parts = []
+    if updates.get("stage"):
+        parts.append(f"stage={updates['stage']}")
+    if updates.get("value") is not None:
+        parts.append(f"€{updates['value']:,.0f}")
+    if expected:
+        parts.append(f"chiusura {expected.date()}")
+    return {
+        "ok": True,
+        "dealId": deal["_id"],
+        "title": deal.get("title"),
+        "message": f"Deal «{deal.get('title')}» aggiornato ({', '.join(parts) or 'ok'})",
+        "deal": {
+            "id": deal["_id"],
+            "title": merged.get("title"),
+            "stage": merged.get("stage"),
+            "value": merged.get("value"),
+            "expectedClose": merged["expectedClose"].isoformat() if merged.get("expectedClose") else None,
+        },
+    }
+
+
+async def _list_deadlines(args: dict, user_id: str) -> dict:
+    from datetime import timedelta
+
+    days = max(1, min(int(args.get("days") or 7), 90))
+    now = utcnow()
+    end = now + timedelta(days=days)
+
+    task_cursor = db["tasks"].find({
+        "deletedAt": None,
+        "status": "open",
+        "dueDate": {"$gte": now, "$lte": end},
+    }).sort("dueDate", 1).limit(50)
+    tasks = await task_cursor.to_list(length=50)
+
+    deal_cursor = db["deals"].find({
+        "deletedAt": None,
+        "stage": {"$nin": ["won", "lost"]},
+        "expectedClose": {"$gte": now, "$lte": end},
+    }).sort("expectedClose", 1).limit(50)
+    deals = await deal_cursor.to_list(length=50)
+
+    items = []
+    for t in tasks:
+        items.append({
+            "kind": "task",
+            "id": t["_id"],
+            "title": t.get("title"),
+            "date": t["dueDate"].isoformat() if t.get("dueDate") else None,
+            "priority": t.get("priority"),
+            "status": t.get("status"),
+        })
+    for d in deals:
+        items.append({
+            "kind": "deal",
+            "id": d["_id"],
+            "title": d.get("title"),
+            "date": d["expectedClose"].isoformat() if d.get("expectedClose") else None,
+            "stage": d.get("stage"),
+            "value": d.get("value"),
+        })
+    items.sort(key=lambda x: x.get("date") or "")
+    return {
+        "ok": True,
+        "days": days,
+        "count": len(items),
+        "items": items,
+        "message": f"{len(items)} scadenze nei prossimi {days} giorni",
+    }
+
+
+async def _reschedule_task(args: dict, user_id: str) -> dict:
+    due = _parse_iso(args.get("dueDate"))
+    if not due:
+        return {"ok": False, "error": "dueDate ISO obbligatoria (es. 2026-03-01)"}
+
+    task = None
+    if args.get("taskId"):
+        task = await db["tasks"].find_one({"_id": args["taskId"], "deletedAt": None})
+    if not task and args.get("title"):
+        task = await db["tasks"].find_one({
+            "deletedAt": None,
+            "status": "open",
+            "title": {"$regex": re.escape(args["title"]), "$options": "i"},
+        })
+    if not task:
+        return {"ok": False, "error": "Task non trovato (specifica taskId o title)"}
+
+    await db["tasks"].update_one(
+        {"_id": task["_id"]},
+        {"$set": {"dueDate": due, "updatedAt": utcnow()}},
+    )
+    return {
+        "ok": True,
+        "taskId": task["_id"],
+        "message": f"Task «{task.get('title')}» spostato al {due.date()}",
+    }
 
 
 async def _draft_email(args: dict, user_id: str) -> dict:
@@ -361,6 +610,10 @@ TOOL_HANDLERS: dict[str, Callable[[dict, str], Awaitable[dict]]] = {
     "create_lead": _create_lead,
     "create_task": _create_task,
     "create_deal": _create_deal,
+    "list_deals": _list_deals,
+    "update_deal": _update_deal,
+    "list_deadlines": _list_deadlines,
+    "reschedule_task": _reschedule_task,
     "draft_email": _draft_email,
     "send_email": _send_email,
     "list_leads": _list_leads,
@@ -445,11 +698,89 @@ def parse_command(text: str) -> tuple[str, dict] | None:
         )
         args["title"] = title_m.group(1).strip() if title_m else "Deal da agente"
         val_m = re.search(r"(\d+(?:[.,]\d+)?)\s*(?:€|euro|eur)", t, re.IGNORECASE)
+        if not val_m:
+            val_m = re.search(r"\bda\s+(\d+(?:[.,]\d+)?)\b", t, re.IGNORECASE)
         if val_m:
             args["value"] = float(val_m.group(1).replace(",", "."))
         if email:
             args["leadEmail"] = email
         return ("create_deal", args)
+
+    # LIST / UPDATE DEALS
+    if any(k in low for k in ("mostra deal", "elenca deal", "lista deal", "mostra i deal", "deal aperti")):
+        args = {}
+        for stage in ("new", "qualified", "proposal", "negotiation", "won", "lost"):
+            if stage in low:
+                args["stage"] = stage
+                break
+        # "deal in proposta" / "in trattativa"
+        if "propost" in low:
+            args["stage"] = "proposal"
+        if "trattativa" in low or "negoziazione" in low:
+            args["stage"] = "negotiation"
+        return ("list_deals", args)
+
+    if any(k in low for k in ("sposta deal", "aggiorna deal", "deal in ", "segna deal", "chiudi deal", "imposta deal")):
+        args = {}
+        id_m = re.search(r"\bdeal[ _]?([0-9a-f-]{8,})\b", low)
+        if id_m:
+            args["dealId"] = id_m.group(1)
+        else:
+            title_m = re.search(
+                r"deal\s+[«\"']?(.+?)[»\"']?\s+(?:in|a|come|stage|valore|del|da)\b",
+                t,
+                re.IGNORECASE,
+            )
+            if title_m:
+                args["title"] = title_m.group(1).strip()
+        for stage, keys in {
+            "won": ("vinto", "won"),
+            "lost": ("perso", "lost"),
+            "proposal": ("proposta", "proposal"),
+            "negotiation": ("trattativa", "negoziazione", "negotiation"),
+            "qualified": ("qualificato", "qualified"),
+            "new": ("nuovo", "new"),
+        }.items():
+            if any(k in low for k in keys):
+                args["stage"] = stage
+                break
+        val_m = re.search(r"(\d+(?:[.,]\d+)?)\s*(?:€|euro|eur)", t, re.IGNORECASE)
+        if val_m:
+            args["value"] = float(val_m.group(1).replace(",", "."))
+        if due:
+            args["expectedClose"] = due
+        if args:
+            return ("update_deal", args)
+
+    # DEADLINES / SCADENZE
+    if any(k in low for k in ("scadenz", "cosa scade", "prossime scadenze", "impegni in scadenza")):
+        args = {}
+        n_m = re.search(r"(\d+)\s*giorn", low)
+        if n_m:
+            args["days"] = int(n_m.group(1))
+        elif "settimana" in low:
+            args["days"] = 7
+        elif "mese" in low:
+            args["days"] = 30
+        return ("list_deadlines", args)
+
+    # RESCHEDULE TASK
+    if any(k in low for k in ("proroga task", "sposta task", "rimanda task", "cambia scadenza", "sposta scadenza")):
+        if not due:
+            return None
+        args = {"dueDate": due}
+        id_m = re.search(r"\btask[ _]?([0-9a-f-]{8,})\b", low)
+        if id_m:
+            args["taskId"] = id_m.group(1)
+        else:
+            title_m = re.search(
+                r"task\s+[«\"']?(.+?)[»\"']?\s+(?:a|al|entro|del)\b",
+                t,
+                re.IGNORECASE,
+            )
+            if title_m:
+                args["title"] = title_m.group(1).strip()
+        return ("reschedule_task", args)
 
     # EMAIL
     if any(k in low for k in ("invia email", "mandare email", "scrivi email", "bozza email", "email a")):

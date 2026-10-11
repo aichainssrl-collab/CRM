@@ -21,8 +21,12 @@ type ChatTurn = {
 const EXAMPLES = [
   "Crea lead Mario Rossi email mario@studio.it",
   "Crea task Chiama Mario entro 2026-02-01 urgente",
+  "Crea deal ZenTratto da 15000 email demo.cliente@example.com",
+  "Mostra i deal",
+  "Sposta deal ZenTratto in proposta",
+  "Scadenze dei prossimi 7 giorni",
+  "Proroga task Call follow-up a 2026-03-01",
   "Bozza email a demo.cliente@example.com oggetto Demo testo Ciao!",
-  "Mostra i lead",
 ];
 
 export default function AgentPage() {

@@ -64,6 +64,40 @@ def test_parse_list_leads():
     assert parsed == ("list_leads", {"limit": 10})
 
 
+def test_parse_list_deals_by_stage():
+    parsed = crm_agent_service.parse_command("Mostra deal in trattativa")
+    assert parsed is not None
+    name, args = parsed
+    assert name == "list_deals"
+    assert args.get("stage") == "negotiation"
+
+
+def test_parse_update_deal_stage():
+    parsed = crm_agent_service.parse_command("Sposta deal ZenTratto in proposta")
+    assert parsed is not None
+    name, args = parsed
+    assert name == "update_deal"
+    assert args.get("stage") == "proposal"
+    assert "ZenTratto" in args.get("title", "")
+
+
+def test_parse_deadlines():
+    parsed = crm_agent_service.parse_command("Scadenze dei prossimi 30 giorni")
+    assert parsed is not None
+    name, args = parsed
+    assert name == "list_deadlines"
+    assert args.get("days") == 30
+
+
+def test_parse_reschedule_task():
+    parsed = crm_agent_service.parse_command("Proroga task Call follow-up a 2026-03-01")
+    assert parsed is not None
+    name, args = parsed
+    assert name == "reschedule_task"
+    assert args.get("dueDate") == "2026-03-01"
+    assert "Call" in args.get("title", "")
+
+
 def test_parse_unknown():
     assert crm_agent_service.parse_command("ciao come va?") is None
 
@@ -151,3 +185,96 @@ def test_duplicate_lead_rejected():
     assert data["ok"] is False
     assert "già presente" in data["reply"]
     assert mock_col.insert_one.await_count == 0
+
+
+# ── deals + deadlines tools ──────────────────────────────────────────────────
+
+def test_list_deals_tool():
+    mock_col = MagicMock()
+    mock_col.find = MagicMock()
+    mock_col.find.return_value.sort.return_value.limit.return_value.to_list = AsyncMock(
+        return_value=[
+            {
+                "_id": "d1",
+                "title": "ZenTratto — Studio",
+                "stage": "proposal",
+                "value": 15000,
+                "expectedClose": None,
+                "leadId": "L1",
+            }
+        ]
+    )
+    with patch("app.services.crm_agent_service.db") as mock_db:
+        mock_db.__getitem__ = MagicMock(return_value=mock_col)
+        resp = client.post(
+            "/api/v1/agent/run",
+            json={"message": "Mostra i deal"},
+        )
+    data = resp.json()
+    assert data["ok"] is True
+    assert data["mode"] == "parser"
+    assert "1 deal" in data["reply"] or "deal trovati" in data["reply"]
+
+
+def test_update_deal_tool():
+    deal = {"_id": "d1", "title": "ZenTratto — Studio", "stage": "new", "value": 0}
+    mock_col = MagicMock()
+    mock_col.find_one = AsyncMock(return_value=deal)
+    mock_col.update_one = AsyncMock()
+
+    with patch("app.services.crm_agent_service.db") as mock_db:
+        mock_db.__getitem__ = MagicMock(return_value=mock_col)
+        resp = client.post(
+            "/api/v1/agent/run",
+            json={"message": "Sposta deal ZenTratto in proposta"},
+        )
+    data = resp.json()
+    assert data["ok"] is True
+    assert mock_col.update_one.await_count == 1
+    set_payload = mock_col.update_one.await_args.args[1]["$set"]
+    assert set_payload["stage"] == "proposal"
+
+
+def test_list_deadlines_tool():
+    tasks_col = MagicMock()
+    tasks_col.find = MagicMock()
+    tasks_col.find.return_value.sort.return_value.limit.return_value.to_list = AsyncMock(
+        return_value=[{"_id": "t1", "title": "Call follow-up", "dueDate": None, "priority": "high", "status": "open"}]
+    )
+    deals_col = MagicMock()
+    deals_col.find = MagicMock()
+    deals_col.find.return_value.sort.return_value.limit.return_value.to_list = AsyncMock(return_value=[])
+
+    def get_col(name):
+        return {"tasks": tasks_col, "deals": deals_col}[name]
+
+    with patch("app.services.crm_agent_service.db") as mock_db:
+        mock_db.__getitem__ = MagicMock(side_effect=get_col)
+        resp = client.post(
+            "/api/v1/agent/run",
+            json={"message": "Scadenze dei prossimi 7 giorni"},
+        )
+    data = resp.json()
+    assert data["ok"] is True
+    assert "scadenze" in data["reply"].lower()
+
+
+def test_reschedule_task_tool():
+    from datetime import datetime, timezone
+
+    task = {"_id": "t1", "title": "Call follow-up", "status": "open", "dueDate": datetime.now(timezone.utc)}
+    mock_col = MagicMock()
+    mock_col.find_one = AsyncMock(return_value=task)
+    mock_col.update_one = AsyncMock()
+
+    with patch("app.services.crm_agent_service.db") as mock_db:
+        mock_db.__getitem__ = MagicMock(return_value=mock_col)
+        resp = client.post(
+            "/api/v1/agent/run",
+            json={"message": "Proroga task Call follow-up a 2026-03-01"},
+        )
+    data = resp.json()
+    assert data["ok"] is True
+    assert mock_col.update_one.await_count == 1
+    set_payload = mock_col.update_one.await_args.args[1]["$set"]
+    assert set_payload["dueDate"].isoformat().startswith("2026-03-01")
