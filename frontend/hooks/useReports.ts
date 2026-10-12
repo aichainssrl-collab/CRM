@@ -1,6 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
 
+export interface ReportNarrative {
+  narrative: string;
+  highlights: string[];
+  risks: string[];
+  actions: string[];
+  source: "llm" | "fallback";
+}
+
 export interface ReportSummary {
   id: string;
   title: string;
@@ -8,6 +16,7 @@ export interface ReportSummary {
   generatedBy: string;
   generatedByName: string;
   createdAt: string;
+  narrativeSnippet?: string | null;
 }
 
 export interface ReportFull extends ReportSummary {
@@ -35,6 +44,7 @@ export interface ReportFull extends ReportSummary {
     }[];
     forecast?: { stage: string; totalValue: number; weightedValue: number; count: number }[];
     forecastTotal?: { weighted: number; pipeline: number };
+    narrative?: ReportNarrative;
   };
 }
 
@@ -45,6 +55,7 @@ interface GenerateParams {
   includeVelocity?: boolean;
   includePerformance?: boolean;
   includeForecast?: boolean;
+  includeNarrative?: boolean;
 }
 
 // ── List reports ──────────────────────────────────────────────

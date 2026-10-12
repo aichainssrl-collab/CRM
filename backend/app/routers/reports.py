@@ -7,7 +7,7 @@ from typing import Optional
 from datetime import datetime, timezone, timedelta
 from app.deps import require_sales, require_admin, UserRecord
 from app.services.db_service import db, new_id, utcnow, _to_dict
-from app.services import analytics_service
+from app.services import analytics_service, report_service
 from app.services.email_service import send_email
 from app.config import settings
 
@@ -21,6 +21,7 @@ class ReportGenerate(BaseModel):
     includeVelocity: bool = True
     includePerformance: bool = True
     includeForecast: bool = True
+    includeNarrative: bool = True
 
 
 class ReportSend(BaseModel):
@@ -60,6 +61,11 @@ async def generate_report(
             "weighted": round(sum(d["weightedValue"] for d in forecast), 2),
             "pipeline": round(sum(d["totalValue"] for d in forecast), 2),
         }
+
+    if body.includeNarrative:
+        report_data["narrative"] = await report_service.generate_narrative(
+            report_data, time_range=body.timeRange
+        )
 
     now = utcnow()
     doc = {
@@ -104,6 +110,7 @@ async def list_reports(
             "generatedBy": d.get("generatedBy"),
             "generatedByName": d.get("generatedByName"),
             "createdAt": d.get("createdAt"),
+            "narrativeSnippet": ((d.get("data") or {}).get("narrative") or {}).get("narrative"),
         })
     return results
 
@@ -167,6 +174,28 @@ async def send_report_email(
         <tr><td><b>Tasso Conversione</b></td><td>{kpis.get('conversionRate', 0)}%</td></tr>
     </table>
     """
+
+    narrative = data.get("narrative") or {}
+    if narrative.get("narrative"):
+        html += "<h3>Sintesi</h3>"
+        for para in str(narrative["narrative"]).split("\n"):
+            if para.strip():
+                html += f"<p>{para}</p>"
+        if narrative.get("highlights"):
+            html += "<p><b>Punti di forza</b></p><ul>"
+            for item in narrative["highlights"]:
+                html += f"<li>{item}</li>"
+            html += "</ul>"
+        if narrative.get("risks"):
+            html += "<p><b>Attenzione</b></p><ul>"
+            for item in narrative["risks"]:
+                html += f"<li>{item}</li>"
+            html += "</ul>"
+        if narrative.get("actions"):
+            html += "<p><b>Prossime azioni</b></p><ul>"
+            for item in narrative["actions"]:
+                html += f"<li>{item}</li>"
+            html += "</ul>"
 
     # Forecast section
     forecast_total = data.get("forecastTotal")

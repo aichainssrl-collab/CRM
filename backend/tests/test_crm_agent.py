@@ -637,3 +637,51 @@ def test_book_demo_missing_date_fails():
     data = resp.json()
     assert data["ok"] is False
     assert "preferredDate" in (data.get("error") or "")
+
+
+def test_parse_generate_report():
+    parsed = crm_agent_service.parse_command("genera report settimanale")
+    assert parsed is not None
+    name, args = parsed
+    assert name == "generate_report"
+    assert args.get("timeRange") == "7d"
+
+
+def test_generate_report_tool():
+    reports_col = MagicMock()
+    reports_col.insert_one = AsyncMock()
+    kpi = {
+        "totalLeads": 10,
+        "newLeads": 2,
+        "wonDeals": 1,
+        "lostDeals": 0,
+        "activeDeals": 3,
+        "pipelineValue": 10000.0,
+        "revenue": 5000.0,
+        "conversionRate": 100.0,
+        "topSources": [],
+    }
+    narrative = {
+        "narrative": "Buon andamento.",
+        "highlights": ["ok"],
+        "risks": [],
+        "actions": ["follow-up"],
+        "source": "llm",
+    }
+
+    with (
+        patch("app.services.crm_agent_service.db") as mock_db,
+        patch("app.services.analytics_service.get_kpi_summary", new=AsyncMock(return_value=kpi)),
+        patch("app.services.analytics_service.get_conversion_funnel", new=AsyncMock(return_value=[])),
+        patch("app.services.report_service.generate_narrative", new=AsyncMock(return_value=narrative)),
+    ):
+        mock_db.__getitem__ = MagicMock(return_value=reports_col)
+        resp = client.post(
+            "/api/v1/agent/run",
+            json={"message": "genera report settimanale"},
+        )
+
+    data = resp.json()
+    assert data["ok"] is True
+    assert reports_col.insert_one.await_count == 1
+    assert "Buon andamento" in data["reply"]

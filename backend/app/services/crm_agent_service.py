@@ -284,6 +284,20 @@ TOOLS: list[dict] = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "generate_report",
+            "description": "Genera un report CRM con sintesi narrativa (KPI + insight)",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "title": {"type": "string"},
+                    "timeRange": {"type": "string", "enum": ["7d", "30d", "90d"]},
+                },
+            },
+        },
+    },
 ]
 
 
@@ -833,6 +847,54 @@ async def _find_lead(args: dict, user_id: str) -> dict:
     }
 
 
+async def _generate_report(args: dict, user_id: str) -> dict:
+    from datetime import timedelta
+
+    from app.services import analytics_service, report_service
+
+    time_range = args.get("timeRange") or "30d"
+    days_map = {"7d": 7, "30d": 30, "90d": 90}
+    days = days_map.get(time_range, 30)
+    since = utcnow() - timedelta(days=days)
+
+    report_data = {
+        "kpis": await analytics_service.get_kpi_summary(since=since),
+        "funnel": await analytics_service.get_conversion_funnel(since),
+    }
+    narrative = await report_service.generate_narrative(report_data, time_range=time_range)
+    report_data["narrative"] = narrative
+
+    title = args.get("title") or f"Report CRM {time_range}"
+    now = utcnow()
+    doc = {
+        "_id": new_id(),
+        "title": title,
+        "timeRange": time_range,
+        "generatedBy": user_id,
+        "generatedByName": "CRM Agent",
+        "data": report_data,
+        "createdAt": now,
+        "updatedAt": now,
+        "deletedAt": None,
+    }
+    await db["reports"].insert_one(doc)
+
+    return {
+        "ok": True,
+        "reportId": doc["_id"],
+        "title": title,
+        "narrative": narrative,
+        "message": (
+            f"Report «{title}» generato.\n\n{narrative.get('narrative') or ''}"
+            + (
+                "\n\nAzioni: " + "; ".join(narrative.get("actions") or [])
+                if narrative.get("actions")
+                else ""
+            )
+        ),
+    }
+
+
 async def _crm_summary(args: dict, user_id: str) -> dict:
     from datetime import timedelta
 
@@ -1007,6 +1069,7 @@ TOOL_HANDLERS: dict[str, Callable[[dict, str], Awaitable[dict]]] = {
     "find_lead": _find_lead,
     "crm_summary": _crm_summary,
     "book_demo": _book_demo,
+    "generate_report": _generate_report,
 }
 
 
@@ -1254,6 +1317,29 @@ def parse_command(text: str) -> tuple[str, dict] | None:
         elif "mese" in low:
             args["days"] = 30
         return ("crm_summary", args)
+
+    # GENERATE REPORT
+    if any(k in low for k in (
+        "genera report", "generare report", "crea report", "report settimanale",
+        "report mensile", "report del crm", "scrivi report", "report executive",
+    )):
+        args = {}
+        if "settiman" in low:
+            args["timeRange"] = "7d"
+        elif "mensil" in low or "mese" in low:
+            args["timeRange"] = "30d"
+        elif "trimestr" in low or "90" in low:
+            args["timeRange"] = "90d"
+        title_m = re.search(
+            r"report\s+[«\"']?(.+?)[»\"']?(?:\s+per il|\s+del |\s*$)",
+            t,
+            re.IGNORECASE,
+        )
+        if title_m and title_m.group(1).strip().lower() not in (
+            "settimanale", "mensile", "del crm", "crm", "executive",
+        ):
+            args["title"] = title_m.group(1).strip()
+        return ("generate_report", args)
 
     # BOOK DEMO / APPOINTMENT
     if any(k in low for k in (

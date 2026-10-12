@@ -137,7 +137,7 @@ export default function ReportsPage() {
   const [genTitle, setGenTitle] = useState(`Report ${new Date().toLocaleDateString("it-IT")}`);
   const [genRange, setGenRange] = useState("30d");
   const [genOptions, setGenOptions] = useState({
-    funnel: true, velocity: true, performance: true, forecast: true,
+    funnel: true, velocity: true, performance: true, forecast: true, narrative: true,
   });
 
   // Email dialog state
@@ -207,6 +207,7 @@ export default function ReportsPage() {
       includeVelocity: genOptions.velocity,
       includePerformance: genOptions.performance,
       includeForecast: genOptions.forecast,
+      includeNarrative: genOptions.narrative,
     });
     setGenOpen(false);
     setTab("history");
@@ -264,7 +265,7 @@ export default function ReportsPage() {
                 </div>
                 <div className="space-y-3">
                   <Label>Includi sezioni</Label>
-                  {(["funnel", "velocity", "performance", "forecast"] as const).map((key) => (
+                  {(["funnel", "velocity", "performance", "forecast", "narrative"] as const).map((key) => (
                     <div key={key} className="flex items-center gap-2">
                       <Checkbox
                         checked={genOptions[key]}
@@ -272,7 +273,13 @@ export default function ReportsPage() {
                           setGenOptions((prev) => ({ ...prev, [key]: !!checked }))
                         }
                       />
-                      <span className="text-sm capitalize">{key === "funnel" ? "Funnel conversioni" : key === "velocity" ? "Pipeline velocity" : key === "performance" ? "Performance team" : "Forecast ponderato"}</span>
+                      <span className="text-sm capitalize">
+                        {key === "funnel" ? "Funnel conversioni"
+                          : key === "velocity" ? "Pipeline velocity"
+                          : key === "performance" ? "Performance team"
+                          : key === "forecast" ? "Forecast ponderato"
+                          : "Sintesi narrativa AI"}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -482,6 +489,9 @@ function ReportRow({ report, onDelete, onEmail }: {
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium truncate">{report.title}</p>
+        {report.narrativeSnippet ? (
+          <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{report.narrativeSnippet}</p>
+        ) : null}
         <div className="flex items-center gap-2 mt-0.5">
           <span className="text-xs text-muted-foreground flex items-center gap-1">
             <Clock className="h-3 w-3" />

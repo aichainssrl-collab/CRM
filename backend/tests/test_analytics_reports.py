@@ -137,6 +137,13 @@ def test_generate_report():
          patch("app.routers.reports.analytics_service.get_pipeline_velocity", new_callable=AsyncMock, return_value=[]), \
          patch("app.routers.reports.analytics_service.get_sales_performance", new_callable=AsyncMock, return_value=[]), \
          patch("app.routers.reports.analytics_service.get_forecast", new_callable=AsyncMock, return_value=[]), \
+         patch("app.routers.reports.report_service.generate_narrative", new_callable=AsyncMock, return_value={
+             "narrative": "Sintesi di test.",
+             "highlights": ["ok"],
+             "risks": [],
+             "actions": ["agisci"],
+             "source": "llm",
+         }), \
          patch("app.routers.reports.db") as mock_db:
         mock_col = AsyncMock()
         mock_db.__getitem__ = MagicMock(return_value=mock_col)
@@ -147,6 +154,26 @@ def test_generate_report():
     body = resp.json()
     assert body["title"] == "Test Report"
     assert "data" in body
+    assert body["data"]["narrative"]["narrative"] == "Sintesi di test."
+
+
+def test_generate_report_without_narrative():
+    with patch("app.routers.reports.analytics_service.get_kpi_summary", new_callable=AsyncMock, return_value={"totalLeads": 1}), \
+         patch("app.routers.reports.analytics_service.get_conversion_funnel", new_callable=AsyncMock, return_value=[]), \
+         patch("app.routers.reports.analytics_service.get_pipeline_velocity", new_callable=AsyncMock, return_value=[]), \
+         patch("app.routers.reports.analytics_service.get_sales_performance", new_callable=AsyncMock, return_value=[]), \
+         patch("app.routers.reports.analytics_service.get_forecast", new_callable=AsyncMock, return_value=[]), \
+         patch("app.routers.reports.db") as mock_db:
+        mock_col = AsyncMock()
+        mock_db.__getitem__ = MagicMock(return_value=mock_col)
+        mock_col.insert_one = AsyncMock()
+        resp = client.post(
+            "/api/v1/reports/generate",
+            json={"title": "No narrative", "includeNarrative": False},
+        )
+
+    assert resp.status_code == 200
+    assert "narrative" not in resp.json()["data"]
 
 
 def test_list_reports():
