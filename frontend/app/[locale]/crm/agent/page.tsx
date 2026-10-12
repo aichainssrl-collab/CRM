@@ -27,6 +27,8 @@ const EXAMPLES = [
   "Scadenze dei prossimi 7 giorni",
   "Proroga task Call follow-up a 2026-03-01",
   "Bozza email a demo.cliente@example.com oggetto Demo testo Ciao!",
+  "Prenota demo con Mario Rossi email mario@studio.it il 2026-03-10 alle 15:00",
+  "Riepilogo CRM",
 ];
 
 export default function AgentPage() {

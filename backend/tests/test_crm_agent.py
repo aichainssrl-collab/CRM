@@ -456,3 +456,184 @@ def test_send_email_failure_reports_error():
     assert data["ok"] is False
     assert data["sent"] is False
     assert "getaddrinfo" in (data.get("error") or "")
+
+
+# ── summary + booking (Phase 25) ─────────────────────────────────────────────
+
+def test_parse_crm_summary():
+    parsed = crm_agent_service.parse_command("riepilogo CRM")
+    assert parsed is not None
+    name, args = parsed
+    assert name == "crm_summary"
+
+
+def test_parse_crm_summary_days():
+    parsed = crm_agent_service.parse_command("situazione ultimi 7 giorni")
+    assert parsed is not None
+    name, args = parsed
+    assert name == "crm_summary"
+    assert args.get("days") == 7
+
+
+def test_parse_book_demo():
+    parsed = crm_agent_service.parse_command(
+        "Prenota demo con Mario Rossi email mario@studio.it il 2026-03-10 alle 15:00"
+    )
+    assert parsed is not None
+    name, args = parsed
+    assert name == "book_demo"
+    assert args["email"] == "mario@studio.it"
+    assert args["preferredDate"] == "2026-03-10"
+    assert args["timeSlot"] == "15:00"
+    assert args["firstName"] == "Mario"
+    assert args["lastName"] == "Rossi"
+
+
+def test_parse_book_demo_requires_date_and_email():
+    assert crm_agent_service.parse_command("prenota demo") is None
+
+
+class _AsyncCursor:
+    def __init__(self, rows):
+        self._rows = list(rows)
+
+    def __aiter__(self):
+        self._iter = iter(self._rows)
+        return self
+
+    async def __anext__(self):
+        try:
+            return next(self._iter)
+        except StopIteration:
+            raise StopAsyncIteration
+
+
+def test_crm_summary_tool():
+    mock_leads = MagicMock()
+    mock_leads.count_documents = AsyncMock(return_value=5)
+    mock_leads.aggregate = MagicMock(
+        return_value=_AsyncCursor([{"_id": "new", "count": 3}, {"_id": "qualified", "count": 2}])
+    )
+    mock_tasks = MagicMock()
+    mock_tasks.count_documents = AsyncMock(return_value=2)
+    mock_deals = MagicMock()
+    mock_deals.aggregate = MagicMock(
+        return_value=_AsyncCursor([{"_id": "proposal", "count": 1, "value": 15000}])
+    )
+
+    def get_col(name):
+        return {"leads": mock_leads, "tasks": mock_tasks, "deals": mock_deals}[name]
+
+    kpi = {
+        "totalLeads": 5,
+        "newLeads": 3,
+        "wonDeals": 1,
+        "lostDeals": 0,
+        "activeDeals": 2,
+        "pipelineValue": 15000.0,
+        "revenue": 8000.0,
+        "conversionRate": 100.0,
+        "topSources": [],
+    }
+
+    with (
+        patch("app.services.crm_agent_service.db") as mock_db,
+        patch("app.services.analytics_service.get_kpi_summary", new=AsyncMock(return_value=kpi)),
+    ):
+        mock_db.__getitem__ = MagicMock(side_effect=get_col)
+        resp = client.post("/api/v1/agent/run", json={"message": "riepilogo CRM"})
+
+    data = resp.json()
+    assert data["ok"] is True
+    assert data["mode"] == "parser"
+    assert "Situazione CRM" in data["reply"] or "Lead totali" in data["reply"]
+
+
+def test_book_demo_tool_creates_booking():
+    leads_col = MagicMock()
+    leads_col.find_one = AsyncMock(return_value=None)
+    leads_col.insert_one = AsyncMock()
+    bookings_col = MagicMock()
+    bookings_col.insert_one = AsyncMock()
+    activities_col = MagicMock()
+    activities_col.insert_one = AsyncMock()
+
+    def get_col(name):
+        return {
+            "leads": leads_col,
+            "bookings": bookings_col,
+            "activities": activities_col,
+        }[name]
+
+    with patch("app.services.crm_agent_service.db") as mock_db:
+        mock_db.__getitem__ = MagicMock(side_effect=get_col)
+        resp = client.post(
+            "/api/v1/agent/tools/book_demo",
+            json={
+                "args": {
+                    "email": "mario@studio.it",
+                    "firstName": "Mario",
+                    "lastName": "Rossi",
+                    "preferredDate": "2026-03-10",
+                    "timeSlot": "15:00",
+                    "companyName": "Studio Rossi",
+                }
+            },
+        )
+
+    data = resp.json()
+    assert resp.status_code == 200
+    assert data["ok"] is True
+    assert data["email"] == "mario@studio.it"
+    assert data["timeSlot"] == "15:00"
+    assert bookings_col.insert_one.await_count == 1
+    payload = bookings_col.insert_one.await_args.args[0]
+    assert payload["email"] == "mario@studio.it"
+    assert payload["status"] == "confirmed"
+    assert payload["preferredDate"].isoformat().startswith("2026-03-10")
+
+
+def test_book_demo_tool_existing_lead():
+    lead = {"_id": "L1", "firstName": "Mario", "lastName": "Rossi", "email": "mario@studio.it"}
+    leads_col = MagicMock()
+    leads_col.find_one = AsyncMock(return_value=lead)
+    leads_col.insert_one = AsyncMock()
+    bookings_col = MagicMock()
+    bookings_col.insert_one = AsyncMock()
+    activities_col = MagicMock()
+    activities_col.insert_one = AsyncMock()
+
+    def get_col(name):
+        return {
+            "leads": leads_col,
+            "bookings": bookings_col,
+            "activities": activities_col,
+        }[name]
+
+    with patch("app.services.crm_agent_service.db") as mock_db:
+        mock_db.__getitem__ = MagicMock(side_effect=get_col)
+        resp = client.post(
+            "/api/v1/agent/run",
+            json={
+                "message": (
+                    "Prenota demo con Mario Rossi email mario@studio.it "
+                    "il 2026-03-10 alle 15:00"
+                )
+            },
+        )
+
+    data = resp.json()
+    assert data["ok"] is True
+    assert leads_col.insert_one.await_count == 0
+    assert bookings_col.insert_one.await_count == 1
+    assert "Demo confermata" in data["reply"]
+
+
+def test_book_demo_missing_date_fails():
+    resp = client.post(
+        "/api/v1/agent/tools/book_demo",
+        json={"args": {"email": "x@y.com"}},
+    )
+    data = resp.json()
+    assert data["ok"] is False
+    assert "preferredDate" in (data.get("error") or "")

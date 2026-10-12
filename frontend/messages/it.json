@@ -863,7 +863,7 @@
   },
   "agent": {
     "title": "Agente CRM",
-    "subtitle": "Esegui azioni in linguaggio naturale: crea lead, task, deal, email",
+    "subtitle": "Esegui azioni in linguaggio naturale: lead, task, deal, email, demo e riepiloghi",
     "chatTitle": "Console agente",
     "chatHint": "Scrivi un comando o scegli un esempio. L'agente esegue le azioni sul CRM.",
     "examples": "Prova un esempio:",

@@ -863,7 +863,7 @@
   },
   "agent": {
     "title": "CRM Agent",
-    "subtitle": "Run natural-language actions: create leads, tasks, deals, emails",
+    "subtitle": "Run natural-language actions: leads, tasks, deals, emails, demos and summaries",
     "chatTitle": "Agent console",
     "chatHint": "Type a command or pick an example. The agent executes CRM actions.",
     "examples": "Try an example:",

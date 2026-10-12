@@ -248,6 +248,42 @@ TOOLS: list[dict] = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "crm_summary",
+            "description": "Riepilogo CRM: lead, deal, pipeline, ricavi e task aperti",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "days": {
+                        "type": "integer",
+                        "description": "Finestra in giorni per i nuovi lead (default 30)",
+                    },
+                },
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "book_demo",
+            "description": "Prenota una demo / appuntamento con un contatto",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "firstName": {"type": "string"},
+                    "lastName": {"type": "string"},
+                    "email": {"type": "string"},
+                    "companyName": {"type": "string"},
+                    "preferredDate": {"type": "string", "description": "ISO date"},
+                    "timeSlot": {"type": "string", "description": "es. 15:00"},
+                    "notes": {"type": "string"},
+                },
+                "required": ["email", "preferredDate"],
+            },
+        },
+    },
 ]
 
 
@@ -797,6 +833,163 @@ async def _find_lead(args: dict, user_id: str) -> dict:
     }
 
 
+async def _crm_summary(args: dict, user_id: str) -> dict:
+    from datetime import timedelta
+
+    from app.services.analytics_service import get_kpi_summary
+
+    days = max(1, min(int(args.get("days") or 30), 365))
+    since = utcnow() - timedelta(days=days)
+    kpi = await get_kpi_summary(since=since)
+
+    open_tasks = await db["tasks"].count_documents({"deletedAt": None, "status": "open"})
+    overdue_tasks = await db["tasks"].count_documents({
+        "deletedAt": None,
+        "status": "open",
+        "dueDate": {"$lt": utcnow()},
+    })
+
+    status_rows = []
+    async for row in db["leads"].aggregate([
+        {"$match": {"deletedAt": None}},
+        {"$group": {"_id": "$status", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}},
+    ]):
+        status_rows.append({"status": row["_id"] or "new", "count": row["count"]})
+
+    stage_rows = []
+    async for row in db["deals"].aggregate([
+        {"$match": {"deletedAt": None}},
+        {"$group": {"_id": "$stage", "count": {"$sum": 1}, "value": {"$sum": "$value"}}},
+        {"$sort": {"count": -1}},
+    ]):
+        stage_rows.append({
+            "stage": row["_id"] or "new",
+            "count": row["count"],
+            "value": float(row.get("value") or 0),
+        })
+
+    parts = [
+        f"Lead totali: {kpi['totalLeads']} (nuovi ultimi {days}gg: {kpi['newLeads']})",
+        f"Deal attivi: {kpi['activeDeals']} · vinti: {kpi['wonDeals']} · persi: {kpi['lostDeals']}",
+        f"Pipeline: €{kpi['pipelineValue']:,.0f} · ricavi: €{kpi['revenue']:,.0f}",
+        f"Tasso conversione: {kpi['conversionRate']}%",
+        f"Task aperti: {open_tasks}" + (f" ({overdue_tasks} in ritardo)" if overdue_tasks else ""),
+    ]
+    if status_rows:
+        top = ", ".join(f"{s['status']}={s['count']}" for s in status_rows[:4])
+        parts.append(f"Lead per status: {top}")
+    if stage_rows:
+        top = ", ".join(f"{s['stage']}={s['count']}" for s in stage_rows[:5])
+        parts.append(f"Deal per stage: {top}")
+
+    return {
+        "ok": True,
+        "kpi": kpi,
+        "openTasks": open_tasks,
+        "overdueTasks": overdue_tasks,
+        "leadStatus": status_rows,
+        "dealStages": stage_rows,
+        "message": "Situazione CRM:\n" + "\n".join(f"• {p}" for p in parts),
+    }
+
+
+async def _book_demo(args: dict, user_id: str) -> dict:
+    email = (args.get("email") or "").strip().lower()
+    preferred = _parse_iso(args.get("preferredDate"))
+    if not email:
+        return {"ok": False, "error": "email obbligatoria"}
+    if not preferred:
+        return {"ok": False, "error": "preferredDate obbligatoria (ISO date)"}
+
+    first = args.get("firstName") or ""
+    last = args.get("lastName") or ""
+    if not first or not last:
+        lead = await db["leads"].find_one({"email": email, "deletedAt": None})
+        if lead:
+            first = first or lead.get("firstName") or ""
+            last = last or lead.get("lastName") or ""
+
+    if not first:
+        first = email.split("@")[0]
+    if not last:
+        last = "—"
+
+    lead_id = None
+    lead = await db["leads"].find_one({"email": email, "deletedAt": None})
+    if lead:
+        lead_id = lead["_id"]
+    else:
+        created = await _create_lead(
+            {
+                "email": email,
+                "firstName": first,
+                "lastName": last,
+                "companyName": args.get("companyName"),
+                "source": "crm_agent_booking",
+                "notes": args.get("notes"),
+            },
+            user_id,
+        )
+        if not created.get("ok"):
+            return created
+        lead_id = created.get("leadId")
+
+    now = utcnow()
+    booking_id = new_id()
+    doc = {
+        "_id": booking_id,
+        "leadId": lead_id,
+        "slotId": None,
+        "status": "confirmed",
+        "firstName": first,
+        "lastName": last,
+        "email": email,
+        "companyName": args.get("companyName"),
+        "preferredDate": preferred,
+        "timeSlot": args.get("timeSlot") or "10:00",
+        "notes": args.get("notes") or "Demo prenotata da CRM Agent",
+        "message": args.get("notes"),
+        "createdBy": user_id,
+        "createdAt": now,
+        "updatedAt": now,
+        "deletedAt": None,
+    }
+    await db["bookings"].insert_one(doc)
+
+    if lead_id:
+        await db["activities"].insert_one({
+            "_id": new_id(),
+            "leadId": lead_id,
+            "type": "booking",
+            "title": f"Demo prenotata — {doc['preferredDate'].date()} {doc['timeSlot']}",
+            "description": doc.get("notes") or "",
+            "userId": user_id,
+            "metadata": {"bookingId": booking_id},
+            "createdAt": now,
+        })
+
+    when = f"{doc['preferredDate'].date()} alle {doc['timeSlot']}"
+    return {
+        "ok": True,
+        "bookingId": booking_id,
+        "leadId": lead_id,
+        "email": email,
+        "preferredDate": doc["preferredDate"].isoformat(),
+        "timeSlot": doc["timeSlot"],
+        "message": f"Demo confermata per {first} {last} ({email}) — {when}",
+        "booking": {
+            "id": booking_id,
+            "email": email,
+            "firstName": first,
+            "lastName": last,
+            "preferredDate": doc["preferredDate"].isoformat(),
+            "timeSlot": doc["timeSlot"],
+            "status": "confirmed",
+        },
+    }
+
+
 TOOL_HANDLERS: dict[str, Callable[[dict, str], Awaitable[dict]]] = {
     "create_lead": _create_lead,
     "create_task": _create_task,
@@ -812,6 +1005,8 @@ TOOL_HANDLERS: dict[str, Callable[[dict, str], Awaitable[dict]]] = {
     "send_email": _send_email,
     "list_leads": _list_leads,
     "find_lead": _find_lead,
+    "crm_summary": _crm_summary,
+    "book_demo": _book_demo,
 }
 
 
@@ -1044,6 +1239,54 @@ def parse_command(text: str) -> tuple[str, dict] | None:
     if any(k in low for k in ("elenca lead", "lista lead", "mostra i lead", "quantì lead", "quanti lead")):
         return ("list_leads", {"limit": 10})
 
+    # CRM SUMMARY / REPORT
+    if any(k in low for k in (
+        "riepilogo", "sommario", "situazione", "panoramica",
+        "come va il crm", "come sta il crm", "report crm", "stato crm",
+        "dashboard", "kpi", "sintesi crm", "riporta la situazione",
+    )):
+        args = {}
+        n_m = re.search(r"(\d+)\s*giorn", low)
+        if n_m:
+            args["days"] = int(n_m.group(1))
+        elif "settimana" in low:
+            args["days"] = 7
+        elif "mese" in low:
+            args["days"] = 30
+        return ("crm_summary", args)
+
+    # BOOK DEMO / APPOINTMENT
+    if any(k in low for k in (
+        "prenota demo", "prenota una demo", "prenota la demo",
+        "fissa demo", "fissa una demo", "fissa appuntamento",
+        "prenota appuntamento", "prenota incontro", "schedula demo",
+        "schedula appuntamento", "prenota un incontro", "booking demo",
+    )):
+        args = {}
+        if email:
+            args["email"] = email
+        name_m = re.search(
+            r"(?:demo|appuntamento|incontro)\s+(?:con|per)\s+([A-ZÀ-Ú][a-zà-ú]+)\s+([A-ZÀ-Ú][a-zà-ú]+)",
+            t,
+        )
+        if name_m:
+            args["firstName"] = name_m.group(1)
+            args["lastName"] = name_m.group(2)
+        if due:
+            args["preferredDate"] = due
+        time_m = re.search(r"\b(?:alle|ore|h)\s*(\d{1,2}[:.]?\d{0,2})\b", low)
+        if time_m:
+            slot = time_m.group(1).replace(".", ":")
+            if ":" not in slot:
+                slot = f"{slot}:00"
+            args["timeSlot"] = slot
+        comp_m = re.search(r"\b(?:di|per|della)\s+([A-Z][\w&.\s]{2,40})(?:\s+email|\s+il |\s+alle|\s*$)", t)
+        if comp_m:
+            args["companyName"] = comp_m.group(1).strip()
+        if not args.get("email") or not args.get("preferredDate"):
+            return None
+        return ("book_demo", args)
+
     return None
 
 
@@ -1167,7 +1410,8 @@ async def run_agent(message: str, user_id: str) -> dict:
         "reply": (
             "Non ho capito. Prova comandi tipo: "
             "«crea lead Mario Rossi email mario@studio.it», "
-            "«crea task Chiama Mario entro 2026-02-01», "
+            "«prenota demo con Mario Rossi email mario@studio.it il 2026-02-01 alle 15:00», "
+            "«riepilogo CRM», "
             "«invia email a mario@studio.it oggetto Demo testo Ciao»."
         ),
         "mode": "fallback",
