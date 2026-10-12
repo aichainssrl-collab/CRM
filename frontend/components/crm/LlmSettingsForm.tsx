@@ -67,9 +67,18 @@ export function LlmSettingsForm() {
 
   async function handleTest() {
     try {
-      const res = await testConn.mutateAsync();
+      const res = await testConn.mutateAsync({
+        provider,
+        model: model.trim(),
+        baseUrl: baseUrl.trim(),
+        apiKey: apiKey.trim() || undefined,
+        localModel: localModel.trim(),
+        localBaseUrl: localBaseUrl.trim(),
+      });
       if (res.ok) {
-        toast.success(t("testOk"), { description: res.model ?? "" });
+        toast.success(t("testOk"), {
+          description: [res.model, res.baseUrl].filter(Boolean).join(" · "),
+        });
       } else {
         toast.error(t("testFail"), { description: res.error });
       }

@@ -103,10 +103,17 @@ async def get_llm_runtime_config() -> dict[str, Any]:
         config["api_base"] = cfg_src.get("localBaseUrl") or settings.LLM_LOCAL_BASE_URL
         config["api_key"] = "ollama"
     elif provider == "custom":
+        # litellm needs a provider prefix for OpenAI-compatible bases
+        if not str(model).count("/"):
+            config["model"] = f"openai/{model}"
+        else:
+            config["model"] = model
         if base_url:
             config["api_base"] = base_url
         config["api_key"] = api_key or "no-key"
     else:
+        if not str(model).count("/"):
+            config["model"] = f"openai/{model}"
         if base_url:
             config["api_base"] = base_url
         config["api_key"] = api_key

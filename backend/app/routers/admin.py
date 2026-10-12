@@ -125,12 +125,70 @@ async def update_llm_settings(
 
 @router.get("/llm-settings/test")
 async def test_llm_settings(user: UserRecord = Depends(require_admin)):
-    """Lightweight connectivity probe — no tokens billed beyond a tiny ping."""
-    from fastapi import HTTPException
+    """Ping the saved LLM configuration."""
+    return await _probe_llm({})
 
+
+@router.post("/llm-settings/test")
+async def test_llm_settings_draft(
+    body: LlmSettingsBody,
+    user: UserRecord = Depends(require_admin),
+):
+    """Ping using form values (not necessarily saved)."""
+    return await _probe_llm(body.model_dump())
+
+
+async def _probe_llm(overrides: dict) -> dict:
+    """Lightweight connectivity probe — max_tokens=1 ping."""
     try:
         import litellm
-        cfg = await llm_settings_service.get_llm_runtime_config()
+
+        saved = await llm_settings_service.get_llm_settings()
+        doc_overrides = {k: v for k, v in (overrides or {}).items() if v not in (None, "", False)}
+        # merge draft fields onto effective settings
+        provider = doc_overrides.get("provider") or saved.get("provider")
+        model = doc_overrides.get("model") or saved.get("model")
+        base_url = doc_overrides.get("baseUrl") or saved.get("baseUrl") or None
+        local_model = doc_overrides.get("localModel") or saved.get("localModel")
+        local_base = doc_overrides.get("localBaseUrl") or saved.get("localBaseUrl")
+        api_key = doc_overrides.get("apiKey")
+
+        if not api_key:
+            from app.services.db_service import db
+            raw = await db["app_settings"].find_one({"_id": "llm"}) or {}
+            api_key = raw.get("apiKey")
+        if not api_key:
+            from app.config import settings as app_settings
+            if (provider or "").lower() == "anthropic":
+                api_key = app_settings.ANTHROPIC_API_KEY
+            elif (provider or "").lower() == "gemini":
+                api_key = app_settings.GEMINI_API_KEY
+            else:
+                api_key = app_settings.OPENAI_API_KEY
+
+        cfg: dict = {"model": model}
+        p = (provider or "openai").lower()
+        if p == "ollama":
+            cfg["model"] = f"ollama/{local_model or 'qwen3:4b'}"
+            cfg["api_base"] = local_base or "http://localhost:11434"
+            cfg["api_key"] = "ollama"
+        elif p == "anthropic":
+            cfg["api_key"] = api_key
+            if not str(model).startswith("claude"):
+                cfg["model"] = f"anthropic/{model}"
+        elif p == "gemini":
+            cfg["api_key"] = api_key
+            if not str(model).startswith("gemini"):
+                cfg["model"] = f"gemini/{model}"
+        else:
+            if not str(model).count("/"):
+                cfg["model"] = f"openai/{model}"
+            else:
+                cfg["model"] = model
+            cfg["api_key"] = api_key or "no-key"
+            if base_url:
+                cfg["api_base"] = base_url
+
         litellm.drop_params = True
         resp = await litellm.acompletion(
             messages=[{"role": "user", "content": "ping"}],
@@ -138,7 +196,12 @@ async def test_llm_settings(user: UserRecord = Depends(require_admin)):
             temperature=0,
             **cfg,
         )
-        model = (resp.get("model") if isinstance(resp, dict) else None) or cfg.get("model")
-        return {"ok": True, "model": model}
+        model_out = (resp.get("model") if isinstance(resp, dict) else None) or cfg.get("model")
+        return {
+            "ok": True,
+            "model": model_out,
+            "provider": p,
+            "baseUrl": base_url or "",
+        }
     except Exception as exc:
         return {"ok": False, "error": str(exc)}

@@ -93,3 +93,40 @@ def test_clear_api_key():
     assert resp.status_code == 200
     set_payload = col.update_one.await_args.args[1]["$set"]
     assert set_payload["apiKey"] is None
+
+
+def test_llm_connection_test_button_uses_form_values():
+    """POST /llm-settings/test probes draft config without saving."""
+    col = _mock_settings_col(None)
+
+    class FakeResp:
+        def __getitem__(self, k):
+            return {"model": "gpt-4o-mini"}[k]
+
+        def get(self, k, default=None):
+            return {"model": "gpt-4o-mini"}.get(k, default)
+
+    async def fake_completion(**kwargs):
+        # custom provider is prefixed for litellm
+        assert kwargs.get("model") in ("gpt-4o-mini", "openai/gpt-4o-mini")
+        assert kwargs.get("api_base") == "http://localhost:11434/v1"
+        return FakeResp()
+
+    with (
+        patch("app.services.llm_settings_service.db") as mock_db,
+        patch("litellm.acompletion", side_effect=fake_completion),
+    ):
+        mock_db.__getitem__ = MagicMock(return_value=col)
+        resp = client.post(
+            "/api/v1/admin/llm-settings/test",
+            json={
+                "provider": "custom",
+                "model": "gpt-4o-mini",
+                "baseUrl": "http://localhost:11434/v1",
+                "apiKey": "sk-draft",
+            },
+        )
+    data = resp.json()
+    assert resp.status_code == 200
+    assert data["ok"] is True
+    assert data["model"] in ("gpt-4o-mini", "openai/gpt-4o-mini")

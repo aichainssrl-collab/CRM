@@ -44,9 +44,23 @@ export function useUpdateLlmSettings() {
 
 export function useTestLlmSettings() {
   return useMutation({
-    mutationFn: () =>
+    mutationFn: (payload?: {
+      provider?: string;
+      model?: string;
+      baseUrl?: string;
+      apiKey?: string;
+      localModel?: string;
+      localBaseUrl?: string;
+    }) =>
       apiFetch("/api/v1/admin/llm-settings/test", {
-        method: "GET",
-      }) as Promise<{ ok: boolean; model?: string; error?: string }>,
+        method: "POST",
+        body: JSON.stringify(payload ?? {}),
+      }) as Promise<{
+        ok: boolean;
+        model?: string;
+        provider?: string;
+        baseUrl?: string;
+        error?: string;
+      }>,
   });
 }
