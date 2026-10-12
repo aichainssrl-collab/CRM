@@ -50,7 +50,8 @@ export function LeadForm({ open, onOpenChange, lead, onSubmit }: LeadFormProps) 
       onOpenChange(false);
     } catch (error) {
       console.error(error);
-      toast.error(t("saveError"));
+      const detail = error instanceof Error ? error.message : String(error);
+      toast.error(t("saveError"), { description: detail });
     } finally {
       setLoading(false);
     }

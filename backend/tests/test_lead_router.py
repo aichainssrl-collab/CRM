@@ -100,3 +100,53 @@ def test_delete_lead_sales():
         response = client.delete("/api/v1/leads/lead_123")
         assert response.status_code == 204
         mock_del.assert_called_once()
+
+
+def test_create_lead_survives_enqueue_failure():
+    """Il salvataggio del lead non deve fallire se i job in background non partono."""
+    from app.deps import require_sales, UserRecord
+    app.dependency_overrides[require_sales] = lambda: UserRecord(uid="user_1", role="sales", email="sales@test.com")
+
+    with patch("app.routers.leads.LeadService.find_by_email", new_callable=AsyncMock) as mock_find:
+        mock_find.return_value = None
+        with patch("app.routers.leads.LeadService.create_lead", new_callable=AsyncMock) as mock_create:
+            mock_create.return_value = {"id": "lead_123", "email": "new@test.com"}
+            with patch("app.routers.leads.enqueue_task", new_callable=AsyncMock) as mock_enqueue:
+                mock_enqueue.side_effect = RuntimeError("cloud tasks down")
+
+                response = client.post("/api/v1/leads", json={"email": "new@test.com", "firstName": "Test"})
+
+                assert response.status_code == 201
+                assert response.json()["id"] == "lead_123"
+
+
+def test_update_lead_survives_enqueue_failure():
+    """Anche l'update non deve fallire se recalculate-score non parte."""
+    from app.deps import require_sales, UserRecord
+    app.dependency_overrides[require_sales] = lambda: UserRecord(uid="user_1", role="sales", email="sales@test.com")
+
+    with patch("app.routers.leads.LeadService.update_lead", new_callable=AsyncMock) as mock_update:
+        mock_update.return_value = {"id": "lead_123", "firstName": "Updated"}
+        with patch("app.routers.leads.enqueue_task", new_callable=AsyncMock) as mock_enqueue:
+            mock_enqueue.side_effect = RuntimeError("cloud tasks down")
+
+            response = client.patch("/api/v1/leads/lead_123", json={"firstName": "Updated"})
+
+            assert response.status_code == 200
+            assert response.json()["firstName"] == "Updated"
+
+
+def test_enrich_lead_reports_enqueue_failure():
+    """Se l'enrichment non parte, il client deve ricevere un errore esplicito."""
+    from app.deps import require_sales, UserRecord
+    app.dependency_overrides[require_sales] = lambda: UserRecord(uid="user_1", role="sales", email="sales@test.com")
+
+    with patch("app.routers.leads.LeadService.get_lead", new_callable=AsyncMock) as mock_get:
+        mock_get.return_value = {"id": "lead_123"}
+        with patch("app.routers.leads.enqueue_task", new_callable=AsyncMock) as mock_enqueue:
+            mock_enqueue.return_value = False
+
+            response = client.post("/api/v1/leads/lead_123/enrich")
+
+            assert response.status_code == 503
+            assert "enrichment" in response.json()["detail"].lower()

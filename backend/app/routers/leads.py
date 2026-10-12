@@ -1,9 +1,13 @@
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
 from typing import Optional
 from app.deps import require_sales, UserRecord
 from app.schemas.lead import LeadCreate, LeadUpdate, LeadStageUpdate
 from app.services.lead_service import LeadService
 from app.utils.cloud_tasks import enqueue_task
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -39,9 +43,13 @@ async def create_lead(
         raise HTTPException(409, f"Lead con email {data.email} già presente (id: {existing['id']})")
 
     lead = await service.create_lead(data, created_by=user.uid)
-    await enqueue_task("recalculate-score", {"lead_id": lead["id"]})
-    # Enrichment automatico: ritardo 5s per non appesantire la risposta
-    await enqueue_task("enrich-lead", {"lead_id": lead["id"]}, delay_seconds=5)
+    # Background jobs must never break the save response
+    try:
+        await enqueue_task("recalculate-score", {"lead_id": lead["id"]})
+        # Enrichment automatico: ritardo 5s per non appesantire la risposta
+        await enqueue_task("enrich-lead", {"lead_id": lead["id"]}, delay_seconds=5)
+    except Exception:
+        logger.warning("enqueue_task failed for lead %s", lead["id"], exc_info=True)
     return lead
 
 
@@ -67,7 +75,10 @@ async def update_lead(
     updated = await service.update_lead(lead_id, data, updated_by=user.uid)
     if not updated:
         raise HTTPException(404, "Lead non trovato")
-    await enqueue_task("recalculate-score", {"lead_id": lead_id})
+    try:
+        await enqueue_task("recalculate-score", {"lead_id": lead_id})
+    except Exception:
+        logger.warning("enqueue_task failed for lead %s", lead_id, exc_info=True)
     return updated
 
 
@@ -107,7 +118,9 @@ async def enrich_lead(
     lead = await svc.get_lead(lead_id)
     if not lead:
         raise HTTPException(404, "Lead non trovato")
-    await enqueue_task("enrich-lead", {"lead_id": lead_id})
+    ok = await enqueue_task("enrich-lead", {"lead_id": lead_id})
+    if not ok:
+        raise HTTPException(503, "Impossibile avviare l'enrichment in background. Riprova.")
     return {"message": "Enrichment avviato — i dati saranno disponibili tra pochi secondi"}
 
 
