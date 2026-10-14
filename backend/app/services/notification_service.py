@@ -3,6 +3,7 @@ Notification service — in-app notifications + activity feed.
 """
 from datetime import datetime, timezone
 from typing import Optional
+import re
 from app.services.db_service import db, new_id, utcnow, _to_dict
 import logging
 
@@ -123,7 +124,7 @@ async def get_activity_feed(
 # ── Global Search ──────────────────────────────────────────────
 async def global_search(query: str, user_id: str, limit: int = 10) -> dict:
     """Search across leads, deals, tasks."""
-    regex = {"$regex": query, "$options": "i"}
+    regex = {"$regex": re.escape(query), "$options": "i"}
     results = {"leads": [], "deals": [], "tasks": []}
 
     # Leads

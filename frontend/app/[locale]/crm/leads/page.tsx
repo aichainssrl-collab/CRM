@@ -149,7 +149,7 @@ export default function LeadsPage() {
               </Button>
             </>
           )}
-          <Button variant="outline" size="sm" onClick={() => downloadCSV("leads").catch(() => toast.error("Export fallito"))} className="gap-2">
+          <Button variant="outline" size="sm" onClick={() => downloadCSV("leads").catch((e) => toast.error(t("exportError"), { description: e instanceof Error ? e.message : String(e) }))} className="gap-2">
             <Download className="h-4 w-4" />
             CSV
           </Button>

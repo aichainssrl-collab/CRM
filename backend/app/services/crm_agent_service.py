@@ -800,7 +800,7 @@ async def _list_leads(args: dict, user_id: str) -> dict:
     query: dict[str, Any] = {"deletedAt": None}
     search = args.get("search")
     if search:
-        rx = {"$regex": search, "$options": "i"}
+        rx = {"$regex": re.escape(search), "$options": "i"}
         query["$or"] = [
             {"email": rx},
             {"firstName": rx},

@@ -76,6 +76,12 @@ async def enroll_lead(seq_id: str, lead_id: str) -> Optional[dict]:
     if not lead:
         return None
 
+    # Evita doppia iscrizione alla stessa sequenza
+    existing = seq.get("enrollments") or []
+    for enr in existing:
+        if enr.get("leadId") == lead_id and enr.get("status") in ("active", "paused"):
+            return enr
+
     now = utcnow()
     steps = seq.get("steps", [])
     first_send = now if steps else None

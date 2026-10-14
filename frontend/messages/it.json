@@ -140,7 +140,8 @@
     "leadUpdated": "Lead aggiornato",
     "leadDeleted": "Lead eliminato",
     "leadsDeleted": "{count} lead eliminati",
-    "deleteError": "Errore durante l'eliminazione"
+    "deleteError": "Errore durante l'eliminazione",
+    "exportError": "Errore durante l'export"
   },
   "leadDetail": {
     "backToLeads": "Torna ai Leads",

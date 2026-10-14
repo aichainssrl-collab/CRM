@@ -24,12 +24,22 @@ async def get_slot(slot_id: str) -> Optional[dict]:
 
 
 async def create_booking(data: BookingCreate, lead_id: str = None) -> dict:
-    slot = await db["booking_slots"].find_one({"_id": data.slotId, "isAvailable": True})
+    booking_id = new_id()
+    now = utcnow()
+
+    # Claim atomico dello slot: evita double-booking su richieste concorrenti
+    slot = await db["booking_slots"].find_one_and_update(
+        {"_id": data.slotId, "isAvailable": True},
+        {"$set": {
+            "isAvailable": False,
+            "bookedBy": data.email,
+            "bookingId": booking_id,
+            "updatedAt": now,
+        }},
+    )
     if not slot:
         raise ValueError("Slot non disponibile")
 
-    booking_id = new_id()
-    now = utcnow()
     payload = {
         "_id": booking_id,
         **data.model_dump(exclude={"consent_given", "consent_text"}),
@@ -40,10 +50,6 @@ async def create_booking(data: BookingCreate, lead_id: str = None) -> dict:
         "deletedAt": None,
     }
     await db["bookings"].insert_one(payload)
-    await db["booking_slots"].update_one(
-        {"_id": data.slotId},
-        {"$set": {"isAvailable": False, "bookedBy": data.email, "bookingId": booking_id, "updatedAt": now}},
-    )
     doc = dict(payload)
     doc["id"] = doc.pop("_id")
     return doc

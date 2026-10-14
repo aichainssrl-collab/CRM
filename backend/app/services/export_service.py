@@ -7,6 +7,16 @@ from typing import Optional
 from app.services.db_service import db
 
 
+def _safe_cell(value) -> str:
+    """Neutralizza formule CSV (=, +, -, @) per evitare injection all'apertura in Excel."""
+    if value is None:
+        return ""
+    s = str(value)
+    if s and s[0] in ("=", "+", "-", "@", "\t", "\r"):
+        return "'" + s
+    return s
+
+
 async def export_leads_csv(filters: Optional[dict] = None) -> str:
     """Export leads as CSV string."""
     query = {"deletedAt": None}
@@ -26,19 +36,19 @@ async def export_leads_csv(filters: Optional[dict] = None) -> str:
 
     for lead in leads:
         writer.writerow([
-            lead["_id"],
-            lead.get("firstName", ""),
-            lead.get("lastName", ""),
-            lead.get("email", ""),
-            lead.get("phone", ""),
-            lead.get("companyName", ""),
-            lead.get("industry", ""),
-            lead.get("source", ""),
-            lead.get("status", ""),
-            lead.get("leadScore", ""),
-            lead.get("assignedTo", ""),
-            lead.get("createdAt", ""),
-            lead.get("updatedAt", ""),
+            _safe_cell(lead["_id"]),
+            _safe_cell(lead.get("firstName", "")),
+            _safe_cell(lead.get("lastName", "")),
+            _safe_cell(lead.get("email", "")),
+            _safe_cell(lead.get("phone", "")),
+            _safe_cell(lead.get("companyName", "")),
+            _safe_cell(lead.get("industry", "")),
+            _safe_cell(lead.get("source", "")),
+            _safe_cell(lead.get("status", "")),
+            _safe_cell(lead.get("leadScore", "")),
+            _safe_cell(lead.get("assignedTo", "")),
+            _safe_cell(lead.get("createdAt", "")),
+            _safe_cell(lead.get("updatedAt", "")),
         ])
 
     return output.getvalue()
@@ -63,17 +73,17 @@ async def export_deals_csv(filters: Optional[dict] = None) -> str:
 
     for deal in deals:
         writer.writerow([
-            deal["_id"],
-            deal.get("title", ""),
-            deal.get("value", ""),
-            deal.get("probability", ""),
-            deal.get("stage", ""),
-            deal.get("product", ""),
-            deal.get("notes", ""),
-            deal.get("assignedTo", ""),
-            deal.get("expectedClose", ""),
-            deal.get("createdAt", ""),
-            deal.get("closedAt", ""),
+            _safe_cell(deal["_id"]),
+            _safe_cell(deal.get("title", "")),
+            _safe_cell(deal.get("value", "")),
+            _safe_cell(deal.get("probability", "")),
+            _safe_cell(deal.get("stage", "")),
+            _safe_cell(deal.get("product", "")),
+            _safe_cell(deal.get("notes", "")),
+            _safe_cell(deal.get("assignedTo", "")),
+            _safe_cell(deal.get("expectedClose", "")),
+            _safe_cell(deal.get("createdAt", "")),
+            _safe_cell(deal.get("closedAt", "")),
         ])
 
     return output.getvalue()
@@ -90,13 +100,13 @@ async def export_contacts_csv() -> str:
 
     for lead in leads:
         writer.writerow([
-            lead.get("email", ""),
-            lead.get("firstName", ""),
-            lead.get("lastName", ""),
-            lead.get("companyName", ""),
-            lead.get("phone", ""),
-            lead.get("industry", ""),
-            lead.get("status", ""),
+            _safe_cell(lead.get("email", "")),
+            _safe_cell(lead.get("firstName", "")),
+            _safe_cell(lead.get("lastName", "")),
+            _safe_cell(lead.get("companyName", "")),
+            _safe_cell(lead.get("phone", "")),
+            _safe_cell(lead.get("industry", "")),
+            _safe_cell(lead.get("status", "")),
         ])
 
     return output.getvalue()

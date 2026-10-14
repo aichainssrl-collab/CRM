@@ -140,7 +140,8 @@
     "leadUpdated": "Lead updated",
     "leadDeleted": "Lead deleted",
     "leadsDeleted": "{count} leads deleted",
-    "deleteError": "Error during deletion"
+    "deleteError": "Error during deletion",
+    "exportError": "Export failed"
   },
   "leadDetail": {
     "backToLeads": "Back to Leads",

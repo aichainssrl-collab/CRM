@@ -1,6 +1,7 @@
 """
 Content Library — reusable marketing content (email, ads, social, landing).
 """
+import re
 from typing import Optional
 from app.services.db_service import db, new_id, utcnow, _to_dict
 import logging
@@ -41,10 +42,11 @@ async def list_content(
     if tag:
         query["tags"] = tag
     if search:
+        rx = {"$regex": re.escape(search), "$options": "i"}
         query["$or"] = [
-            {"title": {"$regex": search, "$options": "i"}},
-            {"body": {"$regex": search, "$options": "i"}},
-            {"description": {"$regex": search, "$options": "i"}},
+            {"title": rx},
+            {"body": rx},
+            {"description": rx},
         ]
     cursor = db["content_library"].find(query).sort("updatedAt", -1)
     docs = await cursor.to_list(length=200)
