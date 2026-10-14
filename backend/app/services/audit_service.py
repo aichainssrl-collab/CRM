@@ -1,7 +1,7 @@
 """
 Audit log service — track all CRUD operations across entities.
 """
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import Optional
 from app.services.db_service import db, new_id, utcnow, _to_dict
 import logging
@@ -69,7 +69,7 @@ async def list_audit_log(
 
 async def get_audit_stats(days: int = 30) -> dict:
     """Get audit statistics for the last N days."""
-    since = datetime.now(timezone.utc) - __import__("datetime").timedelta(days=days)
+    since = datetime.now(timezone.utc) - timedelta(days=days)
 
     # Actions by type
     action_pipeline = [

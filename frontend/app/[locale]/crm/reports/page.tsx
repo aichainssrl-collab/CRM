@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { useTranslations } from "next-intl";
+import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -200,25 +201,33 @@ export default function ReportsPage() {
 
   // ── Handlers ──
   async function handleGenerate() {
-    await generateReport.mutateAsync({
-      title: genTitle,
-      timeRange: genRange,
-      includeFunnel: genOptions.funnel,
-      includeVelocity: genOptions.velocity,
-      includePerformance: genOptions.performance,
-      includeForecast: genOptions.forecast,
-      includeNarrative: genOptions.narrative,
-    });
-    setGenOpen(false);
-    setTab("history");
+    try {
+      await generateReport.mutateAsync({
+        title: genTitle,
+        timeRange: genRange,
+        includeFunnel: genOptions.funnel,
+        includeVelocity: genOptions.velocity,
+        includePerformance: genOptions.performance,
+        includeForecast: genOptions.forecast,
+        includeNarrative: genOptions.narrative,
+      });
+      setGenOpen(false);
+      setTab("history");
+    } catch (error) {
+      toast.error("Errore durante la generazione del report", { description: error instanceof Error ? error.message : String(error) });
+    }
   }
 
   async function handleSendEmail() {
     if (!emailReportId || !emailTo) return;
-    await sendReport.mutateAsync({ id: emailReportId, to: emailTo, message: emailMsg || undefined });
-    setEmailOpen(false);
-    setEmailTo("");
-    setEmailMsg("");
+    try {
+      await sendReport.mutateAsync({ id: emailReportId, to: emailTo, message: emailMsg || undefined });
+      setEmailOpen(false);
+      setEmailTo("");
+      setEmailMsg("");
+    } catch (error) {
+      toast.error("Errore durante l'invio dell'email", { description: error instanceof Error ? error.message : String(error) });
+    }
   }
 
   return (

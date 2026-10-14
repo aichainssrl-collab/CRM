@@ -18,8 +18,14 @@ interface TaskFormProps {
   leadId?: string;
 }
 
+function toLocalInputValue(iso: string): string {
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 export function TaskForm({ open, onOpenChange, task, leadId }: TaskFormProps) {
-  const t = useTranslations("leadForm");
+  const t = useTranslations("taskForm");
   const tCommon = useTranslations("common");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -37,7 +43,7 @@ export function TaskForm({ open, onOpenChange, task, leadId }: TaskFormProps) {
     setError(null);
 
     if (!actualLeadId) {
-      setError("Seleziona un lead prima di salvare il task.");
+      setError(t("selectLeadError"));
       return;
     }
 
@@ -49,7 +55,7 @@ export function TaskForm({ open, onOpenChange, task, leadId }: TaskFormProps) {
     try {
       dueDateISO = new Date(rawDueDate).toISOString();
     } catch {
-      setError("Data di scadenza non valida.");
+      setError(t("invalidDueDate"));
       setLoading(false);
       return;
     }
@@ -90,7 +96,7 @@ export function TaskForm({ open, onOpenChange, task, leadId }: TaskFormProps) {
     <Sheet open={open} onOpenChange={handleOpenChange}>
       <SheetContent className="sm:max-w-md overflow-y-auto">
         <SheetHeader>
-          <SheetTitle>{task ? t("editLead") : t("addLead")}</SheetTitle>
+          <SheetTitle>{task ? t("editTask") : t("addTask")}</SheetTitle>
           <SheetDescription>
             {task ? t("editDesc") : t("addDesc")}
           </SheetDescription>
@@ -125,7 +131,7 @@ export function TaskForm({ open, onOpenChange, task, leadId }: TaskFormProps) {
           )}
 
           <div className="space-y-2">
-            <label htmlFor="title" className="text-sm font-medium">{t("emailRequired").replace("*", "").trim()} *</label>
+            <label htmlFor="title" className="text-sm font-medium">{t("titleLabel")} *</label>
             <Input
               id="title"
               name="title"
@@ -136,18 +142,18 @@ export function TaskForm({ open, onOpenChange, task, leadId }: TaskFormProps) {
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="dueDate" className="text-sm font-medium">Scadenza *</label>
+            <label htmlFor="dueDate" className="text-sm font-medium">{t("dueDateLabel")} *</label>
             <Input
               id="dueDate"
               name="dueDate"
               type="datetime-local"
               required
-              defaultValue={task?.dueDate ? new Date(task.dueDate).toISOString().slice(0, 16) : ""}
+              defaultValue={task?.dueDate ? toLocalInputValue(task.dueDate) : ""}
             />
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="description" className="text-sm font-medium">Descrizione</label>
+            <label htmlFor="description" className="text-sm font-medium">{t("descriptionLabel")}</label>
             <Textarea
               id="description"
               name="description"

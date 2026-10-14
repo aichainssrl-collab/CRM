@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 import { useTranslations, useLocale } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -69,6 +70,8 @@ export default function InboxPage() {
       setPhone("");
       setLeadName("");
       if (conv?.id) setSelectedId(conv.id);
+    } catch (error) {
+      toast.error("Errore durante il salvataggio", { description: error instanceof Error ? error.message : String(error) });
     } finally {
       setSaving(false);
     }
@@ -78,7 +81,12 @@ export default function InboxPage() {
     if (!selectedId || !draft.trim()) return;
     const body = draft.trim();
     setDraft("");
-    await sendMessage.mutateAsync({ conversationId: selectedId, body });
+    try {
+      await sendMessage.mutateAsync({ conversationId: selectedId, body });
+    } catch (error) {
+      toast.error("Errore durante l'invio", { description: error instanceof Error ? error.message : String(error) });
+      setDraft(body);
+    }
   }
 
   return (

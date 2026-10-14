@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -79,9 +80,13 @@ export default function UserAdminPage() {
 
   async function handleCreateUser() {
     if (!newUser.uid || !newUser.email) return;
-    await createUser.mutateAsync(newUser);
-    setNewUser({ uid: "", email: "", displayName: "", role: "sales" });
-    setAddOpen(false);
+    try {
+      await createUser.mutateAsync(newUser);
+      setNewUser({ uid: "", email: "", displayName: "", role: "sales" });
+      setAddOpen(false);
+    } catch (error) {
+      toast.error("Errore durante la creazione dell'utente", { description: error instanceof Error ? error.message : String(error) });
+    }
   }
 
   return (

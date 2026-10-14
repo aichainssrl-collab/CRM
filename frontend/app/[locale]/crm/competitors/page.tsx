@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
+import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -89,6 +90,8 @@ export default function CompetitorsPage() {
       }
       setDialogOpen(false);
       resetForm();
+    } catch (error) {
+      toast.error("Errore durante il salvataggio", { description: error instanceof Error ? error.message : String(error) });
     } finally {
       setSaving(false);
     }
@@ -96,13 +99,19 @@ export default function CompetitorsPage() {
 
   async function handleDelete(id: string) {
     if (!confirm(t("confirmDelete"))) return;
-    await deleteCompetitor.mutateAsync(id);
+    try {
+      await deleteCompetitor.mutateAsync(id);
+    } catch (error) {
+      toast.error("Errore durante l'eliminazione", { description: error instanceof Error ? error.message : String(error) });
+    }
   }
 
   async function handleScan(id: string) {
     setScanningId(id);
     try {
       await scanCompetitor.mutateAsync(id);
+    } catch (error) {
+      toast.error("Errore durante la scansione", { description: error instanceof Error ? error.message : String(error) });
     } finally {
       setScanningId(null);
     }

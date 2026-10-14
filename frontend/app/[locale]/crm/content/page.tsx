@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
+import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -99,6 +100,8 @@ export default function ContentLibraryPage() {
       }
       setDialogOpen(false);
       resetForm();
+    } catch (error) {
+      toast.error("Errore durante il salvataggio", { description: error instanceof Error ? error.message : String(error) });
     } finally {
       setSaving(false);
     }
@@ -116,7 +119,11 @@ export default function ContentLibraryPage() {
 
   async function handleDelete(id: string) {
     if (!confirm(t("confirmDelete"))) return;
-    await deleteContent.mutateAsync(id);
+    try {
+      await deleteContent.mutateAsync(id);
+    } catch (error) {
+      toast.error("Errore durante l'eliminazione", { description: error instanceof Error ? error.message : String(error) });
+    }
   }
 
   return (

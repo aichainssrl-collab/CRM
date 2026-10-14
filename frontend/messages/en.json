@@ -22,7 +22,9 @@
     "import": "Import",
     "export": "Export",
     "of": "of",
-    "vsPreviousMonth": "vs previous month"
+    "vsPreviousMonth": "vs previous month",
+    "saveError": "Error saving",
+    "deleteError": "Error deleting"
   },
   "auth": {
     "welcomeBack": "Welcome back",
@@ -878,5 +880,18 @@
       "error": "error",
       "none": "—"
     }
+  },
+  "taskForm": {
+    "editTask": "Edit Task",
+    "addTask": "New Task",
+    "editDesc": "Update the task details.",
+    "addDesc": "Fill in the fields to create a new task.",
+    "titleLabel": "Title",
+    "descriptionLabel": "Description",
+    "dueDateLabel": "Due date",
+    "saveError": "Error saving task",
+    "selectLead": "Select lead",
+    "selectLeadError": "Select a lead before saving the task.",
+    "invalidDueDate": "Invalid due date."
   }
 }

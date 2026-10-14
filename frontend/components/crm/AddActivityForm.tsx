@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 import { useCreateActivity } from "@/hooks/useActivities";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -26,6 +27,7 @@ export function AddActivityForm({ leadId }: { leadId: string }) {
       setBody("");
     } catch (error) {
       console.error(error);
+      toast.error("Errore durante il salvataggio", { description: error instanceof Error ? error.message : String(error) });
     } finally {
       setLoading(false);
     }

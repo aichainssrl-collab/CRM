@@ -22,7 +22,9 @@
     "import": "Importa",
     "export": "Esporta",
     "of": "di",
-    "vsPreviousMonth": "vs mese precedente"
+    "vsPreviousMonth": "vs mese precedente",
+    "saveError": "Errore durante il salvataggio",
+    "deleteError": "Errore durante l'eliminazione"
   },
   "auth": {
     "welcomeBack": "Bentornato",
@@ -878,5 +880,18 @@
       "error": "errore",
       "none": "—"
     }
+  },
+  "taskForm": {
+    "editTask": "Modifica Task",
+    "addTask": "Nuovo Task",
+    "editDesc": "Aggiorna i dettagli del task.",
+    "addDesc": "Compila i campi per creare un nuovo task.",
+    "titleLabel": "Titolo",
+    "descriptionLabel": "Descrizione",
+    "dueDateLabel": "Scadenza",
+    "saveError": "Errore durante il salvataggio del task",
+    "selectLead": "Seleziona lead",
+    "selectLeadError": "Seleziona un lead prima di salvare il task.",
+    "invalidDueDate": "Data di scadenza non valida."
   }
 }

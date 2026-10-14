@@ -21,7 +21,9 @@ async def list_all_tasks(
         query["status"] = status
 
     if due_before:
-        due_dt = datetime.fromisoformat(due_before).replace(tzinfo=timezone.utc)
+        due_dt = datetime.fromisoformat(due_before)
+        if due_dt.tzinfo is None:
+            due_dt = due_dt.replace(tzinfo=timezone.utc)
         query["dueDate"] = {"$lte": due_dt}
 
     cursor = db["tasks"].find(query).sort("dueDate", ASCENDING).limit(limit)

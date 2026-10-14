@@ -112,8 +112,8 @@ export default function SettingsPage() {
     try {
       await updateUser.mutateAsync({ uid: currentUser.uid, data: { displayName } });
       toast.success(t("profileSaved"));
-    } catch {
-      toast.error(t("profileSaveError"));
+    } catch (error) {
+      toast.error(t("profileSaveError"), { description: error instanceof Error ? error.message : String(error) });
     }
   }
 

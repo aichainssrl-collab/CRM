@@ -14,7 +14,26 @@ async def test_find_by_email_found():
 
         assert result is not None
         assert result["id"] == "123"
-        mock_db["leads"].find_one.assert_called_once_with({"email": "test@test.com", "deletedAt": None})
+        query = mock_db["leads"].find_one.call_args[0][0]
+        assert query["deletedAt"] is None
+        assert query["email"]["$options"] == "i"
+        assert query["email"]["$regex"].startswith("^test@test")
+        assert query["email"]["$regex"].endswith("com$")
+
+
+@pytest.mark.asyncio
+async def test_find_by_email_normalizes_case():
+    """Le email vengono cercate in modo case-insensitive."""
+    with patch("app.services.lead_service.db") as mock_db:
+        mock_db.__getitem__.return_value.find_one = AsyncMock(return_value=None)
+
+        service = LeadService()
+        await service.find_by_email("  Test@Example.COM ")
+
+        query = mock_db["leads"].find_one.call_args[0][0]
+        assert query["email"]["$options"] == "i"
+        assert query["email"]["$regex"].startswith("^test@example")
+        assert "Test@Example" not in query["email"]["$regex"]
 
 
 @pytest.mark.asyncio
@@ -29,16 +48,18 @@ async def test_find_by_email_not_found():
 
 @pytest.mark.asyncio
 async def test_create_lead():
-    data = LeadCreate(email="new@test.com")
-    
+    data = LeadCreate(email="New@Test.com")
+
     with patch("app.services.lead_service.create_document", new_callable=AsyncMock) as mock_create:
         mock_create.return_value = {"id": "lead_123", "email": "new@test.com"}
         with patch("app.services.lead_service.append_activity", new_callable=AsyncMock) as mock_append:
-            
+
             service = LeadService()
             result = await service.create_lead(data, "user_1")
-            
+
             assert result["id"] == "lead_123"
+            # L'email viene normalizzata in lowercase
+            assert mock_create.call_args[0][1]["email"] == "new@test.com"
             mock_create.assert_called_once()
             mock_append.assert_called_once()
 

@@ -1,6 +1,7 @@
 from typing import Optional, List, Dict, Any
 import csv
 import io
+import re
 from app.schemas.lead import LeadCreate, LeadUpdate, LeadStageUpdate
 from app.services.db_service import (
     db, create_document, update_document, get_document,
@@ -12,8 +13,19 @@ from pymongo import DESCENDING
 
 class LeadService:
 
+    @staticmethod
+    def _normalize_email(email: str) -> str:
+        return (email or "").strip().lower()
+
     async def find_by_email(self, email: str) -> Optional[dict]:
-        doc = await db["leads"].find_one({"email": email, "deletedAt": None})
+        email = self._normalize_email(email)
+        if not email:
+            return None
+        # Case-insensitive: alcuni record storici potrebbero avere maiuscole
+        doc = await db["leads"].find_one({
+            "email": {"$regex": f"^{re.escape(email)}$", "$options": "i"},
+            "deletedAt": None,
+        })
         if not doc:
             return None
         doc = dict(doc)
@@ -22,6 +34,7 @@ class LeadService:
 
     async def create_lead(self, data: LeadCreate, created_by: str) -> dict:
         lead_data = data.model_dump()
+        lead_data["email"] = self._normalize_email(lead_data.get("email"))
         lead_data["assignedTo"] = created_by
         lead_data["activityCount"] = 0
         lead_data["taskCount"] = 0
@@ -95,6 +108,7 @@ class LeadService:
         self, email: str, form_data: dict, form_type: str,
         source: str, ip: str, user_agent: str,
     ) -> dict:
+        email = self._normalize_email(email)
         existing = await self.find_by_email(email)
         if existing:
             update = {"source": source}

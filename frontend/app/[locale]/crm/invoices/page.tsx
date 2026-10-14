@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -137,6 +138,8 @@ export default function InvoicesPage() {
       }
       setDialogOpen(false);
       resetForm();
+    } catch (error) {
+      toast.error("Errore durante il salvataggio", { description: error instanceof Error ? error.message : String(error) });
     } finally {
       setSaving(false);
     }
@@ -144,7 +147,11 @@ export default function InvoicesPage() {
 
   async function handleDelete(id: string) {
     if (!confirm(t("confirmDelete"))) return;
-    await deleteInvoice.mutateAsync(id);
+    try {
+      await deleteInvoice.mutateAsync(id);
+    } catch (error) {
+      toast.error("Errore durante l'eliminazione", { description: error instanceof Error ? error.message : String(error) });
+    }
   }
 
   return (
