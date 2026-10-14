@@ -16,6 +16,7 @@ from typing import Any, Callable, Awaitable
 
 from app.config import settings
 from app.services.db_service import db, new_id, utcnow, _to_dict
+from app.services.activity_service import append_activity
 
 logger = logging.getLogger(__name__)
 
@@ -240,11 +241,29 @@ TOOLS: list[dict] = [
         "type": "function",
         "function": {
             "name": "find_lead",
-            "description": "Trova un lead per email o nome",
+            "description": "Trova un lead per email o nome (restituisce tutti i campi, incluso industry/settore)",
             "parameters": {
                 "type": "object",
                 "properties": {"query": {"type": "string"}},
                 "required": ["query"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "update_lead",
+            "description": "Aggiorna i campi di un lead esistente (settore/industry, azienda, telefono, note, stato, nome, cognome)",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "email": {"type": "string", "description": "Email del lead da aggiornare"},
+                    "fields": {
+                        "type": "object",
+                        "description": "Campi da aggiornare. Chiavi: industry, companyName, phone, notes, status, firstName, lastName, roleTitle",
+                    },
+                },
+                "required": ["email", "fields"],
             },
         },
     },
@@ -823,6 +842,23 @@ async def _list_leads(args: dict, user_id: str) -> dict:
     return {"ok": True, "count": len(rows), "leads": rows}
 
 
+async def _help(args: dict, user_id: str) -> dict:
+    return {
+        "ok": True,
+        "message": (
+            "Ecco cosa so fare:\n"
+            "• «crea lead Mario Rossi email mario@studio.it»\n"
+            "• «dammi il settore di mario@studio.it» / «mostra info sul lead …»\n"
+            "• «imposta settore marketing sul lead mario@studio.it»\n"
+            "• «inserisci media nel lead mario@studio.it»\n"
+            "• «prenota demo con Mario Rossi email mario@studio.it il 2026-02-01 alle 15:00»\n"
+            "• «riepilogo CRM»\n"
+            "• «invia email a mario@studio.it oggetto Demo testo Ciao»\n"
+            "• «mostra deal», «crea task …», «promemoria …»"
+        ),
+    }
+
+
 async def _find_lead(args: dict, user_id: str) -> dict:
     q = (args.get("query") or "").strip()
     if not q:
@@ -834,16 +870,69 @@ async def _find_lead(args: dict, user_id: str) -> dict:
     })
     if not doc:
         return {"ok": False, "error": f"Nessun lead per «{q}»"}
+    industry = doc.get("industry") or "(non imposto)"
+    name = f"{doc.get('firstName') or ''} {doc.get('lastName') or ''}".strip() or doc.get("email")
     return {
         "ok": True,
+        "message": (
+            f"Lead {name} <{doc.get('email')}>\n"
+            f"• Settore: {industry}\n"
+            f"• Azienda: {doc.get('companyName') or '—'}\n"
+            f"• Telefono: {doc.get('phone') or '—'}\n"
+            f"• Ruolo: {doc.get('roleTitle') or '—'}\n"
+            f"• Stato: {doc.get('status') or '—'} · Score: {doc.get('leadScore', 0)}"
+        ),
         "lead": {
             "id": doc["_id"],
             "email": doc.get("email"),
-            "name": f"{doc.get('firstName') or ''} {doc.get('lastName') or ''}".strip(),
+            "name": name,
             "companyName": doc.get("companyName"),
+            "industry": doc.get("industry"),
+            "phone": doc.get("phone"),
+            "roleTitle": doc.get("roleTitle"),
             "status": doc.get("status"),
+            "notes": doc.get("notes"),
             "leadScore": doc.get("leadScore"),
         },
+    }
+
+
+async def _update_lead(args: dict, user_id: str) -> dict:
+    email = (args.get("email") or "").strip().lower()
+    fields = args.get("fields") or {}
+    if not email:
+        return {"ok": False, "error": "email obbligatoria"}
+    if not fields:
+        return {"ok": False, "error": "nessun campo da aggiornare"}
+
+    doc = await db["leads"].find_one({"email": {"$regex": f"^{re.escape(email)}$", "$options": "i"}, "deletedAt": None})
+    if not doc:
+        return {"ok": False, "error": f"Lead non trovato: {email}"}
+
+    allowed = {
+        "industry", "companyName", "phone", "notes", "status",
+        "firstName", "lastName", "roleTitle", "roleSeniority",
+        "companySize", "source", "linkedinUrl",
+    }
+    updates = {k: v for k, v in fields.items() if k in allowed and v is not None}
+    if not updates:
+        return {"ok": False, "error": f"Nessun campo valido tra {sorted(fields.keys())}"}
+
+    updates["updatedAt"] = utcnow()
+    await db["leads"].update_one({"_id": doc["_id"]}, {"$set": updates})
+
+    await append_activity(doc["_id"], {
+        "type": "note",
+        "title": f"Lead aggiornato via agent: {', '.join(updates.keys())}",
+        "userId": user_id,
+        "metadata": {"fields": {k: str(v) for k, v in updates.items() if k != "updatedAt"}},
+    })
+
+    return {
+        "ok": True,
+        "leadId": doc["_id"],
+        "updated": sorted(k for k in updates if k != "updatedAt"),
+        "message": f"Lead {email} aggiornato: {', '.join(sorted(k for k in updates if k != 'updatedAt'))}",
     }
 
 
@@ -1067,6 +1156,8 @@ TOOL_HANDLERS: dict[str, Callable[[dict, str], Awaitable[dict]]] = {
     "send_email": _send_email,
     "list_leads": _list_leads,
     "find_lead": _find_lead,
+    "update_lead": _update_lead,
+    "help": _help,
     "crm_summary": _crm_summary,
     "book_demo": _book_demo,
     "generate_report": _generate_report,
@@ -1101,6 +1192,64 @@ def parse_command(text: str) -> tuple[str, dict] | None:
     email = email_m.group(0) if email_m else None
     date_m = _DATE_RE.search(t)
     due = date_m.group(1) if date_m else None
+
+    # HELP
+    if low in ("aiuto", "help", "?", "cosa sai fare", "cosa puoi fare", "comandi"):
+        return ("help", {})
+
+    # FIND LEAD / READ FIELD (es. «dammi il settore di x@y.it», «quale settore ha x@y.it»)
+    if email and any(k in low for k in (
+        "dammi il", "dammi l'", "dammi la", "quale è", "qual è", "qual'e", "qual e",
+        "quale settore", "quale azienda", "quale telefono", "quale stato",
+        "mostra il", "mostra l'", "mostra la", "dimmi il", "dimmi l'", "dimmi la",
+        "che settore", "che azienda", "che telefono", "che stato",
+        "settore di", "azienda di", "telefono di", "stato di",
+        "info sul lead", "dettagli del lead", "scheda del lead", "mostra lead", "mostra il lead",
+    )):
+        return ("find_lead", {"query": email})
+
+    # UPDATE LEAD FIELD (es. «imposta settore marketing sul lead x@y.it», «aggiorna settore …»)
+    if email and any(k in low for k in (
+        "imposta", "aggiorna", "inserisci", "metti", "cambia", "setta", "modifica", "manca",
+    )):
+        field_aliases = {
+            "settore": "industry", "industry": "industry", "settori": "industry",
+            "azienda": "companyName", "company": "companyName", "ragione sociale": "companyName",
+            "telefono": "phone", "tel": "phone", "cellulare": "phone",
+            "note": "notes", "nota": "notes",
+            "stato": "status", "status": "status",
+            "nome": "firstName", "cognome": "lastName",
+            "ruolo": "roleTitle", "qualifica": "roleTitle",
+        }
+        fields = {}
+        skip_vals = {"il", "l'", "la", "lo", "inserisci", "imposta", "aggiorna", "metti", "cambia", "setta", "modifica", "manca", "nel", "nella", "sul", "sulla", "per", "del", "della", "un", "una"}
+        for alias, key in field_aliases.items():
+            m = re.search(
+                rf"(?:{re.escape(alias)})\s+(?:a\s+|in\s+|su\s+|per\s+|:\s*)?[«\"']?([^»\"'\n]+?)[»\"']?(?:\s+(?:sul|sulla|nel|nella|per|del|della|al|alla|a)\s+|$)",
+                low,
+                re.IGNORECASE,
+            )
+            if m:
+                val = m.group(1).strip().strip("«»\"'.")
+                # scarta match spurii tipo «settore inserisci media»
+                tokens = [w for w in val.split() if w not in skip_vals]
+                if tokens and "@" not in val:
+                    fields[key] = " ".join(tokens)
+                    break
+        if not fields:
+            # «inserisci media», «metti legal», «imposta finance» → industry
+            m = re.search(
+                r"(?:imposta|aggiorna|inserisci|metti|cambia|setta|modifica)\s+(?:il\s+|l'|la\s+|il\s+settore\s+|industry\s+)?[«\"']?([a-zà-ú][\wà-ú]{1,40})[»\"']?(?:\s+(?:sul|sulla|nel|nella|per|del|della|al|alla|a|email|il lead|la lead)|\s*$)",
+                low,
+                re.IGNORECASE,
+            )
+            if m:
+                raw = m.group(1).strip().strip("«»\"'.")
+                if raw and raw not in skip_vals and "@" not in raw:
+                    fields["industry"] = raw
+        if fields:
+            return ("update_lead", {"email": email, "fields": fields})
+        return None
 
     # CREATE LEAD
     if any(k in low for k in ("crea lead", "creare lead", "nuovo lead", "aggiungi lead")):
@@ -1378,8 +1527,18 @@ def parse_command(text: str) -> tuple[str, dict] | None:
 
 # ── LLM tool-calling (optional) ──────────────────────────────────────────────
 
-def _llm_available() -> bool:
-    p = settings.LLM_PROVIDER.lower()
+async def _llm_available() -> bool:
+    """True if an LLM can be reached — DB settings win over env defaults."""
+    from app.services.llm_settings_service import get_llm_runtime_config
+
+    try:
+        cfg = await get_llm_runtime_config()
+    except Exception:
+        cfg = {}
+    if cfg.get("api_base") or cfg.get("api_key"):
+        return True
+
+    p = (settings.LLM_PROVIDER or "").lower()
     if p == "ollama":
         return True  # local
     if p == "openai":
@@ -1420,7 +1579,7 @@ async def _run_llm(message: str, user_id: str) -> list[dict]:
         msg = choice.get("message") or {}
         tool_calls = msg.get("tool_calls") or []
         if not tool_calls:
-            content = msg.get("content") or ""
+            content = msg.get("content") or msg.get("reasoning_content") or ""
             steps.append({"type": "assistant", "content": content})
             break
 
@@ -1470,10 +1629,16 @@ async def run_agent(message: str, user_id: str) -> dict:
         return {"ok": bool(result.get("ok")), "steps": steps, "reply": reply, "mode": "parser"}
 
     # 2) LLM tool-calling if available
-    if _llm_available():
+    if await _llm_available():
         try:
             steps = await _run_llm(message, user_id)
-            reply_parts = [s.get("content") for s in steps if s.get("type") == "assistant" and s.get("content")]
+            reply_parts = []
+            for s in steps:
+                if s.get("type") != "assistant":
+                    continue
+                text = s.get("content") or s.get("reasoning_content") or ""
+                if text:
+                    reply_parts.append(text)
             tool_notes = [
                 s["result"].get("message") or f"{s['name']}: {'ok' if s['result'].get('ok') else 'errore'}"
                 for s in steps
