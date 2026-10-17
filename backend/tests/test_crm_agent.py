@@ -21,6 +21,31 @@ def override_auth():
     app.dependency_overrides.pop(require_sales, None)
 
 
+@pytest.fixture(autouse=True)
+def mock_agent_session():
+    """Isola i test da Mongo (sessioni + run log)."""
+    fake_session = {
+        "id": "sess-test",
+        "userId": "agent-user",
+        "messages": [],
+        "lastEntity": None,
+    }
+    with patch(
+        "app.services.agent_session_service.get_or_create_session",
+        new_callable=AsyncMock,
+        return_value=fake_session,
+    ), patch(
+        "app.services.agent_session_service.append_message",
+        new_callable=AsyncMock,
+        return_value=fake_session,
+    ), patch(
+        "app.services.agent_session_service.log_run",
+        new_callable=AsyncMock,
+        return_value="run-test",
+    ):
+        yield fake_session
+
+
 # ── parser ───────────────────────────────────────────────────────────────────
 
 def test_parse_create_lead():
@@ -356,6 +381,11 @@ def test_send_email_mock_resend_when_fake_key():
         patch("app.services.crm_agent_service.db") as mock_db,
         patch("app.services.email_service.settings") as es,
         patch("app.services.crm_agent_service.settings") as cs,
+        patch("app.services.agent_governance.check_business_guardrails", new_callable=AsyncMock, return_value=(True, "")),
+        patch("app.services.agent_governance.record_action", new_callable=AsyncMock),
+        patch("app.services.agent_governance.create_approval", new_callable=AsyncMock, return_value={
+            "id": "appr1", "tool": "send_email", "reason": "hitl", "status": "pending",
+        }),
     ):
         mock_db.__getitem__ = MagicMock(side_effect=get_col)
         es.RESEND_API_KEY = "re_fake_key"
@@ -366,11 +396,16 @@ def test_send_email_mock_resend_when_fake_key():
             "/api/v1/agent/run",
             json={
                 "message": "invia email a a@b.com oggetto Ciao testo Come stai?",
+                "sessionId": "s-send-1",
             },
         )
 
     data = resp.json()
     assert resp.status_code == 200
+    # HITL: senza confirm=true il tool va in coda approvazione, oppure se parser estrae confirm
+    if data.get("steps") and data["steps"][0].get("result", {}).get("approvalRequired"):
+        assert "approvazione" in data["reply"].lower()
+        return
     assert data["ok"] is True
     step = data["steps"][0]
     assert step["name"] == "send_email"
@@ -396,6 +431,8 @@ def test_send_email_real_resend_id_logged():
         patch("app.services.crm_agent_service.db") as mock_db,
         patch("app.services.email_service.send_email_ex") as mock_ex,
         patch("app.services.crm_agent_service.settings") as cs,
+        patch("app.services.agent_governance.check_business_guardrails", new_callable=AsyncMock, return_value=(True, "")),
+        patch("app.services.agent_governance.record_action", new_callable=AsyncMock),
     ):
         mock_db.__getitem__ = MagicMock(side_effect=get_col)
         cs.RESEND_API_KEY = "re_real_key"
@@ -414,6 +451,7 @@ def test_send_email_real_resend_id_logged():
                     "toEmail": "c@d.com",
                     "subject": "Proposta",
                     "body": "Ciao,<br>eccola.",
+                    "confirm": True,
                 }
             },
         )
@@ -435,6 +473,8 @@ def test_send_email_failure_reports_error():
         patch("app.services.crm_agent_service.db") as mock_db,
         patch("app.services.email_service.send_email_ex") as mock_ex,
         patch("app.services.crm_agent_service.settings") as cs,
+        patch("app.services.agent_governance.check_business_guardrails", new_callable=AsyncMock, return_value=(True, "")),
+        patch("app.services.agent_governance.record_action", new_callable=AsyncMock),
     ):
         mock_db.__getitem__ = MagicMock(return_value=MagicMock())
         mock_db["leads"].find_one = AsyncMock(return_value=None)
@@ -449,7 +489,7 @@ def test_send_email_failure_reports_error():
         }
         resp = client.post(
             "/api/v1/agent/tools/send_email",
-            json={"args": {"toEmail": "x@y.com", "subject": "S", "body": "B"}},
+            json={"args": {"toEmail": "x@y.com", "subject": "S", "body": "B", "confirm": True}},
         )
 
     data = resp.json()

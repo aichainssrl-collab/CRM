@@ -37,6 +37,7 @@ export default function AgentPage() {
   const runAgent = useAgentRun();
   const [input, setInput] = useState("");
   const [turns, setTurns] = useState<ChatTurn[]>([]);
+  const [sessionId, setSessionId] = useState<string | undefined>(undefined);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -49,7 +50,8 @@ export default function AgentPage() {
     setInput("");
     setTurns((prev) => [...prev, { role: "user", text: message }]);
     try {
-      const result = await runAgent.mutateAsync(message);
+      const result = await runAgent.mutateAsync({ message, sessionId });
+      if (result.sessionId) setSessionId(result.sessionId);
       setTurns((prev) => [
         ...prev,
         {

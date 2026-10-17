@@ -9,6 +9,7 @@ Never leaves the EU; all writes go through existing services.
 """
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import re
@@ -318,6 +319,16 @@ TOOLS: list[dict] = [
         },
     },
 ]
+
+# Phase B — copertura moduli CRM (task, billing, content, comms, ops)
+from app.services.agent_tools_phase_b import (  # noqa: E402
+    PHASE_B_TOOL_DEFS,
+    PHASE_B_HANDLERS,
+    PHASE_D_TOOL_DEFS,
+    PHASE_D_HANDLERS,
+)
+
+TOOLS = TOOLS + PHASE_B_TOOL_DEFS + PHASE_D_TOOL_DEFS
 
 
 # ── Tool implementations ─────────────────────────────────────────────────────
@@ -854,19 +865,33 @@ async def _help(args: dict, user_id: str) -> dict:
             "• «prenota demo con Mario Rossi email mario@studio.it il 2026-02-01 alle 15:00»\n"
             "• «riepilogo CRM»\n"
             "• «invia email a mario@studio.it oggetto Demo testo Ciao»\n"
-            "• «mostra deal», «crea task …», «promemoria …»"
+            "• «mostra deal», «crea task …», «promemoria …»\n"
+            "• «mostra i task», «mostra fatture», «mostra proposte», «pipeline»\n"
+            "• «mostra prodotti», «export csv», «kpi», «mostra report»"
         ),
     }
 
 
 async def _find_lead(args: dict, user_id: str) -> dict:
-    q = (args.get("query") or "").strip()
+    q = (args.get("query") or "").strip().rstrip(".")
     if not q:
         return {"ok": False, "error": "query obbligatoria"}
     rx = {"$regex": re.escape(q), "$options": "i"}
     doc = await db["leads"].find_one({
         "deletedAt": None,
-        "$or": [{"email": q.lower()}, {"email": rx}, {"lastName": rx}, {"companyName": rx}],
+        "$or": [
+            {"email": q.lower()},
+            {"email": rx},
+            {"firstName": rx},
+            {"lastName": rx},
+            {"companyName": rx},
+            # «Mock Match» → firstName+lastName
+            {"$expr": {"$regexMatch": {
+                "input": {"$concat": [{"$ifNull": ["$firstName", ""]}, " ", {"$ifNull": ["$lastName", ""]}]},
+                "regex": re.escape(q),
+                "options": "i",
+            }}},
+        ],
     })
     if not doc:
         return {"ok": False, "error": f"Nessun lead per «{q}»"}
@@ -876,6 +901,7 @@ async def _find_lead(args: dict, user_id: str) -> dict:
         "ok": True,
         "message": (
             f"Lead {name} <{doc.get('email')}>\n"
+            f"• Email: {doc.get('email')}\n"
             f"• Settore: {industry}\n"
             f"• Azienda: {doc.get('companyName') or '—'}\n"
             f"• Telefono: {doc.get('phone') or '—'}\n"
@@ -898,7 +924,7 @@ async def _find_lead(args: dict, user_id: str) -> dict:
 
 
 async def _update_lead(args: dict, user_id: str) -> dict:
-    email = (args.get("email") or "").strip().lower()
+    email = (args.get("email") or "").strip().lower().rstrip(".")
     fields = args.get("fields") or {}
     if not email:
         return {"ok": False, "error": "email obbligatoria"}
@@ -1161,24 +1187,76 @@ TOOL_HANDLERS: dict[str, Callable[[dict, str], Awaitable[dict]]] = {
     "crm_summary": _crm_summary,
     "book_demo": _book_demo,
     "generate_report": _generate_report,
+    **PHASE_B_HANDLERS,
+    **PHASE_D_HANDLERS,
 }
 
 
-async def run_tool(name: str, args: dict, user_id: str) -> dict:
+async def run_tool(name: str, args: dict, user_id: str, user_role: str = "sales") -> dict:
     handler = TOOL_HANDLERS.get(name)
     if not handler:
         return {"ok": False, "error": f"Tool sconosciuto: {name}"}
+    args = args or {}
+
+    from app.services import agent_governance as gov
+
+    # Business guardrails + HITL
+    allowed, reason = await gov.check_business_guardrails(name, args, user_id, user_role)
+    if not allowed:
+        if gov.requires_approval(name, args, reason):
+            approval = await gov.create_approval(user_id, name, args, reason)
+            return {
+                "ok": False,
+                "approvalRequired": True,
+                "approvalId": approval["id"],
+                "message": f"⚠️ Azione in attesa di approvazione: {reason}",
+                "error": reason,
+            }
+        return {"ok": False, "error": reason}
+
+    if gov.requires_approval(name, args, "") and args.get("confirm") is not True:
+        approval = await gov.create_approval(
+            user_id, name, args,
+            f"«{name}» richiede conferma umana (invio esterno o eliminazione)",
+        )
+        return {
+            "ok": False,
+            "approvalRequired": True,
+            "approvalId": approval["id"],
+            "message": (
+                f"⚠️ Azione sensibile «{name}» messa in coda per approvazione "
+                f"(id {approval['id']}). Rispondi con confirm=true per procedere."
+            ),
+            "error": "approval_required",
+        }
+
     try:
-        return await handler(args or {}, user_id)
+        result = await handler(args, user_id)
     except Exception as exc:
         logger.exception("tool %s failed", name)
         return {"ok": False, "error": str(exc)}
 
+    # Post-hook: registra azioni mutanti (audit / rate-limit)
+    if result.get("ok") and name in (
+        "send_email", "send_whatsapp", "create_lead", "create_deal",
+        "delete_lead", "delete_deal", "mark_invoice",
+    ):
+        await gov.record_action(user_id, name, {"args": {k: v for k, v in args.items() if k != "body"}})
+    return result
+
 
 # ── Deterministic intent parser (no LLM required) ────────────────────────────
 
-_EMAIL_RE = re.compile(r"[\w.+-]+@[\w-]+\.[\w.-]+")
+_EMAIL_RE = re.compile(r"[\w.+-]+@[\w-]+\.[\w.]*[a-zA-Z]")
 _DATE_RE = re.compile(r"\b(\d{4}-\d{2}-\d{2})\b")
+_PERSON_NAME_RE = re.compile(r"\b([A-ZÀ-Ú][a-zà-ú]{1,20}(?:\s+[A-ZÀ-Ú][a-zà-ú]{1,20}){1,2})\b")
+
+
+def _extract_person_name(text: str) -> str | None:
+    """Estrae un Nome Cognome in maiuscolo dal testo (es. «Danilo Zanni»)."""
+    t = (text or "").strip()
+    m = _PERSON_NAME_RE.search(t)
+    return m.group(1).strip() if m else None
 
 
 def parse_command(text: str) -> tuple[str, dict] | None:
@@ -1189,13 +1267,58 @@ def parse_command(text: str) -> tuple[str, dict] | None:
     t = (text or "").strip()
     low = t.lower()
     email_m = _EMAIL_RE.search(t)
-    email = email_m.group(0) if email_m else None
+    email = email_m.group(0).rstrip(".") if email_m else None
     date_m = _DATE_RE.search(t)
     due = date_m.group(1) if date_m else None
 
     # HELP
     if low in ("aiuto", "help", "?", "cosa sai fare", "cosa puoi fare", "comandi"):
         return ("help", {})
+
+    # PHASE B quick intents
+    if any(k in low for k in ("mostra i task", "elenca task", "lista task", "i miei task", "task aperti")):
+        args = {}
+        if "miei" in low:
+            args["assignedTo"] = "me"
+        if "aperti" in low:
+            args["status"] = "open"
+        return ("list_tasks", args)
+    if any(k in low for k in ("completa task", "task completato", "segna completato", "chiudi task")):
+        m = re.search(r"\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b", t)
+        return ("complete_task", {"taskId": m.group(0) if m else ""})
+    if any(k in low for k in ("mostra fatture", "elenca fatture", "lista fatture", "le fatture")):
+        return ("list_invoices", {})
+    if any(k in low for k in ("mostra proposte", "elenca proposte", "lista proposte", "le proposte")):
+        return ("list_proposals", {})
+    if any(k in low for k in ("statistiche fatture", "kpi fatture", "fatture totali")):
+        return ("invoice_stats", {})
+    if any(k in low for k in ("pipeline", "valore pipeline", "deal per stage")):
+        return ("deal_pipeline", {})
+    if any(k in low for k in ("mostra prodotti", "elenca prodotti", "lista prodotti", "listino")):
+        return ("list_products", {})
+    if any(k in low for k in ("mostra report", "elenca report", "lista report")):
+        return ("list_reports", {})
+    if (low.strip() in ("kpi", "kpi crm", "i kpi") or any(k in low for k in ("indicatori", "metriche crm"))) and "fattur" not in low:
+        return ("crm_kpi", {"days": 30})
+    if any(k in low for k in ("export csv", "esporta csv", "scarica csv")):
+        kind = "deals" if "deal" in low else "contacts" if "contatt" in low else "leads"
+        return ("export_csv", {"kind": kind})
+    if any(k in low for k in ("mostra competitor", "monitoraggio competitor", "status competitor")):
+        return ("competitor_status", {})
+    if any(k in low for k in ("mostra calendario", "eventi del mese")):
+        return ("list_calendar_events", {})
+
+    # Phase D — workflow & team
+    if any(k in low for k in ("workflow lead", "workflow inbound", "processa il lead", "gestisci inbound")):
+        args = {}
+        if email:
+            args["leadEmail"] = email
+        return ("workflow_inbound_lead", args)
+    if any(k in low for k in ("genera contenuto marketing", "crea post", "crea email marketing", "contenuto marketing")):
+        topic = t.split("per", 1)[-1].strip() if "per" in t.lower() else t
+        return ("marketing_content", {"topic": topic, "contentType": "email"})
+    if any(k in low for k in ("insight marketing", "suggerimenti marketing", "analisi marketing")):
+        return ("marketing_insights", {})
 
     # FIND LEAD / READ FIELD (es. «dammi il settore di x@y.it», «quale settore ha x@y.it»)
     if email and any(k in low for k in (
@@ -1207,6 +1330,51 @@ def parse_command(text: str) -> tuple[str, dict] | None:
         "info sul lead", "dettagli del lead", "scheda del lead", "mostra lead", "mostra il lead",
     )):
         return ("find_lead", {"query": email})
+
+    # FIND LEAD BY NAME/COMPANY (es. «dammi email di Mock Match», «trova Rossi», «chi è Mario»)
+    if any(k in low for k in (
+        "dammi email", "dammi l'email", "dammi la mail", "dammi il contatto",
+        "email di", "mail di", "e-mail di", "contatto di", "recapito di",
+        "trova il lead", "trova lead", "trova il contatto", "cerca il lead", "cerca lead",
+        "chi è", "chi e'", "chi è il lead", "scheda di", "info su",
+        "in quale azienda", "in che azienda", "dove lavora", "dove lavorano",
+        "azienda di", "azienda del", "azienda della", "ditta di", "società di", "societa di",
+        "quali aziende", "che lavoro fa", "che lavoro fanno",
+    )):
+        query = email
+        if not query:
+            # nome prima della domanda: «Danilo Zanni in quale azienda lavora?»
+            m = re.search(
+                r"^([A-ZÀ-Ú][a-zà-ú]+(?:\s+[A-ZÀ-Ú][a-zà-ú]+){1,2})\s+(?:in quale|in che|dove|che|qual)",
+                t.strip(),
+            )
+            if m:
+                query = m.group(1).strip()
+            else:
+                # nome dopo «lavora» / verbo + nome proprio
+                m = re.search(
+                    r"\b(?:lavora|lavorano|indirizzo|recapito)\s+(?:di\s+|del\s+|della\s+)?([A-ZÀ-Ú][a-zà-ú]+(?:\s+[A-ZÀ-Ú][a-zà-ú]+){1,2})",
+                    t.strip(),
+                )
+                if m:
+                    query = m.group(1).strip()
+                else:
+                    # nome dopo «di» / «su» / «azienda»
+                    m = re.search(
+                        r"(?:di|su|del|della|per|azienda|email|mail|contatto|lead|trova|cerca|chi è|scheda|info su)\s+(?:di\s+|del\s+|della\s+|su\s+)?[«\"']?([A-ZÀ-Úa-zà-ú][\wÀ-ú&.' -]{1,60})[»\"']?\s*[?.!]*$",
+                        t.strip(),
+                        re.IGNORECASE,
+                    )
+                    if m:
+                        query = m.group(1).strip().strip("«»\"'.")
+                        query = re.sub(
+                            r"^(?:il |lo |la |i |le )?(?:lead|contatto|cliente)\s+",
+                            "", query, flags=re.IGNORECASE,
+                        ).strip()
+            if not query:
+                query = _extract_person_name(t)
+        if query and len(query) >= 2:
+            return ("find_lead", {"query": query})
 
     # UPDATE LEAD FIELD (es. «imposta settore marketing sul lead x@y.it», «aggiorna settore …»)
     if email and any(k in low for k in (
@@ -1222,7 +1390,17 @@ def parse_command(text: str) -> tuple[str, dict] | None:
             "ruolo": "roleTitle", "qualifica": "roleTitle",
         }
         fields = {}
-        skip_vals = {"il", "l'", "la", "lo", "inserisci", "imposta", "aggiorna", "metti", "cambia", "setta", "modifica", "manca", "nel", "nella", "sul", "sulla", "per", "del", "della", "un", "una"}
+        skip_vals = {
+            "il", "l'", "la", "lo", "un", "una", "i", "le",
+            "inserisci", "inserisce", "inserire", "inserimento",
+            "imposta", "impostare", "impostazione",
+            "aggiorna", "aggiornare", "aggiornamento",
+            "metti", "mette", "mettere",
+            "cambia", "cambiare", "setta", "settare",
+            "modifica", "modificare", "manca", "mancano", "mancante",
+            "nel", "nella", "sul", "sulla", "per", "del", "della", "dello",
+            "al", "alla", "a", "in", "su", "di", "che", "e",
+        }
         for alias, key in field_aliases.items():
             m = re.search(
                 rf"(?:{re.escape(alias)})\s+(?:a\s+|in\s+|su\s+|per\s+|:\s*)?[«\"']?([^»\"'\n]+?)[»\"']?(?:\s+(?:sul|sulla|nel|nella|per|del|della|al|alla|a)\s+|$)",
@@ -1550,21 +1728,39 @@ async def _llm_available() -> bool:
     return bool(settings.OPENAI_API_KEY or settings.LLM_BASE_URL)
 
 
-async def _run_llm(message: str, user_id: str) -> list[dict]:
-    """Single-turn tool-calling loop (max 4 iterations)."""
+async def _run_llm(message: str, user_id: str, session: dict | None = None) -> list[dict]:
+    """Tool-calling loop with session history (max 4 iterations)."""
     import litellm
+    from app.services.agent_session_service import build_system_context, history_for_llm
     from app.services.llm_settings_service import get_llm_runtime_config
 
     litellm.drop_params = True
     cfg = await get_llm_runtime_config()
-    system = (
-        "Sei il CRM Agent di AiChain Solutions. Esegui azioni sul CRM usando gli tool. "
-        "Rispondi in italiano, in modo breve. Se mancano campi obbligatori chiedi chiarimenti."
-    )
-    messages = [
-        {"role": "system", "content": system},
-        {"role": "user", "content": message},
-    ]
+
+    user_meta = None
+    try:
+        user_doc = await db["users"].find_one({"_id": user_id}) or {}
+        user_meta = {
+            "displayName": user_doc.get("displayName"),
+            "email": user_doc.get("email"),
+            "role": user_doc.get("role"),
+        }
+    except Exception:
+        pass
+
+    system = build_system_context(user_id, session or {}, user_meta)
+    try:
+        from app.services import agent_memory as mem
+        facts = await mem.list_facts(user_id, limit=8)
+        block = mem.facts_prompt_block(facts)
+        if block:
+            system = f"{system}\n\n{block}"
+    except Exception:
+        pass
+    messages = [{"role": "system", "content": system}]
+    if session:
+        messages.extend(history_for_llm(session))
+    messages.append({"role": "user", "content": message})
     steps: list[dict] = []
 
     for _ in range(4):
@@ -1573,6 +1769,7 @@ async def _run_llm(message: str, user_id: str) -> list[dict]:
             tools=TOOLS,
             tool_choice="auto",
             temperature=0.2,
+            timeout=45,
             **cfg,
         )
         choice = resp["choices"][0]
@@ -1603,13 +1800,73 @@ async def _run_llm(message: str, user_id: str) -> list[dict]:
 
 # ── Public entrypoint ────────────────────────────────────────────────────────
 
-async def run_agent(message: str, user_id: str) -> dict:
+async def run_agent(message: str, user_id: str, session_id: str | None = None, user_role: str = "sales") -> dict:
     """
-    Execute an agent turn. Returns {steps, reply, mode}.
+    Execute an agent turn. Returns {steps, reply, mode, sessionId}.
     """
-    message = (message or "").strip()
-    if not message:
-        return {"ok": False, "error": "Messaggio vuoto", "steps": [], "reply": "", "mode": "none"}
+    import time
+
+    from app.services import agent_memory as mem
+    from app.services import agent_session_service as sess
+
+    started = time.monotonic()
+    ok, err = sess.validate_message(message)
+    if not ok:
+        return {
+            "ok": False,
+            "error": err,
+            "steps": [],
+            "reply": err,
+            "mode": "invalid",
+            "sessionId": session_id,
+        }
+    message = message.strip()
+
+    session = await sess.get_or_create_session(user_id, session_id)
+    sid = session["id"]
+
+    async def _finish(result: dict, mode: str, steps: list[dict], reply: str, ok_flag: bool, error: str | None = None) -> dict:
+        duration_ms = int((time.monotonic() - started) * 1000)
+        entity = sess.extract_entity_from_steps(steps)
+        try:
+            await sess.append_message(
+                user_id, "user", message,
+                session_id=sid, meta={"entity": entity} if entity else None,
+            )
+            await sess.append_message(
+                user_id, "assistant", reply or "",
+                session_id=sid,
+                meta={"mode": mode, "tools": [s.get("name") for s in steps if s.get("type") == "tool"]},
+            )
+        except Exception:
+            logger.exception("session persist failed")
+        await sess.log_run(
+            user_id=user_id,
+            message=message,
+            mode=mode,
+            reply=reply or "",
+            steps=steps,
+            ok=ok_flag,
+            duration_ms=duration_ms,
+            session_id=sid,
+            error=error,
+        )
+        out = dict(result)
+        out.setdefault("ok", ok_flag)
+        out.setdefault("steps", steps)
+        out.setdefault("reply", reply)
+        out.setdefault("mode", mode)
+        out["sessionId"] = sid
+        out["durationMs"] = duration_ms
+        return out
+
+    # 0) Memory commands («ricorda che…» / «preferisco…»)
+    mem_cmd = mem.maybe_extract_memory_command(message)
+    if mem_cmd:
+        fact = await mem.remember_fact(user_id, mem_cmd["text"], mem_cmd["kind"])
+        reply = f"Memorizzato: «{fact['text']}»"
+        steps = [{"type": "tool", "name": "remember_fact", "args": mem_cmd, "result": {"ok": True, "fact": fact}}]
+        return await _finish({"ok": True, "steps": steps, "reply": reply, "mode": "parser"}, "parser", steps, reply, True)
 
     # 1) Deterministic parser first (fast, testable, works offline)
     try:
@@ -1623,47 +1880,108 @@ async def run_agent(message: str, user_id: str) -> dict:
 
     if parsed:
         name, args = parsed
-        result = await run_tool(name, args, user_id)
+        result = await run_tool(name, args, user_id, user_role=user_role)
         steps = [{"type": "tool", "name": name, "args": args, "result": result}]
         reply = result.get("message") or result.get("error") or "Fatto."
-        return {"ok": bool(result.get("ok")), "steps": steps, "reply": reply, "mode": "parser"}
+        if result.get("approvalRequired"):
+            reply = result.get("message") or "Azione in attesa di approvazione."
+        return await _finish(
+            {"ok": bool(result.get("ok") or result.get("approvalRequired")), "steps": steps, "reply": reply, "mode": "parser"},
+            "parser", steps, reply, bool(result.get("ok")),
+        )
 
     # 2) LLM tool-calling if available
     if await _llm_available():
-        try:
-            steps = await _run_llm(message, user_id)
-            reply_parts = []
-            for s in steps:
-                if s.get("type") != "assistant":
-                    continue
-                text = s.get("content") or s.get("reasoning_content") or ""
-                if text:
-                    reply_parts.append(text)
-            tool_notes = [
-                s["result"].get("message") or f"{s['name']}: {'ok' if s['result'].get('ok') else 'errore'}"
-                for s in steps
-                if s.get("type") == "tool"
-            ]
-            reply = "\n".join(reply_parts + tool_notes) or "Completato."
-            return {"ok": True, "steps": steps, "reply": reply, "mode": "llm"}
-        except Exception as exc:
-            logger.warning("LLM agent failed: %s", exc)
-            return {
-                "ok": False,
-                "steps": [],
-                "reply": f"LLM non disponibile: {exc}",
-                "mode": "llm_error",
-            }
+        llm_error = None
+        for attempt in range(2):
+            try:
+                steps = await _run_llm(message, user_id, session)
+                reply_parts = []
+                for s in steps:
+                    if s.get("type") != "assistant":
+                        continue
+                    text = s.get("content") or s.get("reasoning_content") or ""
+                    if text:
+                        reply_parts.append(text)
+                tool_notes = [
+                    s["result"].get("message") or f"{s['name']}: {'ok' if s['result'].get('ok') else 'errore'}"
+                    for s in steps
+                    if s.get("type") == "tool"
+                ]
+                reply = "\n".join(reply_parts + tool_notes) or "Completato."
+                # Se l'LLM ha solo chiacchierato senza usare tool su una richiesta dati CRM,
+                # prova comunque un find_lead con l'entità nominata.
+                if not tool_notes and any(k in message.lower() for k in (
+                    "email", "settore", "telefono", "azienda", "lead", "contatto", "chi è", "chi e",
+                )):
+                    q = message
+                    m = re.search(
+                        r"(?:di|su|del|della|per)\s+[«\"']?(.+?)[»\"']?\s*[?.!]*$",
+                        message.strip(),
+                        re.IGNORECASE,
+                    )
+                    if m:
+                        q = m.group(1).strip().strip("«»\"'.")
+                    found = await _find_lead({"query": q}, user_id)
+                    if found.get("ok"):
+                        steps = steps + [{"type": "tool", "name": "find_lead", "args": {"query": q}, "result": found}]
+                        reply = found.get("message") or reply
+                        return await _finish(
+                            {"ok": True, "steps": steps, "reply": reply, "mode": "llm"},
+                            "llm", steps, reply, True,
+                        )
+                return await _finish(
+                    {"ok": True, "steps": steps, "reply": reply, "mode": "llm"},
+                    "llm", steps, reply, True,
+                )
+            except Exception as exc:
+                llm_error = exc
+                logger.warning("LLM agent attempt %s failed: %s", attempt + 1, exc)
+                await asyncio.sleep(0.4)
 
-    return {
-        "ok": False,
-        "steps": [],
-        "reply": (
-            "Non ho capito. Prova comandi tipo: "
-            "«crea lead Mario Rossi email mario@studio.it», "
-            "«prenota demo con Mario Rossi email mario@studio.it il 2026-02-01 alle 15:00», "
-            "«riepilogo CRM», "
-            "«invia email a mario@studio.it oggetto Demo testo Ciao»."
-        ),
-        "mode": "fallback",
-    }
+        # Fallback: mai restituire solo l'errore grezzo
+        q = _extract_person_name(message) or ""
+        if not q:
+            m = re.search(
+                r"(?:di|su|del|della|per)\s+[«\"']?(.+?)[»\"']?\s*[?.!]*$",
+                message.strip(),
+                re.IGNORECASE,
+            )
+            if m:
+                q = m.group(1).strip().strip("«»\"'.")
+        if not q and session.get("lastEntity"):
+            # «dammi la sua email» → ultima entità della sessione
+            ent = session["lastEntity"]
+            q = ent.get("email") or ent.get("name") or ent.get("id") or ""
+        if not q:
+            q = message
+        found = await _find_lead({"query": q}, user_id)
+        if found.get("ok"):
+            steps = [{"type": "tool", "name": "find_lead", "args": {"query": q}, "result": found}]
+            reply = found.get("message") or "Ecco cosa ho trovato."
+            return await _finish(
+                {"ok": True, "steps": steps, "reply": reply, "mode": "parser"},
+                "parser", steps, reply, True,
+            )
+
+        help_res = await _help({}, user_id)
+        reply = (
+            f"Non sono riuscito a consultare il modello LLM ({type(llm_error).__name__}).\n\n"
+            f"{help_res.get('message') or ''}"
+        )
+        return await _finish(
+            {"ok": False, "steps": [], "reply": reply, "mode": "llm_error"},
+            "llm_error", [], reply, False, error=str(llm_error),
+        )
+
+    reply = (
+        "Non ho capito. Prova comandi tipo: "
+        "«crea lead Mario Rossi email mario@studio.it», "
+        "«prenota demo con Mario Rossi email mario@studio.it il 2026-02-01 alle 15:00», "
+        "«riepilogo CRM», "
+        "«invia email a mario@studio.it oggetto Demo testo Ciao»."
+    )
+    return await _finish(
+        {"ok": False, "steps": [], "reply": reply, "mode": "fallback"},
+        "fallback", [], reply, False,
+    )

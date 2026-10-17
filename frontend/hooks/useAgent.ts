@@ -16,18 +16,23 @@ export interface AgentToolStep {
 
 export interface AgentRunResult {
   ok: boolean;
-  mode: "parser" | "llm" | "llm_error" | "fallback" | "none";
+  mode: "parser" | "llm" | "llm_error" | "fallback" | "invalid" | "error" | "none";
   reply: string;
   steps: AgentToolStep[];
+  sessionId?: string;
+  durationMs?: number;
   error?: string;
 }
 
 export function useAgentRun() {
   return useMutation({
-    mutationFn: (message: string) =>
+    mutationFn: (payload: { message: string; sessionId?: string }) =>
       apiFetch("/api/v1/agent/run", {
         method: "POST",
-        body: JSON.stringify({ message }),
+        body: JSON.stringify({
+          message: payload.message,
+          sessionId: payload.sessionId,
+        }),
       }) as Promise<AgentRunResult>,
   });
 }
