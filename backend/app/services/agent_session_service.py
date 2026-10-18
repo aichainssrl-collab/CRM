@@ -143,6 +143,14 @@ async def build_system_context_async(user_id: str, session: dict, user_meta: Opt
             base = f"{base}\n\n{block}"
     except Exception:
         logger.exception("agent_skills block failed")
+    try:
+        from app.services.agent_goals_service import goals_prompt_block
+
+        gblock = await goals_prompt_block()
+        if gblock:
+            base = f"{base}\n\n{gblock}"
+    except Exception:
+        logger.exception("agent_goals block failed")
     return base
 
 

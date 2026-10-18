@@ -472,7 +472,33 @@
       "toggle": "Attiva/disattiva",
       "delete": "Elimina"
     },
-    "agentSkillsNav": "Skill"
+    "agentSkillsNav": "Skill",
+    "agentGoals": {
+      "title": "Goal dell'agent",
+      "subtitle": "Obiettivi tracciabili: si aggiornano quando le azioni CRM completano il goal.",
+      "loading": "Caricamento goal…",
+      "add": "Aggiungi goal",
+      "newGoal": "Nuovo goal",
+      "titleField": "Titolo",
+      "description": "Descrizione",
+      "target": "Target",
+      "metric": "Metrica",
+      "save": "Salva goal",
+      "created": "Goal creato",
+      "completed": "Goal completato",
+      "deleted": "Goal eliminato",
+      "default": "default",
+      "markComplete": "Segna completato",
+      "reset": "Riapri",
+      "delete": "Elimina",
+      "status": {
+        "pending": "in attesa",
+        "in_progress": "in corso",
+        "completed": "completato",
+        "cancelled": "annullato"
+      }
+    },
+    "agentGoalsNav": "Goal"
   },
   "userAdmin": {
     "title": "Gestione Utenti",

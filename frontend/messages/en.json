@@ -472,7 +472,33 @@
       "toggle": "Enable/disable",
       "delete": "Delete"
     },
-    "agentSkillsNav": "Skills"
+    "agentSkillsNav": "Skills",
+    "agentGoals": {
+      "title": "Agent goals",
+      "subtitle": "Trackable goals: they update when CRM actions complete them.",
+      "loading": "Loading goals…",
+      "add": "Add goal",
+      "newGoal": "New goal",
+      "titleField": "Title",
+      "description": "Description",
+      "target": "Target",
+      "metric": "Metric",
+      "save": "Save goal",
+      "created": "Goal created",
+      "completed": "Goal completed",
+      "deleted": "Goal deleted",
+      "default": "default",
+      "markComplete": "Mark complete",
+      "reset": "Reopen",
+      "delete": "Delete",
+      "status": {
+        "pending": "pending",
+        "in_progress": "in progress",
+        "completed": "completed",
+        "cancelled": "cancelled"
+      }
+    },
+    "agentGoalsNav": "Goals"
   },
   "userAdmin": {
     "title": "User Management",

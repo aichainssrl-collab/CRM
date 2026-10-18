@@ -34,14 +34,16 @@ app = FastAPI(
 
 @app.on_event("startup")
 async def seed_agent_skills() -> None:
-    """Seed skill agent default all'avvio (idempotente)."""
+    """Seed skill e goal agent default all'avvio (idempotente)."""
     try:
         from app.services.agent_skills_service import ensure_default_skills
+        from app.services.agent_goals_service import ensure_default_goals
 
         await ensure_default_skills()
-        logger.info("Agent skills seeded")
+        await ensure_default_goals()
+        logger.info("Agent skills + goals seeded")
     except Exception:
-        logger.exception("agent skills seed failed")
+        logger.exception("agent seed failed")
 
 # Rate limiting
 app.state.limiter = limiter

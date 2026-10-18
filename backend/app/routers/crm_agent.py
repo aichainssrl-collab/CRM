@@ -256,6 +256,72 @@ async def preview_skills(
     return {"instructions": await skills.skills_prompt_block(q)}
 
 
+# ── Goal tracciabili ─────────────────────────────────────────────────────────
+
+class AgentGoalBody(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    metric: Optional[str] = None
+    target: Optional[int] = None
+    progress: Optional[int] = None
+    status: Optional[str] = None
+    key: Optional[str] = None
+
+
+@router.get("/goals")
+async def list_agent_goals(user: UserRecord = Depends(require_sales)):
+    from app.services import agent_goals_service as goals
+
+    return {"goals": await goals.list_goals()}
+
+
+@router.post("/goals")
+async def create_agent_goal(body: AgentGoalBody, user: UserRecord = Depends(require_admin)):
+    from app.services import agent_goals_service as goals
+
+    return await goals.create_goal(body.model_dump(exclude_unset=True), user.uid)
+
+
+@router.patch("/goals/{goal_id}")
+async def update_agent_goal(
+    goal_id: str,
+    body: AgentGoalBody,
+    user: UserRecord = Depends(require_admin),
+):
+    from app.services import agent_goals_service as goals
+
+    doc = await goals.update_goal(goal_id, body.model_dump(exclude_unset=True))
+    if not doc:
+        return {"ok": False, "error": "Goal non trovato"}
+    return doc
+
+
+@router.post("/goals/{goal_id}/complete")
+async def complete_agent_goal(
+    goal_id: str,
+    user: UserRecord = Depends(require_sales),
+):
+    from app.services import agent_goals_service as goals
+
+    doc = await goals.complete_goal(goal_id)
+    return doc or {"ok": False, "error": "Goal non trovato"}
+
+
+@router.post("/goals/{goal_id}/reset")
+async def reset_agent_goal(goal_id: str, user: UserRecord = Depends(require_admin)):
+    from app.services import agent_goals_service as goals
+
+    doc = await goals.reset_goal(goal_id)
+    return doc or {"ok": False, "error": "Goal non trovato"}
+
+
+@router.delete("/goals/{goal_id}")
+async def delete_agent_goal(goal_id: str, user: UserRecord = Depends(require_admin)):
+    from app.services import agent_goals_service as goals
+
+    return {"ok": await goals.delete_goal(goal_id)}
+
+
 # ── MCP-lite (esposizione tool a client esterni) ─────────────────────────────
 
 @router.get("/mcp/manifest")

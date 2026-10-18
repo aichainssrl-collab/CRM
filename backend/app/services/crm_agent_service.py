@@ -1329,6 +1329,27 @@ async def run_tool(name: str, args: dict, user_id: str, user_role: str = "sales"
         "delete_lead", "delete_deal", "mark_invoice",
     ):
         await gov.record_action(user_id, name, {"args": {k: v for k, v in args.items() if k != "body"}})
+
+    # Goal progress
+    if result.get("ok"):
+        try:
+            from app.services.agent_goals_service import record_tool_success
+
+            touched = await record_tool_success(name, user_id)
+            if touched:
+                notes = [
+                    f"{g.get('title')}: {g.get('progress')}/{g.get('target')}"
+                    + (" ✓" if g.get("status") == "completed" else "")
+                    for g in touched[:3]
+                ]
+                extra = " · " + " | ".join(notes)
+                if result.get("message"):
+                    result["message"] = f"{result['message']}\n🎯 Goal:{extra}"
+                else:
+                    result["message"] = f"🎯 Goal:{extra}"
+                result["goalsUpdated"] = touched
+        except Exception:
+            logger.exception("goal update failed")
     return result
 
 
