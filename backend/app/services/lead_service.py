@@ -5,7 +5,7 @@ import re
 from app.schemas.lead import LeadCreate, LeadUpdate, LeadStageUpdate
 from app.services.db_service import (
     db, create_document, update_document, get_document,
-    list_collection, soft_delete, utcnow, new_id,
+    list_collection, soft_delete, utcnow, new_id, _to_dict,
 )
 from app.services.activity_service import append_activity
 from pymongo import DESCENDING
@@ -82,24 +82,42 @@ class LeadService:
         status: str = None,
         pipeline_stage: str = None,
         assigned_to: str = None,
+        search: str = None,
+        score: str = None,
         limit: int = 20,
         last_doc_id: str = None,
     ) -> list[dict]:
-        filters = []
+        query: dict = {"deletedAt": None}
         if status:
-            filters.append(("status", "==", status))
+            query["status"] = status
         if pipeline_stage:
-            filters.append(("pipelineStage", "==", pipeline_stage))
+            query["pipelineStage"] = pipeline_stage
         if assigned_to:
-            filters.append(("assignedTo", "==", assigned_to))
-        return await list_collection(
-            "leads",
-            filters=filters,
-            order_by="createdAt",
-            descending=True,
-            limit=limit,
-            last_doc_id=last_doc_id,
-        )
+            query["assignedTo"] = assigned_to
+
+        # score: high >= 60, medium 30-59, low < 30
+        if score == "high":
+            query["leadScore"] = {"$gte": 60}
+        elif score == "medium":
+            query["leadScore"] = {"$gte": 30, "$lt": 60}
+        elif score == "low":
+            query["leadScore"] = {"$lt": 30}
+
+        q = (search or "").strip()
+        if q:
+            rx = {"$regex": re.escape(q), "$options": "i"}
+            query["$or"] = [
+                {"firstName": rx},
+                {"lastName": rx},
+                {"email": rx},
+                {"companyName": rx},
+                {"phone": rx},
+                {"industry": rx},
+            ]
+
+        cursor = db["leads"].find(query).sort("createdAt", DESCENDING).limit(limit)
+        docs = await cursor.to_list(length=limit)
+        return [_to_dict(d) for d in docs]
 
     async def delete_lead(self, lead_id: str) -> None:
         await soft_delete("leads", lead_id)

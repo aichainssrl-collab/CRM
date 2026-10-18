@@ -18,6 +18,8 @@ async def list_leads(
     status: Optional[str] = Query(None),
     pipeline_stage: Optional[str] = Query(None),
     assigned_to: Optional[str] = Query(None),
+    search: Optional[str] = Query(None, description="Cerca nome, cognome, email, azienda"),
+    score: Optional[str] = Query(None, description="high | medium | low"),
     limit: int = Query(20, ge=1, le=500),
     last_doc_id: Optional[str] = Query(None),
     user: UserRecord = Depends(require_sales),
@@ -27,6 +29,8 @@ async def list_leads(
         status=status,
         pipeline_stage=pipeline_stage,
         assigned_to=assigned_to,
+        search=search,
+        score=score,
         limit=limit,
         last_doc_id=last_doc_id,
     )
