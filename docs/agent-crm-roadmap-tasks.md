@@ -268,3 +268,16 @@ Le fasi A+B da sole (2 settimane) coprono il 90% dei casi d'uso quotidiani.
 | E4 | **Esempi chat aggiornati** | Comandi Fase B/D + multi-turno |
 
 File: `frontend/hooks/useAgent.ts`, `frontend/app/[locale]/crm/agent/page.tsx`
+
+---
+
+## Fase F — Knowledge, planner, follow-up (completata)
+
+| # | Task | Deliverable |
+|---|---|---|
+| F1 | **Knowledge RAG-lite** | `search_knowledge` su content/template/product/lead/deal (keyword scoring) |
+| F2 | **Planner multi-step** | «crea lead X e poi crea task Y» → piano + esecuzione sequenziale |
+| F3 | **Reply strutturata** | Cosa ho fatto / Cosa manca / Prossimo passo (`format_action_summary`) |
+| F4 | **Follow-up automatico** | `schedule_followup` → task su lead |
+
+File: `agent_knowledge.py`, `agent_planner.py`, tool `search_knowledge` / `schedule_followup`

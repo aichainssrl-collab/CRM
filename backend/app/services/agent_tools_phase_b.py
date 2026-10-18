@@ -827,3 +827,77 @@ PHASE_D_HANDLERS = {
     "marketing_content": _marketing_content,
     "marketing_insights": _marketing_insights,
 }
+
+
+# ── Phase F — knowledge + follow-up ──────────────────────────────────────────
+
+async def _search_knowledge(args: dict, user_id: str) -> dict:
+    from app.services import agent_knowledge as k
+
+    kinds = args.get("kinds")
+    if isinstance(kinds, str):
+        kinds = [kinds]
+    res = await k.search_knowledge(
+        args.get("query") or args.get("q") or "",
+        kinds=kinds,
+        limit=min(int(args.get("limit") or 8), 20),
+    )
+    if not res.get("ok"):
+        return _err(res.get("error") or "Ricerca knowledge fallita")
+    return _ok(res["message"], results=res["results"], count=res["count"])
+
+
+async def _schedule_followup(args: dict, user_id: str) -> dict:
+    """Crea automaticamente un task di follow-up (anche da workflow/agent)."""
+    lead = await _find_lead_doc(args.get("leadEmail"), args.get("leadQuery"))
+    if not lead:
+        return _err("Lead non trovato")
+    title = args.get("title") or f"Follow-up {lead.get('email')}"
+    now = utcnow()
+    task_id = new_id()
+    await db["tasks"].insert_one({
+        "_id": task_id,
+        "leadId": lead["_id"],
+        "title": title,
+        "description": args.get("description") or "Follow-up automatico generato dall'agent",
+        "dueDate": now,
+        "priority": args.get("priority") or "normal",
+        "type": "todo",
+        "status": "open",
+        "assignedTo": user_id,
+        "createdBy": user_id,
+        "createdAt": now,
+        "updatedAt": now,
+        "deletedAt": None,
+    })
+    await db["leads"].update_one({"_id": lead["_id"]}, {"$inc": {"taskCount": 1}})
+    return _ok(f"Follow-up creato su {lead.get('email')}", taskId=task_id, leadId=lead["_id"])
+
+
+PHASE_F_TOOL_DEFS: list[dict] = [
+    {"type": "function", "function": {
+        "name": "search_knowledge",
+        "description": "Cerca nella knowledge CRM (content library, template, prodotti, lead, deal)",
+        "parameters": {"type": "object", "properties": {
+            "query": {"type": "string"},
+            "kinds": {"type": "array", "items": {"type": "string", "enum": ["content", "template", "product", "lead", "deal"]}},
+            "limit": {"type": "integer"},
+        }, "required": ["query"]},
+    }},
+    {"type": "function", "function": {
+        "name": "schedule_followup",
+        "description": "Crea un task di follow-up automatico su un lead",
+        "parameters": {"type": "object", "properties": {
+            "leadEmail": {"type": "string"},
+            "leadQuery": {"type": "string"},
+            "title": {"type": "string"},
+            "description": {"type": "string"},
+            "priority": {"type": "string", "enum": ["low", "normal", "high"]},
+        }},
+    }},
+]
+
+PHASE_F_HANDLERS = {
+    "search_knowledge": _search_knowledge,
+    "schedule_followup": _schedule_followup,
+}

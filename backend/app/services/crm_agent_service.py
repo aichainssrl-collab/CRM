@@ -326,9 +326,11 @@ from app.services.agent_tools_phase_b import (  # noqa: E402
     PHASE_B_HANDLERS,
     PHASE_D_TOOL_DEFS,
     PHASE_D_HANDLERS,
+    PHASE_F_TOOL_DEFS,
+    PHASE_F_HANDLERS,
 )
 
-TOOLS = TOOLS + PHASE_B_TOOL_DEFS + PHASE_D_TOOL_DEFS
+TOOLS = TOOLS + PHASE_B_TOOL_DEFS + PHASE_D_TOOL_DEFS + PHASE_F_TOOL_DEFS
 
 
 # ── Tool implementations ─────────────────────────────────────────────────────
@@ -1189,6 +1191,7 @@ TOOL_HANDLERS: dict[str, Callable[[dict, str], Awaitable[dict]]] = {
     "generate_report": _generate_report,
     **PHASE_B_HANDLERS,
     **PHASE_D_HANDLERS,
+    **PHASE_F_HANDLERS,
 }
 
 
@@ -1319,6 +1322,21 @@ def parse_command(text: str) -> tuple[str, dict] | None:
         return ("marketing_content", {"topic": topic, "contentType": "email"})
     if any(k in low for k in ("insight marketing", "suggerimenti marketing", "analisi marketing")):
         return ("marketing_insights", {})
+
+    # Phase F — knowledge & follow-up
+    if any(k in low for k in ("cerca nel knowledge", "cerca knowledge", "knowledge", "documenti su", "contenuti su", "template per")):
+        q = t
+        for prefix in ("cerca nel knowledge", "cerca knowledge", "knowledge", "documenti su", "contenuti su", "template per"):
+            if prefix in low:
+                idx = low.find(prefix)
+                q = t[idx + len(prefix):].strip(" :«»\"'.")
+                break
+        return ("search_knowledge", {"query": q or t})
+    if any(k in low for k in ("crea follow-up", "follow-up su", "follow up su", "promemoria follow")):
+        args = {}
+        if email:
+            args["leadEmail"] = email
+        return ("schedule_followup", args)
 
     # FIND LEAD / READ FIELD (es. «dammi il settore di x@y.it», «quale settore ha x@y.it»)
     if email and any(k in low for k in (
@@ -1867,6 +1885,25 @@ async def run_agent(message: str, user_id: str, session_id: str | None = None, u
         reply = f"Memorizzato: «{fact['text']}»"
         steps = [{"type": "tool", "name": "remember_fact", "args": mem_cmd, "result": {"ok": True, "fact": fact}}]
         return await _finish({"ok": True, "steps": steps, "reply": reply, "mode": "parser"}, "parser", steps, reply, True)
+
+    # 1b) Planner — richieste composte («crea lead X e poi crea task Y»)
+    try:
+        from app.services.agent_planner import format_action_summary, plan_message
+
+        plan = plan_message(message, parse_command)
+    except Exception:
+        plan = []
+    if plan:
+        steps = []
+        for step in plan:
+            result = await run_tool(step["tool"], step.get("args") or {}, user_id, user_role=user_role)
+            steps.append({"type": "tool", "name": step["tool"], "args": step.get("args"), "result": result})
+        summary = format_action_summary(steps)
+        ok_flag = any(s["result"].get("ok") for s in steps)
+        return await _finish(
+            {"ok": ok_flag, "steps": steps, "reply": summary, "mode": "parser", "plan": plan},
+            "parser", steps, summary, ok_flag,
+        )
 
     # 1) Deterministic parser first (fast, testable, works offline)
     try:
