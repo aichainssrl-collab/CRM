@@ -38,7 +38,7 @@ export function Navbar() {
   const isSubpage = pathWithoutLocale.split("/").filter(Boolean).length > 2;
 
   return (
-    <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border/60 bg-card/80 backdrop-blur-sm px-4">
+    <header className="glass sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 px-4">
       <div className="flex flex-1 items-center gap-3">
         <SidebarTrigger className="-ml-1 text-muted-foreground hover:text-foreground transition-colors" />
         <Separator orientation="vertical" className="h-4 bg-border/60" />

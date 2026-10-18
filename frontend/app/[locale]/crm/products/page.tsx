@@ -153,7 +153,7 @@ export default function ProductsPage() {
       {/* Header */}
       <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Catalogo & Segmentazione</h1>
+          <h1 className="page-title">Catalogo & Segmentazione</h1>
           <p className="text-sm text-muted-foreground">
             Gestisci prodotti, segmenti clienti e analisi di conversione
           </p>

@@ -140,7 +140,7 @@ export default function SettingsPage() {
   return (
     <div className="flex flex-col gap-6 p-6 max-w-[1400px] mx-auto w-full">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">{t("title")}</h1>
+        <h1 className="page-title">{t("title")}</h1>
         <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
       </div>
 

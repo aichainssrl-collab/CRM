@@ -125,7 +125,7 @@ export default function LeadsPage() {
       {/* Header */}
       <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between shrink-0">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">
+          <h1 className="page-title">
             {t("title")}
             <span className="ml-2 text-base font-normal text-muted-foreground">({leads.length})</span>
           </h1>

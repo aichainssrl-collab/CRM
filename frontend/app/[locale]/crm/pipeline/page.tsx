@@ -89,7 +89,7 @@ export default function PipelinePage() {
     <div className="flex flex-1 flex-col overflow-hidden p-6 gap-4">
       <div className="flex items-center justify-between shrink-0">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">{t("title")}</h1>
+          <h1 className="page-title">{t("title")}</h1>
           {!isLoading && deals && (
             <p className="text-sm text-muted-foreground mt-0.5">
               {t("deals", { count: deals.length })} · {formatEUR(totalValue)} {t("total")}

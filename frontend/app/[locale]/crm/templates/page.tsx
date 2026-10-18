@@ -109,7 +109,7 @@ export default function EmailTemplatesPage() {
     <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">{t("title")}</h1>
+          <h1 className="page-title">{t("title")}</h1>
           <p className="text-sm text-muted-foreground mt-1">{t("subtitle")}</p>
         </div>
         <div className="flex gap-2">

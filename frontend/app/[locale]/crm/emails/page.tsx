@@ -344,7 +344,7 @@ export default function EmailSequencesPage() {
       {/* Header */}
       <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Email Sequences</h1>
+          <h1 className="page-title">Email Sequences</h1>
           <p className="text-sm text-muted-foreground">
             Drip campaign automatiche — crea, attiva e monitora le tue sequenze email
           </p>

@@ -94,7 +94,7 @@ export default function LoginPage() {
           </div>
 
           <div className="flex flex-col gap-2 text-center lg:text-left">
-            <h1 className="text-2xl font-bold tracking-tight">{t("welcomeBack")}</h1>
+            <h1 className="page-title">{t("welcomeBack")}</h1>
             <p className="text-sm text-muted-foreground">
               {t("loginSubtitle")}
             </p>
