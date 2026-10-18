@@ -5,6 +5,8 @@ const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:8088";
 
 const nextConfig = {
   output: "standalone",
+  // Type-check resta attivo (tsc in CI); ESLint non blocca il build prod/Docker
+  eslint: { ignoreDuringBuilds: true },
 
   async rewrites() {
     return [
