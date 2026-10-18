@@ -21,6 +21,7 @@ import { KpiCard } from "@/components/crm/KpiCard";
 import { ActivityFeed } from "@/components/crm/ActivityFeed";
 import { TeamLeaderboard } from "@/components/crm/TeamLeaderboard";
 import { CompetitorAlerts } from "@/components/crm/CompetitorAlerts";
+import { DueTasksCard } from "@/components/crm/DueTasksCard";
 import { formatEUR } from "@/lib/format";
 import {
   Users,
@@ -135,6 +136,9 @@ export default function DashboardPage() {
           accent="bg-status-proposal-muted text-status-proposal"
         />
       </div>
+
+      {/* Task in scadenza */}
+      <DueTasksCard metrics={metrics} loading={isLoading} />
 
       {/* Charts + Recent Leads */}
       <div className="grid gap-4 lg:grid-cols-3">

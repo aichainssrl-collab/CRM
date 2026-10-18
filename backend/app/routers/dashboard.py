@@ -14,7 +14,8 @@ async def get_dashboard_metrics(
     user: UserRecord = Depends(require_sales),
 ):
     days = _TIME_RANGE_DAYS.get(time_range, 30)
-    since = datetime.now(timezone.utc) - timedelta(days=days)
+    now = datetime.now(timezone.utc)
+    since = now - timedelta(days=days)
 
     total_leads = await db["leads"].count_documents({"deletedAt": None})
     new_leads = await db["leads"].count_documents({"deletedAt": None, "createdAt": {"$gte": since}})
@@ -42,10 +43,67 @@ async def get_dashboard_metrics(
     closed = won_count + lost_count
     conversion_rate = round(won_count / closed * 100, 2) if closed > 0 else 0.0
 
+    # ── Task in scadenza / scaduti ──────────────────────────────────────────
+    start_today = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    end_today = start_today + timedelta(days=1)
+    end_week = now + timedelta(days=7)
+
+    overdue_q = {
+        "deletedAt": None,
+        "status": "open",
+        "dueDate": {"$lt": now, "$ne": None},
+    }
+    due_today_q = {
+        "deletedAt": None,
+        "status": "open",
+        "dueDate": {"$gte": start_today, "$lt": end_today},
+    }
+    due_soon_q = {
+        "deletedAt": None,
+        "status": "open",
+        "dueDate": {"$gte": start_today, "$lt": end_week},
+    }
+
+    overdue_count = await db["tasks"].count_documents(overdue_q)
+    due_today_count = await db["tasks"].count_documents(due_today_q)
+    due_soon_count = await db["tasks"].count_documents(due_soon_q)
+
+    due_tasks = []
+    cursor = (
+        db["tasks"]
+        .find({
+            "deletedAt": None,
+            "status": "open",
+            "dueDate": {"$ne": None, "$lt": end_week},
+        })
+        .sort("dueDate", 1)
+        .limit(15)
+    )
+    async for t in cursor:
+        due = t.get("dueDate")
+        if isinstance(due, datetime) and due.tzinfo is None:
+            due = due.replace(tzinfo=timezone.utc)
+        due_iso = due.isoformat() if hasattr(due, "isoformat") else (str(due) if due else None)
+        is_overdue = bool(isinstance(due, datetime) and due < now)
+        is_today = bool(isinstance(due, datetime) and start_today <= due < end_today)
+        due_tasks.append({
+            "id": t["_id"],
+            "title": t.get("title"),
+            "dueDate": due_iso,
+            "priority": t.get("priority"),
+            "leadId": t.get("leadId"),
+            "isOverdue": is_overdue,
+            "isToday": is_today,
+        })
+
     return {
         "totalLeads": total_leads,
         "newLeads": new_leads,
         "activeDeals": active_deals,
         "pipelineValue": pipeline_value,
         "conversionRate": conversion_rate,
+        "overdueTasks": overdue_count,
+        "dueTodayTasks": due_today_count,
+        "dueSoonTasks": due_soon_count,
+        "dueTasks": due_tasks,
     }

@@ -109,7 +109,17 @@
     "goToLeads": "Vai ai Lead",
     "competitorAlerts": "Alert competitor",
     "competitorAlertsHint": "Ultime variazioni rilevate dal monitoraggio automatico",
-    "noCompetitorAlerts": "Nessuna variazione competitor di recente."
+    "noCompetitorAlerts": "Nessuna variazione competitor di recente.",
+    "dueTasks": {
+      "title": "Task in scadenza",
+      "subtitle": "Attività da chiudere: scadute, di oggi e dei prossimi 7 giorni.",
+      "overdue": "Scadute",
+      "today": "Oggi",
+      "week": "7 giorni",
+      "empty": "Nessuna scadenza urgente. Ottimo lavoro!",
+      "untitled": "Task senza titolo",
+      "goToTasks": "Vai alle task"
+    }
   },
   "leads": {
     "title": "Leads",

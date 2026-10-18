@@ -109,7 +109,17 @@
     "goToLeads": "Go to Leads",
     "competitorAlerts": "Competitor alerts",
     "competitorAlertsHint": "Latest changes from automatic monitoring",
-    "noCompetitorAlerts": "No recent competitor changes."
+    "noCompetitorAlerts": "No recent competitor changes.",
+    "dueTasks": {
+      "title": "Due tasks",
+      "subtitle": "Work to close: overdue, due today and in the next 7 days.",
+      "overdue": "Overdue",
+      "today": "Today",
+      "week": "7 days",
+      "empty": "No urgent deadlines. Great job!",
+      "untitled": "Untitled task",
+      "goToTasks": "Go to tasks"
+    }
   },
   "leads": {
     "title": "Leads",
