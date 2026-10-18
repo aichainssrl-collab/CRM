@@ -295,3 +295,18 @@ File: `agent_knowledge.py`, `agent_planner.py`, tool `search_knowledge` / `sched
 | G5 | **CI** | Eval suite già in `pytest` (CI backend esegue `pytest tests/`) |
 
 File: `agent_metrics.py`, `routers/crm_agent.py`, `useAgent.ts`, agent page
+
+---
+
+## Documentazione finale
+
+→ **`docs/crm-agent-documentazione.md`** — guida operativa completa (API, tool, governance, test, health).
+
+### Esito test finali (2026-10-16)
+| Suite | Risultato |
+|---|---|
+| Backend pytest | 371 passed |
+| Evals parser | 32/32 (100%) |
+| Frontend Vitest | 29 passed |
+| tsc | pulito |
+| Smoke live | 7/7 comandi ok · MCP 50 tool · success rate 92.3% |

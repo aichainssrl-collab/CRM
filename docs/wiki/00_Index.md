@@ -11,6 +11,7 @@ Sia gli sviluppatori umani che gli agenti AI (LLM) devono consultare questa wiki
 - [[03_Tech_Stack]] - Tecnologie utilizzate nel frontend e nel backend.
 - [[04_ADRs/00_ADR_Template|ADRs (Architecture Decision Records)]] - Registro delle decisioni architetturali importanti.
 - [[05_LLM_Guidelines]] - Regole specifiche per l'interazione degli agenti AI con questo progetto.
+- [[../crm-agent-documentazione|CRM Agent (A–G)]] - Agent NLP su tutto il CRM: API, tool, HITL, metrics.
 
 ---
 *Nota per gli LLM: Utilizza questa wiki per rispondere a domande sull'architettura. Se modifichi l'architettura, crea un nuovo ADR.*
