@@ -336,16 +336,53 @@ TOOLS = TOOLS + PHASE_B_TOOL_DEFS + PHASE_D_TOOL_DEFS + PHASE_F_TOOL_DEFS
 # ── Tool implementations ─────────────────────────────────────────────────────
 
 async def _create_lead(args: dict, user_id: str) -> dict:
-    email = (args.get("email") or "").strip().lower()
+    email = (args.get("email") or "").strip().lower().rstrip(".")
     if not email:
         return {"ok": False, "error": "email obbligatoria"}
-    existing = await db["leads"].find_one({"email": email, "deletedAt": None})
+
+    existing = await db["leads"].find_one({
+        "email": {"$regex": f"^{re.escape(email)}$", "$options": "i"},
+        "deletedAt": None,
+    })
     if existing:
+        # Upsert: completa i campi mancanti invece di fallire
+        updates = {}
+        for key in ("firstName", "lastName", "phone", "companyName", "industry", "notes"):
+            val = args.get(key)
+            if val and not existing.get(key):
+                updates[key] = val
+        if updates:
+            updates["updatedAt"] = utcnow()
+            await db["leads"].update_one({"_id": existing["_id"]}, {"$set": updates})
+            existing.update(updates)
+
+        name = f"{existing.get('firstName') or ''} {existing.get('lastName') or ''}".strip() or email
+        filled = ", ".join(sorted(k for k in updates if k != "updatedAt")) if updates else ""
+        if filled:
+            message = f"Lead già presente: {name} <{email}> — aggiornati i campi: {filled}"
+        else:
+            message = (
+                f"Lead già presente: {name} <{email}> "
+                f"(azienda: {existing.get('companyName') or '—'}, settore: {existing.get('industry') or '—'})"
+            )
         return {
-            "ok": False,
-            "error": f"Lead già presente: {email} (id={existing['_id']})",
+            "ok": True,
             "leadId": existing["_id"],
+            "email": existing.get("email") or email,
+            "existing": True,
+            "updatedFields": sorted(k for k in updates if k != "updatedAt"),
+            "message": message,
+            "lead": {
+                "id": existing["_id"],
+                "email": existing.get("email"),
+                "name": name,
+                "companyName": existing.get("companyName"),
+                "industry": existing.get("industry"),
+                "phone": existing.get("phone"),
+                "status": existing.get("status"),
+            },
         }
+
     now = utcnow()
     doc = {
         "_id": new_id(),
@@ -371,7 +408,20 @@ async def _create_lead(args: dict, user_id: str) -> dict:
         "deletedAt": None,
     }
     await db["leads"].insert_one(doc)
-    return {"ok": True, "leadId": doc["_id"], "email": email, "message": f"Lead {email} creato"}
+    return {
+        "ok": True,
+        "leadId": doc["_id"],
+        "email": email,
+        "existing": False,
+        "message": f"Lead {email} creato",
+        "lead": {
+            "id": doc["_id"],
+            "email": email,
+            "name": f"{doc['firstName']} {doc['lastName']}".strip(),
+            "companyName": doc.get("companyName"),
+            "industry": doc.get("industry"),
+        },
+    }
 
 
 async def _create_task(args: dict, user_id: str) -> dict:

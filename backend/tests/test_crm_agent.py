@@ -211,10 +211,18 @@ def test_direct_tool_endpoint():
     assert resp.json()["ok"] is True
 
 
-def test_duplicate_lead_rejected():
+def test_duplicate_lead_returns_existing():
+    """Lead già presente: non fallisce, restituisce la scheda (upsert campi mancanti)."""
     mock_col = MagicMock()
-    mock_col.find_one = AsyncMock(return_value={"_id": "existing", "email": "dup@test.com"})
+    mock_col.find_one = AsyncMock(return_value={
+        "_id": "existing",
+        "email": "dup@test.com",
+        "firstName": "Dup",
+        "lastName": "Test",
+        "companyName": "Acme",
+    })
     mock_col.insert_one = AsyncMock()
+    mock_col.update_one = AsyncMock()
 
     with patch("app.services.crm_agent_service.db") as mock_db:
         mock_db.__getitem__ = MagicMock(return_value=mock_col)
@@ -224,7 +232,7 @@ def test_duplicate_lead_rejected():
         )
 
     data = resp.json()
-    assert data["ok"] is False
+    assert data["ok"] is True
     assert "già presente" in data["reply"]
     assert mock_col.insert_one.await_count == 0
 
