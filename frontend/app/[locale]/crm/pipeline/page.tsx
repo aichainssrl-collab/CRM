@@ -35,13 +35,27 @@ export default function PipelinePage() {
   const t = useTranslations("pipeline");
   const { data: deals, isLoading } = useDeals();
   const { mutateAsync: createDeal } = useCreateDeal();
-  const { data: leads = [] } = useLeads();
+  const { data: leads = [], isLoading: leadsLoading } = useLeads({ limit: 500 });
   const [sheetOpen, setSheetOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [selectedLeadId, setSelectedLeadId] = useState<string>("");
   const [selectedStage, setSelectedStage] = useState<string>("new");
+  const [leadQuery, setLeadQuery] = useState("");
 
   const totalValue = deals?.reduce((sum, d) => sum + (d.value ?? 0), 0) ?? 0;
+
+  const filteredLeads = leads.filter((l) => {
+    if (!leadQuery.trim()) return true;
+    const q = leadQuery.trim().toLowerCase();
+    const name = [l.firstName, l.lastName].filter(Boolean).join(" ").toLowerCase();
+    return (
+      name.includes(q) ||
+      (l.email || "").toLowerCase().includes(q) ||
+      (l.companyName || "").toLowerCase().includes(q)
+    );
+  });
+
+  const selectedLead = leads.find((l) => l.id === selectedLeadId);
 
   async function handleCreate(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -82,7 +96,7 @@ export default function PipelinePage() {
             </p>
           )}
         </div>
-        <Button onClick={() => setSheetOpen(true)} className="gap-2">
+        <Button onClick={() => { setSelectedLeadId(""); setLeadQuery(""); setSheetOpen(true); }} className="gap-2">
           <Plus className="h-4 w-4" />
           {t("newDeal")}
         </Button>
@@ -113,19 +127,48 @@ export default function PipelinePage() {
           <form onSubmit={handleCreate} className="space-y-4 py-6">
             <div className="space-y-2">
               <Label>{t("selectLeadLabel")}</Label>
-              <Select value={selectedLeadId} onValueChange={(v) => setSelectedLeadId(v ?? "")} required>
-                <SelectTrigger>
-                  <SelectValue placeholder={t("selectLead")} />
-                </SelectTrigger>
-                <SelectContent>
-                  {leads.map(l => (
-                    <SelectItem key={l.id} value={l.id}>
-                      {[l.firstName, l.lastName].filter(Boolean).join(" ") || l.email}
-                      {l.companyName ? ` — ${l.companyName}` : ""}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Input
+                value={leadQuery}
+                onChange={(e) => setLeadQuery(e.target.value)}
+                placeholder={t("selectLead")}
+                aria-label={t("selectLead")}
+              />
+              <div className="max-h-56 overflow-y-auto rounded-md border">
+                {leadsLoading && (
+                  <p className="p-3 text-sm text-muted-foreground">Caricamento lead…</p>
+                )}
+                {!leadsLoading && filteredLeads.length === 0 && (
+                  <p className="p-3 text-sm text-muted-foreground">Nessun lead trovato</p>
+                )}
+                {!leadsLoading &&
+                  filteredLeads.slice(0, 50).map((l) => {
+                    const label =
+                      [l.firstName, l.lastName].filter(Boolean).join(" ") || l.email;
+                    const active = l.id === selectedLeadId;
+                    return (
+                      <button
+                        key={l.id}
+                        type="button"
+                        className={`w-full text-left px-3 py-2 text-sm hover:bg-accent ${
+                          active ? "bg-accent font-medium" : ""
+                        }`}
+                        onClick={() => setSelectedLeadId(l.id)}
+                      >
+                        {label}
+                        {l.companyName ? ` — ${l.companyName}` : ""}
+                        <span className="block text-xs text-muted-foreground">{l.email}</span>
+                      </button>
+                    );
+                  })}
+              </div>
+              {selectedLead && (
+                <p className="text-xs text-muted-foreground">
+                  Selezionato: {[selectedLead.firstName, selectedLead.lastName].filter(Boolean).join(" ") || selectedLead.email}
+                </p>
+              )}
+              {!selectedLeadId && (
+                <p className="text-xs text-destructive">{t("selectLeadError")}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="title">{t("titleRequired")}</Label>
