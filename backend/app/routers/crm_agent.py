@@ -84,7 +84,40 @@ async def decide_approval(
     doc = await gov.resolve_approval(approval_id, user.uid, body.approve)
     if not doc:
         return {"ok": False, "error": "Richiesta non trovata o già gestita"}
-    return {"ok": True, "status": doc.get("status"), "tool": doc.get("tool"), "args": doc.get("args")}
+
+    if not body.approve:
+        return {
+            "ok": True,
+            "status": "rejected",
+            "tool": doc.get("tool"),
+            "message": "Azione respinta",
+        }
+
+    # Approvato → esegui il tool con confirm=true
+    tool = doc.get("tool")
+    args = dict(doc.get("args") or {})
+    args["confirm"] = True
+    try:
+        result = await crm_agent_service.run_tool(
+            tool, args, doc.get("userId") or user.uid, user_role=user.role,
+        )
+        return {
+            "ok": bool(result.get("ok")),
+            "status": "approved",
+            "tool": tool,
+            "args": args,
+            "result": result,
+            "message": result.get("message") or result.get("error") or "Azione eseguita",
+        }
+    except Exception as exc:
+        logger.exception("approved tool %s failed", tool)
+        return {
+            "ok": False,
+            "status": "approved",
+            "tool": tool,
+            "error": str(exc),
+            "message": f"Approvata ma esecuzione fallita: {exc}",
+        }
 
 
 @router.get("/memory")
@@ -93,6 +126,23 @@ async def list_memory(user: UserRecord = Depends(require_sales)):
 
     facts = await mem.list_facts(user.uid)
     return {"facts": facts}
+
+
+@router.get("/health")
+async def agent_health_endpoint(user: UserRecord = Depends(require_sales)):
+    from app.services import agent_metrics as m
+
+    return await m.agent_health()
+
+
+@router.get("/metrics")
+async def agent_metrics_endpoint(
+    days: int = 7,
+    user: UserRecord = Depends(require_sales),
+):
+    from app.services import agent_metrics as m
+
+    return await m.agent_metrics(days)
 
 
 # ── MCP-lite (esposizione tool a client esterni) ─────────────────────────────

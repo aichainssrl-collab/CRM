@@ -12,11 +12,12 @@ import {
   useAgentApprovalDecision,
   useAgentMemory,
   useAgentRuns,
+  useAgentHealth,
   type AgentRunResult,
 } from "@/hooks/useAgent";
 import {
   Bot, Send, Loader2, User, Sparkles, CheckCircle2, XCircle,
-  ShieldCheck, Brain, History, Check, X,
+  ShieldCheck, Brain, History, Check, X, Activity,
 } from "lucide-react";
 
 type ChatTurn = {
@@ -51,7 +52,9 @@ export default function AgentPage() {
   const approvalsQ = useAgentApprovals(true);
   const memoryQ = useAgentMemory(true);
   const runsQ = useAgentRuns(true, 12);
+  const healthQ = useAgentHealth(true);
   const decide = useAgentApprovalDecision();
+  const health = healthQ.data;
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -90,21 +93,29 @@ export default function AgentPage() {
 
   async function decideApproval(id: string, approve: boolean) {
     const res = await decide.mutateAsync({ id, approve });
-    if (res.ok && approve && res.tool && res.args) {
-      // Esegui il tool approvato con confirm=true
-      const label = JSON.stringify(res.args).slice(0, 80);
-      setTurns((prev) => [
-        ...prev,
-        { role: "user", text: `Conferma esecuzione ${res.tool} ${label}` },
-        {
-          role: "agent",
-          text: approve
-            ? `✓ Approvazione registrata per ${res.tool}. Riesegui l'azione se necessario.`
-            : `✗ Richiesta ${res.tool} respinta.`,
-          mode: "parser",
-        },
-      ]);
-    }
+    const detail =
+      res.message ||
+      (res.result?.message || res.result?.error) ||
+      (approve ? `✓ ${res.tool} eseguita` : `✗ Richiesta respinta`);
+    setTurns((prev) => [
+      ...prev,
+      {
+        role: "agent",
+        text: detail,
+        mode: "parser",
+        steps: res.tool
+          ? [{
+              type: "tool" as const,
+              name: res.tool,
+              result: {
+                ok: res.ok,
+                message: res.result?.message || res.message,
+                error: res.result?.error,
+              },
+            }]
+          : undefined,
+      },
+    ]);
   }
 
   const approvals = approvalsQ.data?.approvals ?? [];
@@ -115,12 +126,24 @@ export default function AgentPage() {
     <div className="flex flex-col xl:flex-row gap-4 p-6 w-full h-[calc(100vh-3.5rem)]">
       {/* Chat */}
       <div className="flex flex-col gap-4 flex-1 min-w-0 max-w-[900px]">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight flex items-center gap-2">
-            <Bot className="h-6 w-6 text-primary" />
-            {t("title")}
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">{t("subtitle")}</p>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight flex items-center gap-2">
+              <Bot className="h-6 w-6 text-primary" />
+              {t("title")}
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1">{t("subtitle")}</p>
+          </div>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Activity className={`h-3.5 w-3.5 ${health?.llmAvailable && health?.llmPing?.ok ? "text-success" : "text-destructive"}`} />
+            <span>
+              LLM {health?.llmAvailable ? (health?.llmPing?.ok ? "ok" : "non raggiungibile") : "off"}
+              {health?.llm?.model ? ` · ${health.llm.model}` : ""}
+            </span>
+            {typeof health?.pendingApprovals === "number" && health.pendingApprovals > 0 && (
+              <Badge variant="secondary" className="text-[10px]">{health.pendingApprovals} approvazioni</Badge>
+            )}
+          </div>
         </div>
 
         <Card className="flex-1 flex flex-col min-h-0">

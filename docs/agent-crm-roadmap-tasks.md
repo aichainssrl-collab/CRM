@@ -281,3 +281,17 @@ File: `frontend/hooks/useAgent.ts`, `frontend/app/[locale]/crm/agent/page.tsx`
 | F4 | **Follow-up automatico** | `schedule_followup` → task su lead |
 
 File: `agent_knowledge.py`, `agent_planner.py`, tool `search_knowledge` / `schedule_followup`
+
+---
+
+## Fase G — Produzione: approvazioni eseguite, health & metrics (completata)
+
+| # | Task | Deliverable |
+|---|---|---|
+| G1 | **Esecuzione post-approvazione** | Approva → `run_tool(..., confirm=true)` e risultato in chat |
+| G2 | **Agent health** | `GET /agent/health` — LLM status, ping provider, pending, run 24h |
+| G3 | **Agent metrics** | `GET /agent/metrics` — success rate, mode mix, latenza p95, top tool |
+| G4 | **UI health badge** | Stato LLM + badge approvazioni in testata chat |
+| G5 | **CI** | Eval suite già in `pytest` (CI backend esegue `pytest tests/`) |
+
+File: `agent_metrics.py`, `routers/crm_agent.py`, `useAgent.ts`, agent page

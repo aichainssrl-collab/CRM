@@ -82,11 +82,37 @@ export function useAgentApprovalDecision() {
       apiFetch(`/api/v1/agent/approvals/${payload.id}/decision`, {
         method: "POST",
         body: JSON.stringify({ approve: payload.approve }),
-      }) as Promise<{ ok: boolean; status?: string; tool?: string; args?: Record<string, unknown> }>,
+      }) as Promise<{
+        ok: boolean;
+        status?: string;
+        tool?: string;
+        args?: Record<string, unknown>;
+        message?: string;
+        result?: { ok?: boolean; message?: string; error?: string };
+      }>,
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["agent-approvals"] });
       void qc.invalidateQueries({ queryKey: ["agent-runs"] });
     },
+  });
+}
+
+export interface AgentHealth {
+  ok: boolean;
+  llmAvailable?: boolean;
+  llm?: { provider?: string; model?: string; baseUrl?: string };
+  llmPing?: { ok: boolean; error?: string | null; status?: number | string };
+  pendingApprovals?: number;
+  runsLast24h?: number;
+  timestamp?: string;
+}
+
+export function useAgentHealth(enabled = true) {
+  return useQuery({
+    queryKey: ["agent-health"],
+    enabled,
+    queryFn: () => apiFetch("/api/v1/agent/health") as Promise<AgentHealth>,
+    refetchInterval: 30_000,
   });
 }
 
