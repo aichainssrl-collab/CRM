@@ -2,11 +2,16 @@
 
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiFetch } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CalendarClock, AlertTriangle, CalendarCheck, ArrowRight } from "lucide-react";
+import { toast } from "sonner";
+import {
+  CalendarClock, AlertTriangle, CalendarCheck, ArrowRight, Mail, Loader2,
+} from "lucide-react";
 import type { DashboardMetrics, DueTask } from "@/hooks/useDashboard";
 
 function formatDue(iso?: string | null) {
@@ -31,11 +36,24 @@ export function DueTasksCard({
   loading?: boolean;
 }) {
   const t = useTranslations("dashboard.dueTasks");
+  const qc = useQueryClient();
   const tasks = metrics?.dueTasks ?? [];
   const overdue = metrics?.overdueTasks ?? 0;
   const today = metrics?.dueTodayTasks ?? 0;
   const soon = metrics?.dueSoonTasks ?? 0;
   const hasAlert = overdue > 0 || today > 0;
+
+  const sendReminders = useMutation({
+    mutationFn: () =>
+      apiFetch("/api/v1/dashboard/task-reminders/send", {
+        method: "POST",
+      }) as Promise<{ sent: number; skipped: number; errors: number }>,
+    onSuccess: (res) => {
+      toast.success(t("reminderSent", { sent: res.sent, skipped: res.skipped }));
+      void qc.invalidateQueries({ queryKey: ["dashboard"] });
+    },
+    onError: () => toast.error(t("reminderError")),
+  });
 
   return (
     <Card className={hasAlert ? "border-destructive/40" : undefined}>
@@ -120,10 +138,27 @@ export function DueTasksCard({
               </ul>
             )}
 
-            <Button variant="outline" size="sm" nativeButton={false} render={<Link href="/crm/tasks" />} className="w-full gap-1">
-              {t("goToTasks")}
-              <ArrowRight className="h-3.5 w-3.5" />
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="flex-1 gap-1"
+                disabled={sendReminders.isPending || tasks.length === 0}
+                onClick={() => sendReminders.mutate()}
+              >
+                {sendReminders.isPending ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Mail className="h-3.5 w-3.5" />
+                )}
+                {t("sendReminders")}
+              </Button>
+              <Button variant="outline" size="sm" nativeButton={false} render={<Link href="/crm/tasks" />} className="flex-1 gap-1">
+                {t("goToTasks")}
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Button>
+            </div>
           </>
         )}
       </CardContent>

@@ -118,7 +118,10 @@
       "week": "7 giorni",
       "empty": "Nessuna scadenza urgente. Ottimo lavoro!",
       "untitled": "Task senza titolo",
-      "goToTasks": "Vai alle task"
+      "goToTasks": "Vai alle task",
+      "sendReminders": "Invia promemoria email",
+      "reminderSent": "Promemoria inviati: {sent} · saltati: {skipped}",
+      "reminderError": "Errore nell'invio dei promemoria"
     }
   },
   "leads": {

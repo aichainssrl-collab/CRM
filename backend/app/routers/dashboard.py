@@ -107,3 +107,32 @@ async def get_dashboard_metrics(
         "dueSoonTasks": due_soon_count,
         "dueTasks": due_tasks,
     }
+
+
+@router.post("/task-reminders/send")
+async def send_task_reminders(
+    hours_ahead: int = Query(24, ge=1, le=168),
+    include_overdue: bool = Query(True),
+    force: bool = Query(False),
+    user: UserRecord = Depends(require_sales),
+):
+    """Invia promemoria email per task scadute/in scadenza."""
+    from app.services import task_reminder_service as rem
+
+    result = await rem.send_due_task_reminders(
+        hours_ahead=hours_ahead,
+        include_overdue=include_overdue,
+        only_uid=None,
+        force=force,
+    )
+    return result
+
+
+@router.get("/task-reminders")
+async def list_task_reminders(
+    limit: int = Query(50, ge=1, le=200),
+    user: UserRecord = Depends(require_sales),
+):
+    from app.services import task_reminder_service as rem
+
+    return {"reminders": await rem.list_recent_reminders(limit)}

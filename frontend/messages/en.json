@@ -118,7 +118,10 @@
       "week": "7 days",
       "empty": "No urgent deadlines. Great job!",
       "untitled": "Untitled task",
-      "goToTasks": "Go to tasks"
+      "goToTasks": "Go to tasks",
+      "sendReminders": "Send email reminders",
+      "reminderSent": "Reminders sent: {sent} · skipped: {skipped}",
+      "reminderError": "Failed to send reminders"
     }
   },
   "leads": {
