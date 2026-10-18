@@ -879,7 +879,8 @@
       "llm_error": "errore LLM",
       "fallback": "aiuto",
       "error": "errore",
-      "none": "—"
+      "none": "—",
+      "invalid": "Input non valido"
     }
   },
   "taskForm": {

@@ -255,3 +255,16 @@ Le fasi A+B da sole (2 settimane) coprono il 90% dei casi d'uso quotidiani.
 ---
 
 *Documento operativo di roadmap — aggiornare lo stato dei task qui o in `docs/task.md` man mano che si completano.*
+
+---
+
+## Fase E — UX agent (completata)
+
+| # | Task | Deliverable |
+|---|---|---|
+| E1 | **Pannello approvazioni** | Lista HITL pending + Approva/Rifiuta (`useAgentApprovals`) |
+| E2 | **Pannello memoria** | Fatti «ricorda che…» / preferenze (`useAgentMemory`) |
+| E3 | **Run history** | Ultime run con mode, tool, latenza (`useAgentRuns`) |
+| E4 | **Esempi chat aggiornati** | Comandi Fase B/D + multi-turno |
+
+File: `frontend/hooks/useAgent.ts`, `frontend/app/[locale]/crm/agent/page.tsx`

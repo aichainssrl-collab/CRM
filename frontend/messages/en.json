@@ -879,7 +879,8 @@
       "llm_error": "LLM error",
       "fallback": "help",
       "error": "error",
-      "none": "—"
+      "none": "—",
+      "invalid": "Invalid input"
     }
   },
   "taskForm": {
