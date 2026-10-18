@@ -906,9 +906,32 @@ async def _list_leads(args: dict, user_id: str) -> dict:
 
 
 async def _help(args: dict, user_id: str) -> dict:
+    from app.services.agent_config_service import get_agent_config
+    from app.services.agent_skills_service import list_skills
+
+    try:
+        cfg = await get_agent_config()
+    except Exception:
+        cfg = {}
+    try:
+        skills = await list_skills(include_inactive=False)
+    except Exception:
+        skills = []
+
+    name = cfg.get("agentName") or "CRM Agent"
+    goal_lines = (cfg.get("goal") or "").strip().splitlines()
+    goal_summary = goal_lines[0][:120] if goal_lines else ""
+
+    skill_lines = [
+        f"  • {s.get('title')} — {s.get('description') or ''}".rstrip(" —")
+        for s in skills[:8]
+    ]
+
     return {
         "ok": True,
         "message": (
+            f"Sono **{name}**. {cfg.get('soul') or ''}\n\n"
+            f"Goal: {goal_summary}\n\n"
             "Ecco cosa so fare:\n"
             "• «crea lead Mario Rossi email mario@studio.it»\n"
             "• «dammi il settore di mario@studio.it» / «mostra info sul lead …»\n"
@@ -919,7 +942,18 @@ async def _help(args: dict, user_id: str) -> dict:
             "• «invia email a mario@studio.it oggetto Demo testo Ciao»\n"
             "• «mostra deal», «crea task …», «promemoria …»\n"
             "• «mostra i task», «mostra fatture», «mostra proposte», «pipeline»\n"
-            "• «mostra prodotti», «export csv», «kpi», «mostra report»"
+            "• «mostra prodotti», «export csv», «kpi», «mostra report»\n"
+            "• «workflow inbound per …», «genera contenuto marketing per …»\n\n"
+            + (
+                "Skill attive:\n" + "\n".join(skill_lines) + "\n"
+                if skill_lines
+                else ""
+            )
+            + (
+                "Regole:\n" + (cfg.get("rules") or "")[:500]
+                if cfg.get("rules")
+                else ""
+            )
         ),
     }
 
@@ -1936,6 +1970,24 @@ async def run_agent(message: str, user_id: str, session_id: str | None = None, u
         steps = [{"type": "tool", "name": "remember_fact", "args": mem_cmd, "result": {"ok": True, "fact": fact}}]
         return await _finish({"ok": True, "steps": steps, "reply": reply, "mode": "parser"}, "parser", steps, reply, True)
 
+    async def _skill_hint(msg: str) -> str:
+        """Prima skill con trigger nel messaggio → consiglio operativo."""
+        try:
+            from app.services.agent_skills_service import list_skills, match_skills
+
+            skills = await list_skills(include_inactive=False)
+            matched = match_skills(msg, skills, limit=1)
+            if not matched:
+                return ""
+            s = matched[0]
+            body_line = next(
+                (ln.strip(" -•") for ln in (s.get("body") or "").splitlines() if ln.strip()),
+                s.get("description") or "",
+            )
+            return f"💡 Skill «{s.get('title')}»: {body_line[:160]}"
+        except Exception:
+            return ""
+
     # 1b) Planner — richieste composte («crea lead X e poi crea task Y»)
     try:
         from app.services.agent_planner import format_action_summary, plan_message
@@ -1972,6 +2024,9 @@ async def run_agent(message: str, user_id: str, session_id: str | None = None, u
         reply = result.get("message") or result.get("error") or "Fatto."
         if result.get("approvalRequired"):
             reply = result.get("message") or "Azione in attesa di approvazione."
+        hint = await _skill_hint(message)
+        if hint:
+            reply = f"{reply}\n\n{hint}"
         return await _finish(
             {"ok": bool(result.get("ok") or result.get("approvalRequired")), "steps": steps, "reply": reply, "mode": "parser"},
             "parser", steps, reply, bool(result.get("ok")),
@@ -2056,6 +2111,9 @@ async def run_agent(message: str, user_id: str, session_id: str | None = None, u
             f"Non sono riuscito a consultare il modello LLM ({type(llm_error).__name__}).\n\n"
             f"{help_res.get('message') or ''}"
         )
+        hint = await _skill_hint(message)
+        if hint:
+            reply = f"{hint}\n\n{reply}"
         return await _finish(
             {"ok": False, "steps": [], "reply": reply, "mode": "llm_error"},
             "llm_error", [], reply, False, error=str(llm_error),
@@ -2068,6 +2126,17 @@ async def run_agent(message: str, user_id: str, session_id: str | None = None, u
         "«riepilogo CRM», "
         "«invia email a mario@studio.it oggetto Demo testo Ciao»."
     )
+    try:
+        from app.services.agent_config_service import get_agent_config
+
+        _cfg = await get_agent_config()
+        if _cfg.get("agentName"):
+            reply = f"[{_cfg['agentName']}] {reply}"
+    except Exception:
+        pass
+    hint = await _skill_hint(message)
+    if hint:
+        reply = f"{reply}\n\n{hint}"
     return await _finish(
         {"ok": False, "steps": [], "reply": reply, "mode": "fallback"},
         "fallback", [], reply, False,

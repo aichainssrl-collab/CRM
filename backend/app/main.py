@@ -31,6 +31,18 @@ app = FastAPI(
     debug=settings.DEBUG,
 )
 
+
+@app.on_event("startup")
+async def seed_agent_skills() -> None:
+    """Seed skill agent default all'avvio (idempotente)."""
+    try:
+        from app.services.agent_skills_service import ensure_default_skills
+
+        await ensure_default_skills()
+        logger.info("Agent skills seeded")
+    except Exception:
+        logger.exception("agent skills seed failed")
+
 # Rate limiting
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
