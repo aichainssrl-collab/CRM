@@ -98,6 +98,7 @@ def history_for_llm(session: dict, max_messages: int = 12) -> list[dict]:
 def build_system_context(user_id: str, session: dict, user_meta: Optional[dict] = None) -> str:
     """
     System prompt con contesto live (pattern Agno context providers).
+    Le istruzioni goal/soul/regole arrivano da agent_config_service.
     """
     now = datetime.now(timezone.utc)
     last = session.get("lastEntity") or {}
@@ -122,6 +123,27 @@ def build_system_context(user_id: str, session: dict, user_meta: Optional[dict] 
             "Se l'utente dice «quel lead / lui / questa azienda» riferisciti a questa."
         )
     return "\n".join(parts)
+
+
+async def build_system_context_async(user_id: str, session: dict, user_meta: Optional[dict] = None, message: str = "") -> str:
+    """Come build_system_context + istruzioni agent_config + skill attive."""
+    base = build_system_context(user_id, session, user_meta)
+    try:
+        from app.services.agent_config_service import build_agent_instructions
+
+        instructions = await build_agent_instructions()
+        base = f"{base}\n\n{instructions}"
+    except Exception:
+        logger.exception("agent_config instructions failed")
+    try:
+        from app.services.agent_skills_service import skills_prompt_block
+
+        block = await skills_prompt_block(message)
+        if block:
+            base = f"{base}\n\n{block}"
+    except Exception:
+        logger.exception("agent_skills block failed")
+    return base
 
 
 # ── Run log ──────────────────────────────────────────────────────────────────

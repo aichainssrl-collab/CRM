@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends
 from typing import Optional
 from pydantic import BaseModel, Field
 
-from app.deps import require_sales, UserRecord
+from app.deps import require_sales, require_admin, UserRecord
 from app.services import crm_agent_service
 
 logger = logging.getLogger(__name__)
@@ -143,6 +143,117 @@ async def agent_metrics_endpoint(
     from app.services import agent_metrics as m
 
     return await m.agent_metrics(days)
+
+
+# ── Configurazione agent (goal / soul / rules) ───────────────────────────────
+
+class AgentConfigBody(BaseModel):
+    agentName: Optional[str] = None
+    role: Optional[str] = None
+    company: Optional[str] = None
+    goal: Optional[str] = None
+    soul: Optional[str] = None
+    tone: Optional[str] = None
+    language: Optional[str] = None
+    rules: Optional[str] = None
+    fallbackBehavior: Optional[str] = None
+    toolsPolicy: Optional[str] = None
+
+
+@router.get("/config")
+async def get_agent_config(user: UserRecord = Depends(require_sales)):
+    from app.services import agent_config_service as cfg
+
+    return await cfg.get_agent_config()
+
+
+@router.put("/config")
+@router.post("/config")
+async def update_agent_config(
+    body: AgentConfigBody,
+    user: UserRecord = Depends(require_admin),
+):
+    from app.services import agent_config_service as cfg
+
+    data = {k: v for k, v in body.model_dump(exclude_unset=True).items()}
+    return await cfg.update_agent_config(data)
+
+
+@router.get("/config/preview")
+async def preview_agent_config(user: UserRecord = Depends(require_sales)):
+    """System prompt effettivo che l'agent usa."""
+    from app.services import agent_config_service as cfg
+
+    return {"instructions": await cfg.build_agent_instructions()}
+
+
+# ── Skill (stile Claude) ─────────────────────────────────────────────────────
+
+class AgentSkillBody(BaseModel):
+    name: Optional[str] = None
+    title: Optional[str] = None
+    description: Optional[str] = None
+    category: Optional[str] = None
+    triggers: Optional[list[str]] = None
+    body: Optional[str] = None
+    isActive: Optional[bool] = None
+
+
+@router.get("/skills")
+async def list_agent_skills(user: UserRecord = Depends(require_sales)):
+    from app.services import agent_skills_service as skills
+
+    items = await skills.list_skills(include_inactive=True)
+    return {"skills": items}
+
+
+@router.post("/skills")
+async def create_agent_skill(body: AgentSkillBody, user: UserRecord = Depends(require_admin)):
+    from app.services import agent_skills_service as skills
+
+    return await skills.create_skill(body.model_dump(exclude_unset=True), user.uid)
+
+
+@router.patch("/skills/{skill_id}")
+async def update_agent_skill(
+    skill_id: str,
+    body: AgentSkillBody,
+    user: UserRecord = Depends(require_admin),
+):
+    from app.services import agent_skills_service as skills
+
+    doc = await skills.update_skill(skill_id, body.model_dump(exclude_unset=True))
+    if not doc:
+        return {"ok": False, "error": "Skill non trovata"}
+    return doc
+
+
+@router.delete("/skills/{skill_id}")
+async def delete_agent_skill(skill_id: str, user: UserRecord = Depends(require_admin)):
+    from app.services import agent_skills_service as skills
+
+    ok = await skills.delete_skill(skill_id)
+    return {"ok": ok}
+
+
+@router.post("/skills/{skill_id}/toggle")
+async def toggle_agent_skill(skill_id: str, user: UserRecord = Depends(require_admin)):
+    from app.services import agent_skills_service as skills
+
+    skill = await skills.get_skill(skill_id)
+    if not skill:
+        return {"ok": False, "error": "Skill non trovata"}
+    return await skills.update_skill(skill_id, {"isActive": not skill.get("isActive")})
+
+
+@router.get("/skills/preview")
+async def preview_skills(
+    q: str = "",
+    user: UserRecord = Depends(require_sales),
+):
+    from app.services import agent_skills_service as skills
+
+    return {"instructions": await skills.skills_prompt_block(q)}
 
 
 # ── MCP-lite (esposizione tool a client esterni) ─────────────────────────────

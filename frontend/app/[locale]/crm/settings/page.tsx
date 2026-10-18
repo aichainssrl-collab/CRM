@@ -24,6 +24,9 @@ import { updateProfile } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { getAuthToken } from "@/lib/auth";
 import { LlmSettingsForm } from "@/components/crm/LlmSettingsForm";
+import { AgentSettingsForm } from "@/components/crm/AgentSettingsForm";
+import { AgentSkillsManager } from "@/components/crm/AgentSkillsManager";
+import { Bot, Sparkles } from "lucide-react";
 
 export default function SettingsPage() {
   const t = useTranslations("settings");
@@ -40,6 +43,8 @@ export default function SettingsPage() {
 
   const NAV_ITEMS = [
     { label: t("profile"), icon: User, id: "profile" },
+    { label: t("agentConfig"), icon: Bot, id: "agent" },
+    { label: t("agentSkillsNav"), icon: Sparkles, id: "skills" },
     { label: t("notifications"), icon: Bell, id: "notifications" },
     { label: t("security"), icon: Shield, id: "security" },
     { label: t("integrations"), icon: Plug, id: "integrations" },
@@ -272,7 +277,7 @@ export default function SettingsPage() {
             </Card>
           </TabsContent>
 
-          {NAV_ITEMS.filter((n) => n.id !== "profile" && n.id !== "integrations").map((item) => (
+          {NAV_ITEMS.filter((n) => n.id !== "profile" && n.id !== "integrations" && n.id !== "agent" && n.id !== "skills").map((item) => (
             <TabsContent key={item.id} value={item.id}>
               <Card>
                 <CardHeader>
@@ -288,6 +293,14 @@ export default function SettingsPage() {
               </Card>
             </TabsContent>
           ))}
+
+          <TabsContent value="agent">
+            <AgentSettingsForm />
+          </TabsContent>
+
+          <TabsContent value="skills">
+            <AgentSkillsManager />
+          </TabsContent>
 
           <TabsContent value="integrations">
             <Card>

@@ -1799,7 +1799,7 @@ async def _llm_available() -> bool:
 async def _run_llm(message: str, user_id: str, session: dict | None = None) -> list[dict]:
     """Tool-calling loop with session history (max 4 iterations)."""
     import litellm
-    from app.services.agent_session_service import build_system_context, history_for_llm
+    from app.services.agent_session_service import build_system_context_async, history_for_llm
     from app.services.llm_settings_service import get_llm_runtime_config
 
     litellm.drop_params = True
@@ -1816,7 +1816,7 @@ async def _run_llm(message: str, user_id: str, session: dict | None = None) -> l
     except Exception:
         pass
 
-    system = build_system_context(user_id, session or {}, user_meta)
+    system = await build_system_context_async(user_id, session or {}, user_meta, message=message)
     try:
         from app.services import agent_memory as mem
         facts = await mem.list_facts(user_id, limit=8)
