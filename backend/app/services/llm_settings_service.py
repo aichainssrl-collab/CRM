@@ -6,6 +6,7 @@ Document: app_settings / { _id: "llm" }
 from __future__ import annotations
 
 import logging
+import re
 from typing import Any, Optional
 
 from app.config import settings
@@ -71,6 +72,40 @@ async def update_llm_settings(payload: dict[str, Any]) -> dict[str, Any]:
     return await get_llm_settings()
 
 
+async def _resolve_model_id(model: str, base_url: str | None, api_key: str | None) -> str:
+    """
+    Match a display name («Nemotron 3 Nano 4B») to the API model id
+    («nvidia/nemotron-3-nano-4b») on OpenAI-compatible servers.
+    Avoids BadRequestError from model names with spaces.
+    """
+    if not model or " " not in model:
+        return model
+    try:
+        import httpx
+
+        async with httpx.AsyncClient(timeout=4) as client:
+            url = f"{(base_url or '').rstrip('/')}/models"
+            headers = {"Authorization": f"Bearer {api_key or 'no-key'}"}
+            resp = await client.get(url, headers=headers)
+            resp.raise_for_status()
+            ids = [m.get("id") for m in (resp.json().get("data") or []) if m.get("id")]
+        low = model.lower().strip()
+        for i in ids:
+            if i.lower() == low:
+                return i
+        slug = re.sub(r"[^a-z0-9]+", "-", low).strip("-")
+        for i in ids:
+            il = i.lower()
+            if slug in il.replace("/", "-") or il.endswith(slug) or slug in il:
+                return i
+        for i in ids:
+            if i.lower().replace("-", " ") == low or i.lower().replace("_", " ") == low:
+                return i
+    except Exception:
+        logger.debug("model id resolve failed for %r", model, exc_info=True)
+    return re.sub(r"\s+", "-", model.strip()).lower()
+
+
 async def get_llm_runtime_config() -> dict[str, Any]:
     """
     Config for litellm.acompletion — DB overrides win over env.
@@ -83,6 +118,10 @@ async def get_llm_runtime_config() -> dict[str, Any]:
     # raw key from DB if set, else env
     doc = await db["app_settings"].find_one({"_id": LLM_DOC_ID}) or {}
     api_key = doc.get("apiKey") or settings.OPENAI_API_KEY
+
+    # Normalize display names → API ids (LM Studio / Ollama / vLLM)
+    if base_url and model and " " in str(model):
+        model = await _resolve_model_id(str(model), base_url, api_key)
 
     config: dict[str, Any] = {"model": model}
 

@@ -384,10 +384,13 @@ async def _create_lead(args: dict, user_id: str) -> dict:
         }
 
     now = utcnow()
+    derived = _name_parts_from_email(email) if not (args.get("firstName") or args.get("lastName")) else None
+    first_name = args.get("firstName") or (derived[0] if derived else "")
+    last_name = args.get("lastName") or (derived[1] if derived else "")
     doc = {
         "_id": new_id(),
-        "firstName": args.get("firstName") or "",
-        "lastName": args.get("lastName") or "",
+        "firstName": first_name or "",
+        "lastName": last_name or "",
         "email": email,
         "phone": args.get("phone"),
         "companyName": args.get("companyName"),
@@ -1367,6 +1370,36 @@ def _extract_person_name(text: str) -> str | None:
     return m.group(1).strip() if m else None
 
 
+def _name_parts_from_email(email: str) -> tuple[str, str] | None:
+    """Deriva Nome Cognome dalla local-part dell'email (tommaso.penazzi@… → Tommaso, Penazzi)."""
+    local = ((email or "").split("@")[0] or "").lower()
+    if not local:
+        return None
+    parts = [p for p in re.split(r"[._\-+]+", local) if p and not p.isdigit()]
+    if len(parts) >= 2:
+        return parts[0].capitalize(), parts[1].capitalize()
+    if len(parts) == 1 and len(parts[0]) >= 4:
+        return parts[0].capitalize(), ""
+    return None
+
+
+def _llm_error_brief(exc: Exception) -> str:
+    """Messaggio leggibile da errore litellm/API (evita solo «BadRequestError»)."""
+    raw = str(exc) or type(exc).__name__
+    for marker in (
+        "invalid_request_error",
+        "No models loaded",
+        "model_not_found",
+        "NotFoundError",
+        "AuthenticationError",
+    ):
+        if marker.lower() in raw.lower():
+            raw = raw.strip()
+            break
+    raw = re.sub(r"\s+", " ", raw).strip()
+    return raw if len(raw) <= 280 else raw[:277] + "…"
+
+
 def parse_command(text: str) -> tuple[str, dict] | None:
     """
     Map common Italian commands → (tool, args).
@@ -1498,6 +1531,23 @@ def parse_command(text: str) -> tuple[str, dict] | None:
                 query = _extract_person_name(t)
         if query and len(query) >= 2:
             return ("find_lead", {"query": query})
+
+    # EXTRACT NAME FROM EMAIL (es. «aggiungi nome e cognome dalla email x@y.it»)
+    if email and any(k in low for k in (
+        "nome e cognome", "nome e cognome", "nome e cognome dalla",
+        "nome dalla email", "nome dall'email", "nome dalla mail",
+        "cognome dalla email", "cognome dall'email",
+        "dalla email", "dall'email", "dalla mail", "dall'email", "dalla e-mail",
+        "estratt", "strato dalla", "deriva", "ricava", "prendi nome",
+    )) and any(k in low for k in ("nome", "cognome", "firstname", "lastname")):
+        names = _name_parts_from_email(email)
+        if names and (names[0] or names[1]):
+            fields: dict[str, str] = {}
+            if names[0]:
+                fields["firstName"] = names[0]
+            if names[1]:
+                fields["lastName"] = names[1]
+            return ("update_lead", {"email": email, "fields": fields})
 
     # UPDATE LEAD FIELD (es. «imposta settore marketing sul lead x@y.it», «aggiorna settore …»)
     if email and any(k in low for k in (
@@ -2128,8 +2178,17 @@ async def run_agent(message: str, user_id: str, session_id: str | None = None, u
             )
 
         help_res = await _help({}, user_id)
+        detail = _llm_error_brief(llm_error) if llm_error else "errore sconosciuto"
+        hint_fix = ""
+        if "No models loaded" in detail or "model_not_found" in detail or "not found" in detail.lower():
+            hint_fix = (
+                "\n\n⚠️ Modello LLM non disponibile: carica un modello sul server locale "
+                "(LM Studio / Ollama) oppure correggi Modello/Base URL in Impostazioni → LLM."
+            )
+        elif "Authentication" in detail or "api key" in detail.lower() or "unauthorized" in detail.lower():
+            hint_fix = "\n\n⚠️ Chiave API non valida: controlla le impostazioni LLM."
         reply = (
-            f"Non sono riuscito a consultare il modello LLM ({type(llm_error).__name__}).\n\n"
+            f"Non sono riuscito a consultare il modello LLM ({detail}).{hint_fix}\n\n"
             f"{help_res.get('message') or ''}"
         )
         hint = await _skill_hint(message)
