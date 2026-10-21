@@ -82,9 +82,9 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* Right panel — form */}
-      <div className="flex flex-col items-center justify-center gap-6 p-6 md:p-10 bg-background">
-        <div className="flex w-full max-w-sm flex-col gap-7">
+      {/* Right panel — form — my-auto evita che il CTA finisca sotto al banner cookie */}
+      <div className="flex min-h-svh flex-col items-center gap-6 px-6 py-10 pb-[calc(var(--cookie-banner-h,0px)+1.5rem)] md:px-10 bg-background">
+        <div className="my-auto flex w-full max-w-sm flex-col gap-6 sm:gap-7">
           {/* Mobile logo */}
           <div className="flex items-center gap-2.5 self-center font-semibold lg:hidden">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
