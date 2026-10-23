@@ -345,10 +345,11 @@ async def _create_lead(args: dict, user_id: str) -> dict:
         "deletedAt": None,
     })
     if existing:
-        # Upsert: completa i campi mancanti invece di fallire
+        # Upsert: completa i campi mancanti invece di fallire (email → nome/azienda)
+        derived = _enrich_from_email(email)
         updates = {}
         for key in ("firstName", "lastName", "phone", "companyName", "industry", "notes"):
-            val = args.get(key)
+            val = args.get(key) or derived.get(key)
             if val and not existing.get(key):
                 updates[key] = val
         if updates:
@@ -384,16 +385,16 @@ async def _create_lead(args: dict, user_id: str) -> dict:
         }
 
     now = utcnow()
-    derived = _name_parts_from_email(email) if not (args.get("firstName") or args.get("lastName")) else None
-    first_name = args.get("firstName") or (derived[0] if derived else "")
-    last_name = args.get("lastName") or (derived[1] if derived else "")
+    derived = _enrich_from_email(email)
+    first_name = args.get("firstName") or derived.get("firstName") or ""
+    last_name = args.get("lastName") or derived.get("lastName") or ""
     doc = {
         "_id": new_id(),
         "firstName": first_name or "",
         "lastName": last_name or "",
         "email": email,
         "phone": args.get("phone"),
-        "companyName": args.get("companyName"),
+        "companyName": args.get("companyName") or derived.get("companyName"),
         "industry": args.get("industry"),
         "source": args.get("source") or "crm_agent",
         "status": "new",
@@ -1030,8 +1031,19 @@ async def _update_lead(args: dict, user_id: str) -> dict:
         "companySize", "source", "linkedinUrl",
     }
     updates = {k: v for k, v in fields.items() if k in allowed and v is not None}
+    # Completa dall'email i campi ancora vuoti (nome/cognome/azienda)
+    derived = _enrich_from_email(email)
+    for key, val in derived.items():
+        if key in allowed and val and not doc.get(key) and key not in updates:
+            updates[key] = val
     if not updates:
-        return {"ok": False, "error": f"Nessun campo valido tra {sorted(fields.keys())}"}
+        missing = [k for k in ("phone", "industry", "roleTitle", "notes") if not doc.get(k)]
+        return {
+            "ok": False,
+            "error": f"Nessun campo valido tra {sorted(fields.keys())}",
+            "missing": missing,
+            "hint": "Dati già completi dall'email; manca: " + (", ".join(missing) or "—"),
+        }
 
     updates["updatedAt"] = utcnow()
     await db["leads"].update_one({"_id": doc["_id"]}, {"$set": updates})
@@ -1043,11 +1055,18 @@ async def _update_lead(args: dict, user_id: str) -> dict:
         "metadata": {"fields": {k: str(v) for k, v in updates.items() if k != "updatedAt"}},
     })
 
+    updated_keys = sorted(k for k in updates if k != "updatedAt")
+    merged = {**doc, **updates}
+    missing = [k for k in ("phone", "industry", "roleTitle", "notes", "companyName") if not merged.get(k)]
+    message = f"Lead {email} aggiornato: {', '.join(updated_keys)}"
+    if missing:
+        message += f" — mancano ancora: {', '.join(missing)}"
     return {
         "ok": True,
         "leadId": doc["_id"],
-        "updated": sorted(k for k in updates if k != "updatedAt"),
-        "message": f"Lead {email} aggiornato: {', '.join(sorted(k for k in updates if k != 'updatedAt'))}",
+        "updated": updated_keys,
+        "missing": missing,
+        "message": message,
     }
 
 
@@ -1381,6 +1400,47 @@ def _name_parts_from_email(email: str) -> tuple[str, str] | None:
     if len(parts) == 1 and len(parts[0]) >= 4:
         return parts[0].capitalize(), ""
     return None
+
+
+# Domini mail pubblici → non sono aziende
+_PUBLIC_MAIL_DOMAINS = {
+    "gmail", "yahoo", "hotmail", "outlook", "libero", "tin", "alice",
+    "aruba", "pec", "icloud", "me", "live", "email", "mail", "gmail.com",
+    "yahoo.com", "hotmail.com", "outlook.com", "libero.it", "tin.it",
+    "alice.it", "aruba.it", "pec.it", "icloud.com", "live.com",
+}
+
+
+def _company_from_email(email: str) -> str | None:
+    """Deriva l'azienda dal dominio (lella.mongiovi@nvp.it → NVP)."""
+    domain = ((email or "").split("@")[-1] or "").strip().lower()
+    if not domain or "." not in domain:
+        return None
+    parts = [p for p in domain.split(".") if p]
+    if len(parts) < 2:
+        return None
+    sld = parts[-2]
+    if sld in _PUBLIC_MAIL_DOMAINS or domain in _PUBLIC_MAIL_DOMAINS:
+        return None
+    # nvp.it → NVP; microsoft.com → Microsoft; acme-corp.com → Acme Corp
+    if len(sld) <= 4 and sld.isalpha():
+        return sld.upper()
+    return sld.replace("-", " ").title()
+
+
+def _enrich_from_email(email: str) -> dict:
+    """Campi ricavabili dall'email: nome/cognome dalla local-part, azienda dal dominio."""
+    out: dict = {}
+    names = _name_parts_from_email(email)
+    if names:
+        if names[0]:
+            out["firstName"] = names[0]
+        if names[1]:
+            out["lastName"] = names[1]
+    company = _company_from_email(email)
+    if company:
+        out["companyName"] = company
+    return out
 
 
 def _llm_error_brief(exc: Exception) -> str:

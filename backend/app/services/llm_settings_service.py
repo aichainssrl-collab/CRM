@@ -106,6 +106,36 @@ async def _resolve_model_id(model: str, base_url: str | None, api_key: str | Non
     return re.sub(r"\s+", "-", model.strip()).lower()
 
 
+# litellm provider prefixes — anything else is an OpenAI-compatible model id
+# that may itself contain "/" (e.g. Bionic `nvidia/nemotron-3-nano-4b`).
+_KNOWN_PROVIDER_PREFIXES = (
+    "openai/",
+    "anthropic/",
+    "gemini/",
+    "ollama/",
+    "azure/",
+    "huggingface/",
+    "bedrock/",
+    "vertex_ai/",
+    "groq/",
+    "mistral/",
+    "cohere/",
+    "together_ai/",
+    "openrouter/",
+)
+
+
+def _as_openai_compatible_model(model: str) -> str:
+    """Force an `openai/` prefix so litellm routes to the OpenAI client + api_base."""
+    m = str(model or "").strip()
+    if not m:
+        return m
+    low = m.lower()
+    if low.startswith(_KNOWN_PROVIDER_PREFIXES):
+        return m
+    return f"openai/{m}"
+
+
 async def get_llm_runtime_config() -> dict[str, Any]:
     """
     Config for litellm.acompletion — DB overrides win over env.
@@ -126,6 +156,7 @@ async def get_llm_runtime_config() -> dict[str, Any]:
     config: dict[str, Any] = {"model": model}
 
     if provider == "openai":
+        config["model"] = _as_openai_compatible_model(model)
         config["api_key"] = api_key
         if base_url:
             config["api_base"] = base_url
@@ -142,17 +173,14 @@ async def get_llm_runtime_config() -> dict[str, Any]:
         config["api_base"] = cfg_src.get("localBaseUrl") or settings.LLM_LOCAL_BASE_URL
         config["api_key"] = "ollama"
     elif provider == "custom":
-        # litellm needs a provider prefix for OpenAI-compatible bases
-        if not str(model).count("/"):
-            config["model"] = f"openai/{model}"
-        else:
-            config["model"] = model
+        # OpenAI-compatible bases (Bionic, LM Studio, vLLM): always openai/-prefix.
+        # Model ids may contain "/" (nvidia/nemotron-3-nano-4b) — that is NOT a provider.
+        config["model"] = _as_openai_compatible_model(model)
         if base_url:
             config["api_base"] = base_url
         config["api_key"] = api_key or "no-key"
     else:
-        if not str(model).count("/"):
-            config["model"] = f"openai/{model}"
+        config["model"] = _as_openai_compatible_model(model)
         if base_url:
             config["api_base"] = base_url
         config["api_key"] = api_key

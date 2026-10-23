@@ -81,7 +81,7 @@ async def save_conversation(
 ):
     """Salva una conversazione."""
     doc = await svc.save_conversation(
-        user_id=user["uid"],
+        user_id=user.uid,
         title=req.title,
         messages=req.messages,
     )
@@ -91,14 +91,14 @@ async def save_conversation(
 @router.get("/conversations")
 async def list_conversations(user=Depends(get_current_user)):
     """Lista conversazioni dell'utente."""
-    convs = await svc.list_conversations(user["uid"])
+    convs = await svc.list_conversations(user.uid)
     return {"conversations": convs}
 
 
 @router.get("/conversations/{conv_id}")
 async def get_conversation(conv_id: str, user=Depends(get_current_user)):
     """Recupera una conversazione completa."""
-    conv = await svc.get_conversation(conv_id, user["uid"])
+    conv = await svc.get_conversation(conv_id, user.uid)
     if not conv:
         raise HTTPException(status_code=404, detail="Conversazione non trovata")
     return conv
@@ -111,7 +111,7 @@ async def update_conversation(
     user=Depends(get_current_user),
 ):
     """Aggiorna i messaggi di una conversazione."""
-    ok = await svc.update_conversation(conv_id, user["uid"], req.messages)
+    ok = await svc.update_conversation(conv_id, user.uid, req.messages)
     if not ok:
         raise HTTPException(status_code=404, detail="Conversazione non trovata")
     return {"updated": True}
@@ -120,7 +120,7 @@ async def update_conversation(
 @router.delete("/conversations/{conv_id}")
 async def delete_conversation(conv_id: str, user=Depends(get_current_user)):
     """Elimina una conversazione."""
-    ok = await svc.delete_conversation(conv_id, user["uid"])
+    ok = await svc.delete_conversation(conv_id, user.uid)
     if not ok:
         raise HTTPException(status_code=404, detail="Conversazione non trovata")
     return {"deleted": True}

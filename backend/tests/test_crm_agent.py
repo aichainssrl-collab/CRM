@@ -48,6 +48,23 @@ def mock_agent_session():
 
 # ── parser ───────────────────────────────────────────────────────────────────
 
+def test_company_from_email_domain():
+    """Dominio → azienda (nvp.it → NVP). Domini pubblici non generano azienda."""
+    assert crm_agent_service._company_from_email("lella.mongiovi@nvp.it") == "NVP"
+    assert crm_agent_service._company_from_email("mario@microsoft.com") == "Microsoft"
+    assert crm_agent_service._company_from_email("x@acme-corp.com") == "Acme Corp"
+    assert crm_agent_service._company_from_email("x@gmail.com") is None
+    assert crm_agent_service._company_from_email("x@libero.it") is None
+    assert crm_agent_service._company_from_email("no-at-sign") is None
+
+
+def test_enrich_from_email():
+    enrich = crm_agent_service._enrich_from_email("lella.mongiovi@nvp.it")
+    assert enrich["firstName"] == "Lella"
+    assert enrich["lastName"] == "Mongiovi"
+    assert enrich["companyName"] == "NVP"
+
+
 def test_parse_create_lead():
     parsed = crm_agent_service.parse_command(
         "Crea lead Mario Rossi email mario@studio.it"
@@ -235,6 +252,58 @@ def test_duplicate_lead_returns_existing():
     assert data["ok"] is True
     assert "già presente" in data["reply"]
     assert mock_col.insert_one.await_count == 0
+
+
+def test_create_lead_derives_company_from_email_domain():
+    """create_lead senza companyName → azienda dal dominio (nvp.it → NVP)."""
+    mock_col = MagicMock()
+    mock_col.find_one = AsyncMock(return_value=None)
+    mock_col.insert_one = AsyncMock()
+
+    with patch("app.services.crm_agent_service.db") as mock_db:
+        mock_db.__getitem__ = MagicMock(return_value=mock_col)
+        resp = client.post(
+            "/api/v1/agent/tools/create_lead",
+            json={"args": {"email": "lella.mongiovi@nvp.it"}},
+        )
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["ok"] is True
+    inserted = mock_col.insert_one.await_args.args[0]
+    assert inserted["firstName"] == "Lella"
+    assert inserted["lastName"] == "Mongiovi"
+    assert inserted["companyName"] == "NVP"
+
+
+def test_update_lead_fills_missing_from_email():
+    """update_lead completa companyName/nome dall'email se il DB è vuoto."""
+    import asyncio
+
+    mock_col = MagicMock()
+    mock_col.find_one = AsyncMock(return_value={
+        "_id": "lead-1",
+        "email": "lella.mongiovi@nvp.it",
+        "firstName": "Lella",
+        "lastName": "Mongiovi",
+        "companyName": None,
+        "phone": None,
+    })
+    mock_col.update_one = AsyncMock()
+
+    with patch("app.services.crm_agent_service.db") as mock_db, \
+         patch("app.services.crm_agent_service.append_activity", new_callable=AsyncMock):
+        mock_db.__getitem__ = MagicMock(return_value=mock_col)
+        result = asyncio.run(crm_agent_service._update_lead(
+            {"email": "lella.mongiovi@nvp.it", "fields": {"notes": "Contattata"}},
+            "u1",
+        ))
+
+    assert result["ok"] is True
+    assert "companyName" in result["updated"]
+    assert "phone" in result["missing"]
+    set_doc = mock_col.update_one.await_args.args[1]["$set"]
+    assert set_doc["companyName"] == "NVP"
 
 
 # ── deals + deadlines tools ──────────────────────────────────────────────────

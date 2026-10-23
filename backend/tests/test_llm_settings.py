@@ -130,3 +130,31 @@ def test_llm_connection_test_button_uses_form_values():
     assert resp.status_code == 200
     assert data["ok"] is True
     assert data["model"] in ("gpt-4o-mini", "openai/gpt-4o-mini")
+
+
+def test_custom_model_id_with_slash_gets_openai_prefix():
+    """Bionic-style ids (nvidia/nemotron-3-nano-4b) must not be treated as litellm providers."""
+    from app.services.llm_settings_service import get_llm_runtime_config, _as_openai_compatible_model
+
+    assert _as_openai_compatible_model("nvidia/nemotron-3-nano-4b") == "openai/nvidia/nemotron-3-nano-4b"
+    assert _as_openai_compatible_model("openai/gpt-4o") == "openai/gpt-4o"
+    assert _as_openai_compatible_model("qwen3:4b") == "openai/qwen3:4b"
+
+    col = _mock_settings_col({
+        "_id": "llm",
+        "provider": "custom",
+        "model": "nvidia/nemotron-3-nano-4b",
+        "baseUrl": "http://localhost:1235/v1",
+        "apiKey": "no-key",
+    })
+    with patch("app.services.llm_settings_service.db") as mock_db:
+        mock_db.__getitem__ = MagicMock(return_value=col)
+
+        async def _run():
+            return await get_llm_runtime_config()
+
+        import asyncio
+        cfg = asyncio.run(_run())
+
+    assert cfg["model"] == "openai/nvidia/nemotron-3-nano-4b"
+    assert cfg["api_base"] == "http://localhost:1235/v1"
